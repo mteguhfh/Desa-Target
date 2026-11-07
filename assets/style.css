@@ -981,3 +981,191 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
     .sakelar-opsi { transition: none; }
 }
+
+/* --- Tab bar bawah dan panel bersayap -------------------------------------
+   Dipakai peta 3D dan peta 2D. Tujuannya: berpindah isi tanpa meninggalkan
+   dunia peta. Peta 3D memuat stylesheet ini dari kepala peta3d/index.php,
+   jadi satu berkas cukup untuk dua tampilan. */
+
+.tab-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(64px, 1fr));
+    width: min(460px, 100vw);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -6px 24px rgba(30, 58, 138, 0.16);
+    backdrop-filter: blur(10px);
+}
+
+.tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 6px 4px;
+    border: none;
+    border-radius: 12px;
+    background: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--teks-lembut);
+    font: 700 11.5px/1.2 inherit;
+    font-family: inherit;
+    transition: background 160ms ease, color 160ms ease;
+}
+.tab-item:hover { background: var(--biru-pucat); color: var(--biru-gelap); }
+.tab-item.aktif { color: var(--biru); }
+.tab-item.aktif .tab-ikon { transform: translateY(-1px) scale(1.08); }
+.tab-item:focus-visible { outline: 3px solid var(--biru-gelap); outline-offset: -2px; }
+.tab-ikon {
+    font-size: 19px;
+    line-height: 1;
+    transition: transform 160ms ease;
+}
+.tab-teks { white-space: nowrap; }
+
+/* Panel bersayap: muncul dari bawah, di atas tab bar. Bagian atas dunia
+   peta tetap terlihat, itulah alasan panel ini ada. */
+.panel-bersayap {
+    position: fixed;
+    /* Geseran horizontal dipisah dari pergerakan naik-turun: --panel-x hanya
+       mengurus pemusatan, transform mengurus buka-tutup. Kalau digabung,
+       media query yang mengubah --panel-x akan ikut membatalkan animasi. */
+    --panel-x: 50%;
+    left: var(--panel-x);
+    /* Berhenti tepat di atas tab bar, jadi tab yang aktif tetap terlihat
+       dan bisa diketuk lagi untuk menutup panel.
+       72px = tinggi tab bar (52px item + 12px padding + 6px atas) + 2px
+       celah supaya keduanya tidak saling menimpa. */
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(calc(100% + 78px));
+    /* translate3d memaksa lapisan GPU sendiri. Tanpa ini, panel ikut dihitung
+       ulang bersama kanvas 3D di perangkat kelas bawah dan animasinya tersendat. */
+    will-change: transform;
+    z-index: 58;
+    width: min(520px, 100vw);
+    /* Sisakan minimal 190px dunia 3D di atas panel. Pakai dvh supaya
+       bilah alamat ponsel yang menyusut tidak memotong panel. */
+    max-height: max(240px, calc(100dvh - 72px - 180px - env(safe-area-inset-bottom, 0px)));
+    display: flex;
+    flex-direction: column;
+    background: var(--putih);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -14px 44px rgba(30, 58, 138, 0.28);
+    /* Tanpa ini, daftar isi yang panjang memaksa panel melebihi max-height
+       dan menutupi tab bar. Dipakai clip, bukan hidden: flex dengan
+       overflow hidden menolak menyusut di bawah tinggi isinya. */
+    overflow: clip;
+    transition: transform 180ms ease-out, visibility 0s linear 180ms;
+    visibility: hidden;
+}
+/* Sudut kiri bawah dipakai sakelar 3D/2D, jadi di layar lebar panel diberi
+   jarak supaya sakelar tidak tertutup. */
+@media (min-width: 701px) {
+    .panel-bersayap { --panel-x: calc(50% + 34px); }
+}
+.panel-bersayap.terbuka {
+    transform: translateX(-50%) translateY(0);
+    visibility: visible;
+    transition: transform 180ms ease-out, visibility 0s;
+}
+/* Dipasang skrip saat halaman punya kanvas 3D: bingkai terlalu jarang untuk
+   animasi, jadi panel dibuka tanpa transisi. */
+.panel-bersayap.segera,
+.panel-bersayap.segera.terbuka { transition: none; }
+
+.panel-bersayap-kepala {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px 10px;
+    border-bottom: 1px solid var(--garis);
+}
+.panel-bersayap-judul { margin: 0; font-size: 18px; color: var(--teks); }
+.panel-bersayap-tutup {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: var(--teks-lembut);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+}
+.panel-bersayap-tutup:hover { background: var(--garis); }
+
+.panel-bersayap-isi {
+    padding: 14px 18px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-height: 0;
+}
+.panel-deskripsi { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--teks-lembut); }
+.panel-statistik { margin: 0 0 12px; font-size: 15px; color: var(--teks); }
+
+.tombol-panel-utama {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 999px;
+    background: var(--biru);
+    color: var(--putih);
+    font-weight: 700;
+    text-decoration: none;
+}
+.tombol-panel-utama:hover { background: var(--biru-gelap); }
+
+.kartu-misi {
+    padding: 14px 16px;
+    border: 1px solid var(--garis);
+    border-radius: var(--radius);
+    background: var(--biru-pucat);
+}
+.kartu-misi h3 { margin: 0 0 6px; font-size: 15.5px; color: var(--teks); }
+.kartu-misi p { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--teks-lembut); }
+
+.daftar-bangunan { list-style: none; margin: 0; padding: 0; }
+.daftar-bangunan-baris {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.daftar-bangunan-nama { font-weight: 700; font-size: 14.5px; color: var(--teks); }
+.daftar-bangunan-gang {
+    flex: none;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--teks-lembut);
+    background: #f1f5f9;
+    border-radius: 999px;
+    padding: 2px 9px;
+}
+.panel-gabung { margin: 14px 0 0; font-weight: 700; }
+.panel-gabung a { color: var(--biru); }
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-bersayap,
+    .panel-bersayap.terbuka,
+    .tab-item,
+    .tab-ikon { transition: none; }
+}
+
+.panel-catatan {
+    margin: 14px 0 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--teks-lembut);
+}

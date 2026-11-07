@@ -31,11 +31,13 @@ const catat = (nama, lulus, detail = '') => {
   catat('sakelar menandai 3D aktif', aktif === '3D', 'aktif=' + aktif);
   catat('URL tetap /peta.php (tanpa redirect)', page.url().endsWith('/peta.php'), page.url());
 
-  // kontrol peta 3D hadir
-  for (const id of ['tombolJalan', 'tombolPapan', 'tombolZoomIn', 'tombolZoomOut', 'tombolReset']) {
+  // Kontrol peta 3D hadir. "Papan Gang" kini berupa tab di tab bar bawah
+  // (bukan tombol di tumpukan kontrol), jadi diperiksa terpisah.
+  for (const id of ['tombolJalan', 'tombolZoomIn', 'tombolZoomOut', 'tombolReset']) {
     if ((await page.locator('#' + id).count()) === 0) catat('kontrol ' + id + ' ada', false);
   }
-  catat('kontrol peta 3D lengkap', true, 'Keliling/Papan/zoom/reset');
+  catat('kontrol peta 3D lengkap', true, 'Keliling/zoom/reset');
+  catat('tab Papan Gang ada', (await page.locator('#tabBar .tab-item[data-panel="papan-gang"]').count()) === 1);
   await page.screenshot({ path: '/tmp/opencode/shot-3d.png' });
 
   // 2. Switch ke 2D

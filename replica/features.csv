@@ -8,16 +8,16 @@ Label nama warga melayang di dekat avatarnya,3d map,should,yes,selesai,labelNama
 Tap bangunan membuka detail bangunan,3d map,must,yes,selesai,popover + bisaDiklik,Data dari data-desa.php (ADR-0004)
 Masuk ke dalam bangunan (interior),3d map,should,yes,sebagian,chipMasuk -> peta2d.php#interior-balai,Balai Desa lompat ke interior 2D; interior 3D belum ada
 Kontrol zoom tombol plus dan minus,shell,should,yes,selesai,tombolZoomIn/Out baris 1385,
-Bilah atas: nama desa statistik dan suasana,shell,must,yes,sebagian,stats + ?jam= di peta3d,Ada jam dan statistik; belum ada status ramai/sepi
-Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,belum,grep tab-bar: nihil,Navigasi masih lewat tautan header biasa
-Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,belum,grep panel-bersayap: nihil,Tanpa panel, dunia 3D hilang saat pindah halaman
-Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,sebagian,ktp.php bisa buat kartu,Tapi tidak ditautkan dari dalam peta 3D
+Bilah atas: nama desa statistik dan suasana,shell,must,yes,selesai,chipWaktu + chipSuasana di peta3d/index.php,Suasana ramai/sepi dihitung dari warga yang berdiri dan jumlah bangunan
+Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; Desa/Aku tautan, Misi/Papan Gang membuka panel
+Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,selesai,includes/panel-bersayap.php,Membuka di atas tab bar; dunia peta tetap terlihat; diuji 4 ukuran layar
+Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,selesai,tab Aku -> ktp.php,Tertaut dari panel Aku; halaman KTP kembali ke peta setelah kartu jadi
 Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,selesai,ktp.php,
 Cari warga berdasarkan nama atau nomor,community,should,yes,belum,cari_warga() hanya cari by id; UI belum ada,Perlu fungsi cari by nama/nomor + halaman hasil
 Daftar semua bangunan beserta gangnya,community,should,yes,sebagian,data.bangunan dikirim ke 3D,Belum ada daftar yang bisa dibaca/di-scroll
 Papan peringkat gang,community,should,yes,selesai,includes/papan-gang.php + papan di peta 2D,
 Siang dan malam mengikuti jam setempat,ambience,could,yes,selesai,?jam= di peta3d baris 1427,
-Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,belum,tidak ada di kode,Bisa dihitung dari jumlah warga aktif
+Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,selesai,chipSuasana di peta3d/index.php,Selesai bersama bilah atas; disembunyikan di layar <=700px
 Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru video pembanding
 Misi harian untuk menggerakkan komentar,gamification,could,yes,belum,tidak ada tabel misi,Butuh tabel + UI; paling dekat ke konsep komentar terbanyak
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding

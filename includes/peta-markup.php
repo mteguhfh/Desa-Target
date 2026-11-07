@@ -1487,3 +1487,14 @@
 })();
 </script>
 
+<?php
+// Tab bar dan panel bersayap (sama seperti di peta 3D).
+$tabAktif = '';
+$tabAwalan = '';
+$panelBangunan = $bangunan;
+$panelPapanGang = $papanGang;
+$panelTotalWarga = $totalWarga ?? hitung_warga($pdo);
+require __DIR__ . '/panel-bersayap.php';
+require __DIR__ . '/tab-bar.php';
+require __DIR__ . '/tab-bar-skrip.php';
+?>

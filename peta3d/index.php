@@ -24,6 +24,22 @@ $versiStyle = (int) (@filemtime(__DIR__ . '/../assets/style.css') ?: 1);
 // bare specifier. Dipakai untuk importmap dan modul bangunan3d.js.
 $akarUrl = $dariAkar ? './' : '../';
 $folder3dUrl = $dariAkar ? './peta3d/' : './';
+
+// Isi panel bersayap (tab Papan Gang dan bangunan). Dibaca dari basis data
+// supaya panel dan dunia 3D di belakangnya tidak mungkin berbeda angka.
+// Kegagalan basis data tidak boleh mematikan peta 3D: panel cukup kosong.
+$PAPAN_GANG_SERVER = [];
+$BANGUNAN_SERVER = [];
+$TOTAL_WARGA_SERVER = 0;
+try {
+    require_once __DIR__ . '/../db.php';
+    $pdoPanel = db();
+    $PAPAN_GANG_SERVER = papan_gang($pdoPanel);
+    $BANGUNAN_SERVER = semua_bangunan($pdoPanel);
+    $TOTAL_WARGA_SERVER = hitung_warga($pdoPanel);
+} catch (Throwable $e) {
+    // biarkan kosong
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -85,6 +101,19 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
     }
     .chip-waktu.malam { background: rgba(30,41,59,0.92); color: #e2e8f0; }
+    /* Suasana desa: ramai atau sepi, dihitung dari warga yang berdiri. */
+    .chip-suasana {
+        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        background: rgba(255,255,255,0.94); border-radius: 999px;
+        padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: #374151;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
+    }
+    .chip-suasana::before {
+        content: ''; width: 8px; height: 8px; border-radius: 999px; background: #94a3b8;
+    }
+    .chip-suasana.ramai::before { background: #22c55e; }
+    .chip-suasana.sepi::before { background: #f59e0b; }
+    @media (max-width: 700px) { .chip-suasana { display: none; } }
     @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
 
     /* --- Kartu pengantar --- */
@@ -109,7 +138,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
 
     /* --- Tumpukan kontrol kanan --- */
     .kontrol {
-        position: fixed; right: 12px; bottom: 88px; z-index: 20;
+        position: fixed; right: 12px; bottom: 146px; z-index: 20;
         display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
     }
     .kontrol button {
@@ -177,7 +206,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
 
     /* --- Mode Keliling Desa --- */
     .dpad {
-        position: fixed; left: 14px; bottom: 18px; z-index: 22;
+        position: fixed; left: 14px; bottom: 78px; z-index: 22;
         display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
         gap: 5px; touch-action: none;
     }
@@ -191,7 +220,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     .dpad .atas { grid-area: 1 / 2; } .dpad .kiri { grid-area: 2 / 1; }
     .dpad .kanan { grid-area: 2 / 3; } .dpad .bawah { grid-area: 3 / 2; }
     .chip-masuk {
-        position: fixed; left: 50%; bottom: 108px; transform: translateX(-50%);
+        position: fixed; left: 50%; bottom: 150px; transform: translateX(-50%);
         z-index: 22; display: none;
         background: #2563eb; color: #fff; border: none; cursor: pointer;
         font: 700 15px system-ui, sans-serif; border-radius: 999px; padding: 13px 24px;
@@ -199,7 +228,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     }
     .chip-masuk.tampil { display: block; }
     .chip-petunjuk-jalan {
-        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+        position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%);
         z-index: 21; display: none;
         background: rgba(17,24,39,0.82); color: #f9fafb; border-radius: 999px;
         padding: 9px 16px; font-size: 13px; font-weight: 600; white-space: nowrap;
@@ -221,12 +250,12 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     .webgl-gagal a { color: #2563eb; font-weight: 700; }
 
     #stats {
-        position: fixed; left: 12px; bottom: 12px; z-index: 40; display: none;
+        position: fixed; left: 12px; bottom: 78px; z-index: 40; display: none;
         background: rgba(17,24,39,0.85); color: #a7f3d0; border-radius: 10px;
         font: 12px ui-monospace, monospace; padding: 8px 11px; white-space: pre;
     }
     .muat {
-        position: fixed; inset: 0; z-index: 45; display: flex;
+        position: fixed; inset: 0; z-index: 70; display: flex;
         align-items: center; justify-content: center;
         background: linear-gradient(#bae6fd, #dcfce7);
         font-weight: 700; color: #1e3a8a; font-size: 17px;
@@ -241,7 +270,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     .sakelar-peta {
         position: fixed;
         left: 12px;
-        bottom: 12px;
+        bottom: 72px;
         z-index: 40;
         display: inline-flex;
         gap: 2px;
@@ -273,6 +302,8 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     /* Di layar sempit sudut kiri bawah dipakai D-pad, jadi sakelar naik. */
     @media (max-width: 700px) {
         .sakelar-peta { bottom: auto; top: 62px; left: 12px; }
+        /* Tab bar bawah memakan ~66px; D-pad naik supaya tetap di atasnya. */
+        .dpad { bottom: 78px; }
     }
     @media (prefers-reduced-motion: reduce) {
         .sakelar-opsi { transition: none; }
@@ -286,6 +317,12 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
     }
 }
 </script>
+<?php
+// Stylesheet situs untuk tab bar dan panel bersayap. Dunia 3D tetap memakai
+// gaya di dalam berkas ini; yang dipinjam dari style.css hanya dua komponen
+// navigasi tadi, jadi kalau style.css gagal dimuat peta 3D masih hidup.
+?>
+<link rel="stylesheet" href="<?= $awalan ?>assets/style.css?v=<?= $versiStyle ?>">
 </head>
 <body<?= $dariAkar ? ' data-pintu-peta="1"' : '' ?>>
 <div id="panggung" aria-label="Peta Desa Target tiga dimensi"></div>
@@ -299,12 +336,23 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
-    <a class="pil-nav sembunyi-kecil" href="<?= $awalan ?>index.php">Beranda</a>
-    <a class="pil-nav" href="<?= $awalan ?>ktp.php">Bikin KTP Warga</a>
-    <a class="pil-nav sembunyi-kecil" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Instagram</a>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
     <span class="chip-waktu" id="chipWaktu">&#9728;&#65039; Siang</span>
+    <span class="chip-suasana" id="chipSuasana" title="Suasana desa dihitung dari jumlah warga yang berdiri di peta">Memuat…</span>
 </div>
+
+<?php
+// Tab bar bawah (Desa · Misi · Papan Gang · Aku) dan panel bersayap.
+// Navigasi pindah dari bilah atas ke sini supaya dunia 3D tetap terlihat
+// saat pengunjung berpindah isi: panel membuka di bawah, bukan halaman baru.
+$tabAktif = '';
+$tabAwalan = $awalan;
+$panelBangunan = $BANGUNAN_SERVER;
+$panelPapanGang = $PAPAN_GANG_SERVER;
+$panelTotalWarga = $TOTAL_WARGA_SERVER;
+require __DIR__ . '/../includes/panel-bersayap.php';
+require __DIR__ . '/../includes/tab-bar.php';
+?>
 
 <div class="kartu-intro" id="kartuIntro">
     <button type="button" class="tombol-tutup" id="introTutup" aria-label="Tutup pengantar">&times;</button>
@@ -315,22 +363,11 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 
 <div class="kontrol">
     <button type="button" class="pil utama" id="tombolJalan">Keliling Desa</button>
-    <button type="button" class="pil" id="tombolPapan">Papan Gang</button>
     <button type="button" class="bulat" id="tombolZoomIn" aria-label="Zoom masuk">+</button>
     <button type="button" class="bulat" id="tombolZoomOut" aria-label="Zoom keluar">&minus;</button>
     <button type="button" class="bulat" id="tombolReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
     <button type="button" class="bulat" id="tombolLayarPenuh" aria-label="Layar penuh">&#9974;</button>
 </div>
-
-<aside class="panel-gang" id="panelGang" aria-hidden="true" aria-label="Papan peringkat gang">
-    <div class="kepala">
-        <h2>Papan Gang</h2>
-        <button type="button" class="tombol-tutup" id="panelGangTutup" aria-label="Tutup papan gang">&times;</button>
-    </div>
-    <p class="deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
-    <div id="isiPapanGang"></div>
-    <p class="gabung"><a href="<?= $awalan ?>ktp.php">Gabung gang-mu</a></p>
-</aside>
 
 <div class="popover" id="popover">
     <button type="button" class="tombol-tutup" id="popoverTutup" aria-label="Tutup detail">&times;</button>
@@ -362,6 +399,7 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 <div class="muat" id="layarMuat">Membangun desa 3D...</div>
 
 <?php require __DIR__ . '/../includes/sakelar-peta-skrip.php'; ?>
+<?php require __DIR__ . '/../includes/tab-bar-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
@@ -500,17 +538,6 @@ terapkanDataDesa(DATA_DESA);
 // Isi desa dari server, atau cadangan bila endpoint gagal.
 const WARGA_SEED = DATA_DESA && Array.isArray(DATA_DESA.warga) ? DATA_DESA.warga : [];
 const BANGUNAN_SEED = DATA_DESA && Array.isArray(DATA_DESA.bangunan) ? DATA_DESA.bangunan : [];
-// Papan gang: pakai keluaran papan_gang() dari server bila ada; kalau tidak,
-// hitung dari daftar warga yang tersedia.
-const PAPAN_SEED = DATA_DESA && Array.isArray(DATA_DESA.papanGang) ? DATA_DESA.papanGang : (() => {
-    const hitung = {};
-    for (const namaGang of Object.keys(ZONA_GANG)) hitung[namaGang] = 0;
-    WARGA_SEED.forEach(w => { if (w.gang in hitung) hitung[w.gang]++; });
-    return Object.entries(hitung)
-        .map(([gang, jumlah]) => ({ gang, jumlah }))
-        .sort((a, b) => b.jumlah - a.jumlah);
-})();
-
 // RNG deterministik supaya sebaran pohon dan warga konsisten tiap muat.
 function mulberry32(a) {
     return function () {
@@ -1349,21 +1376,15 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     if (obj) bukaPopover(obj.userData.popover, obj === spriteUju ? spriteUju : obj, e.clientX, e.clientY);
 });
 
-const panelGang = document.getElementById('panelGang');
-document.getElementById('tombolPapan').addEventListener('click', () => {
-    panelGang.classList.add('buka');
-    panelGang.setAttribute('aria-hidden', 'false');
-});
-document.getElementById('panelGangTutup').addEventListener('click', () => {
-    panelGang.classList.remove('buka');
-    panelGang.setAttribute('aria-hidden', 'true');
-});
-// Isi papan peringkat dari daftar [{ gang, jumlah }], bentuk yang sama
-// seperti keluaran papan_gang() di PHP maupun PAPAN_SEED.
+// Papan peringkat gang dibangun server (includes/panel-bersayap.php), jadi
+// tidak ada lagi yang perlu digambar dari sini. Fungsi ini disisakan supaya
+// kait window.__desa tetap sah, dan hanya menyegarkan bila wadahnya ada.
 function gambarPapanGang(papan) {
+    const wadah = document.getElementById('isiPapanGang');
+    if (!wadah) return;
     const urutan = [...papan].sort((a, b) => b.jumlah - a.jumlah);
     const maks = Math.max(1, ...urutan.map(p => p.jumlah));
-    document.getElementById('isiPapanGang').innerHTML = urutan.map((p, i) => `
+    wadah.innerHTML = urutan.map((p, i) => `
         <div class="papan-baris">
             <span class="papan-peringkat">${i + 1}</span>
             <span class="papan-nama">${p.gang}</span>
@@ -1371,7 +1392,6 @@ function gambarPapanGang(papan) {
             <span class="papan-palangan"><span class="papan-isi" style="width: ${Math.round(p.jumlah / maks * 100)}%; background: ${cssGang(p.gang)}"></span></span>
         </div>`).join('');
 }
-gambarPapanGang(PAPAN_SEED);
 document.getElementById('introTutup').addEventListener('click', () => {
     document.getElementById('kartuIntro').style.display = 'none';
 });
@@ -1400,6 +1420,32 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// ---------------------------------------------------------------------------
+// Suasana desa di bilah atas: ramai atau sepi.
+//
+// Dihitung dari data desa sendiri, bukan angka karangan: jumlah warga yang
+// benar-benar berdiri di peta, ditambah jumlah bangunan yang sudah berdiri.
+// Ambangnya sengaja dibuat rendah karena desa ini masih muda; begitu warganya
+// bertambah, labelnya naik sendiri tanpa perlu diubah.
+// ---------------------------------------------------------------------------
+function perbaruiSuasana() {
+    const chip = document.getElementById('chipSuasana');
+    if (!chip) return;
+    const warga = Math.min(WARGA_SEED.length, 80);
+    const bangunan = BANGUNAN_SEED.length;
+    let teks, kelas;
+    if (warga >= 25) { teks = 'Ramai · ' + warga + ' warga di desa'; kelas = 'ramai'; }
+    else if (warga >= 5) { teks = 'Mulai hidup · ' + warga + ' warga'; kelas = 'ramai'; }
+    else if (warga >= 1) { teks = 'Sepi · ' + warga + ' warga baru'; kelas = 'sepi'; }
+    else { teks = 'Desa baru · belum ada warga'; kelas = 'sepi'; }
+    if (bangunan > 0) teks += ' · ' + bangunan + ' bangunan';
+    chip.textContent = teks;
+    chip.classList.remove('ramai', 'sepi');
+    chip.classList.add(kelas);
+    chip.setAttribute('data-suasana', kelas);
+}
+perbaruiSuasana();
 
 // Kait untuk pengujian otomatis dan tangkapan layar.
 window.__desa = {

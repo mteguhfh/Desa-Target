@@ -67,7 +67,7 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
     </article>
     <p class="ktp-setelah">
         Simpan alamat halaman ini untuk melihat kartumu lagi kapan pun.
-        Lanjut ke <a href="peta.php">Peta Desa</a> buat lihat bangunan yang sudah berdiri.
+        Kembali ke <a href="peta.php">Peta Desa</a> buat lihat namamu berdiri di depan balai desa.
     </p>
     <?php endif; ?>
 

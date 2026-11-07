@@ -86,6 +86,14 @@ Satu sumber data untuk dua tampilan peta (lihat ADR-0004): titik kavling, zona g
 
 Penanda versi aset dihitung otomatis dari waktu ubah berkasnya (`filemtime`): `assets/style.css` untuk semua halaman, dan `peta3d/bangunan3d.js` untuk peta 3D. Tidak perlu lagi mengganti `?v=` dengan tangan setiap kali berkas itu berubah.
 
+Navigasi desa ada di tab bar bawah (Desa · Misi · Papan Gang · Aku) dengan
+panel bersayap di atasnya. Tab Misi dan Papan Gang membuka panel di halaman
+yang sama, jadi dunia peta tidak hilang saat pengunjung berpindah isi. Komponen
+ini dipakai peta 3D maupun 2D: `includes/tab-bar.php`,
+`includes/panel-bersayap.php`, dan `includes/tab-bar-skrip.php`. Gayanya di
+`assets/style.css`; `peta3d/index.php` memuat stylesheet itu khusus untuk
+komponen ini dan tetap memakai gaya dunianya sendiri.
+
 Uji perilaku peta di peramban ada di `tools/uji/` (Playwright). Lihat `tools/uji/README.md`.
 
 ## Cara loop hariannya bekerja

@@ -7,6 +7,9 @@ pekerjaan yang benar-benar belum ada.
 Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
+**Perbarui 2026-11-08:** Tahap 1 selesai. Sekarang 16 selesai, 2 sebagian,
+4 belum, 5 sengaja tidak dikerjakan. Yang tersisa semuanya Tahap 2 dan 3.
+
 ## Prinsip urutan
 
 1. **Jangan pecah yang sudah jalan.** Peta 3D, sakelar, dan satu sumber data
@@ -26,17 +29,30 @@ Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 Ini satu-satunya kelompok yang menyentuh kerangka halaman, jadi dikerjakan lebih
 dulu supaya pekerjaan lain punya tempat menaruh isinya.
 
-| # | pekerjaan | status awal | yang perlu dibuat |
+| # | pekerjaan | status | bukti |
 | --- | --- | --- | --- |
-| 1.1 | Tab bar bawah 4 tab: Desa · Misi · Papan Gang · Aku | belum | Komponen tab di `includes/`, muncul di peta 3D dan 2D |
-| 1.2 | Panel bersayap di atas dunia 3D | belum | Satu panel yang isinya berganti per tab; dunia tetap terlihat di belakang |
-| 1.3 | Bilah atas lengkap (statistik + suasana) | sebagian | Tambah status ramai/sepi, hitung dari data desa sendiri |
-| 1.4 | Tautkan pembuatan kartu warga dari dalam peta 3D | sebagian | Tombol di tab Aku menuju `ktp.php`; kembali ke peta setelah jadi |
+| 1.1 | Tab bar bawah 4 tab: Desa · Misi · Papan Gang · Aku | **selesai** | `includes/tab-bar.php` |
+| 1.2 | Panel bersayap di atas dunia 3D | **selesai** | `includes/panel-bersayap.php` |
+| 1.3 | Bilah atas lengkap (statistik + suasana) | **selesai** | `chipSuasana` di `peta3d/index.php` |
+| 1.4 | Tautkan pembuatan kartu warga dari dalam peta 3D | **selesai** | tab Aku → `ktp.php`, kembali ke peta |
 
-**Selesai bila:** dari dalam peta 3D, pengunjung bisa membuka keempat tab tanpa
-meninggalkan halaman, dan bisa sampai ke pembuatan kartu lalu kembali.
+**Hasil:** keempat tab bisa dibuka tanpa meninggalkan peta. Tab Desa dan Aku
+adalah tautan biasa; Misi dan Papan Gang membuka panel di halaman yang sama.
+Dunia peta tetap terlihat di atas panel.
 
-**Risiko:** panel bertumpuk di layar 390px. Wajib diuji di 390 / 768 / 1440.
+**Catatan teknis yang ditemukan saat mengerjakan:**
+
+- Peta 3D menggambar hanya sekitar 3 bingkai per detik di mesin uji tanpa GPU,
+  jadi animasi 300ms tertinggal hampir satu detik. Panel karena itu dibuka
+  tanpa transisi saat halaman punya kanvas 3D (kelas `.segera`). Latensi turun
+  dari ~870ms ke 7ms.
+- Layar muat 3D dulu menutupi tab bar dengan z-index lebih tinggi, sehingga
+  ketukan pertama tertelan. Layar muat dinaikkan ke z-index 70, di atas tab bar.
+- Panel dan tab bar dijaga jarak 1px lewat rumus `bottom: 72px`, bukan 64px:
+  tinggi tab bar sebenarnya 70.6px (52px item + padding + safe-area).
+
+**Uji:** `tools/uji/tab-bar-panel.js`, 112 pemeriksaan di 4 ukuran layar ×
+2 halaman. Tata letak diverifikasi dengan `elementFromPoint`, bukan hanya kotak.
 
 ---
 
@@ -46,7 +62,7 @@ Tab bar tanpa isi hanya kulit. Di sini isinya diisi.
 
 | # | pekerjaan | status awal | yang perlu dibuat |
 | --- | --- | --- | --- |
-| 2.1 | Daftar semua bangunan beserta gangnya | sebagian | Data sudah dikirim `data-desa.php`; tinggal tampilan daftar yang bisa digulir dan diketuk untuk menyorot bangunan di dunia |
+| 2.1 | Daftar semua bangunan beserta gangnya | sebagian | Daftar sudah bisa dibaca di panel `data-isi="bangunan"`; sisa: ketuk baris untuk menyorot bangunan di dunia |
 | 2.2 | Cari warga berdasarkan nama atau nomor | belum | Helper baru di `db.php` (`cari_warga_berdasarkan()`), halaman hasil, dipakai tab Desa |
 | 2.3 | Interior Balai Desa di dalam 3D | sebagian | Sekarang masih lompat ke `peta2d.php#interior-balai`; perlu tampilan interior tanpa keluar dari peta 3D |
 
