@@ -5,7 +5,13 @@
 // tanpa aset gambar luar. Fungsi svg_bangunan() mengembalikan satu grup SVG
 // (<g>) yang sudah berisi data detail bangunan sebagai atribut data-*;
 // peta.php menaruh grup itu di titik kavlingnya dan skrip kecil di halaman
-// yang sama membaca atributnya saat bangunan diklik.
+// yang sama membaca atributnya saat bangunan ditap.
+//
+// Sejak peta versi 3, gambar bangunan tetap memakai koordinat lokal versi 2
+// (kanvas 1200 x 800), lalu svg_bangunan() dan svg_tanah_kosong() membungkusnya
+// dengan grup skala SKALA_DUNIA supaya pas dengan dunia 2000 x 1333.
+// Setiap bangunan juga memakai label nama melayang di atas atapnya, dan
+// bangunan yang paling baru dibangun mendapat cincin denyut di kakinya.
 //
 // Aturan gambar:
 // - Jenis bangunan dipilih dari kata kunci di nama bangunan:
@@ -15,6 +21,7 @@
 // - Balai Desa digambar khusus: lebih besar, atap amber, ada bendera.
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/peta-posisi.php';
 
 if (!function_exists('svg_teks')) {
     function svg_teks(?string $teks): string
@@ -136,7 +143,7 @@ function gambar_bangunan(string $varian, string $atap, string $nama, bool $terba
             . '<polygon points="-75,-74 0,-113 75,-74" fill="#f59e0b"/>'
             . '<rect x="-75" y="-78" width="150" height="7" rx="3.5" fill="#000000" opacity="0.12"/>'
             . '<line x1="0" y1="-113" x2="0" y2="-141" stroke="#78716c" stroke-width="3" stroke-linecap="round"/>'
-            . '<polygon points="0,-141 27,-134 0,-127" fill="#2563eb"/>'
+            . '<polygon class="bendera-balai" points="0,-141 27,-134 0,-127" fill="#2563eb"/>'
             . '<rect x="-41" y="-73" width="82" height="17" fill="#ffffff" stroke="#eadfc6" stroke-width="1"/>'
             . '<text x="0" y="-60.5" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing="1" fill="#92400e">BALAI DESA</text>'
             . '<rect x="-56" y="-48" width="14" height="18" fill="#bae6fd" stroke="#7dd3fc" stroke-width="1.5"/>'
@@ -218,8 +225,42 @@ function gambar_bangunan(string $varian, string $atap, string $nama, bool $terba
     return $svg;
 }
 
+// Label nama melayang di atas bangunan: pil putih kecil dengan nama usaha.
+// Balai Desa cukup ditulis "Balai Desa" supaya labelnya ringkas; nama usaha
+// yang panjang dipotong dengan elipsis supaya pil tidak melebar berlebihan.
+// Koordinat lokal versi 2, digambar di dalam grup skala bangunan.
+function label_bangunan_svg(string $varian, string $nama): string
+{
+    $teks = $varian === 'balai' ? 'Balai Desa' : $nama;
+    if (strlen($teks) > 30) {
+        $teks = substr($teks, 0, 29) . '…';
+    }
+    $lebar = (int) round(strlen($teks) * 7.0) + 20;
+    $y = match ($varian) {
+        'balai' => -172,
+        'kopi' => -97,
+        default => -109,
+    };
+
+    return '<g class="label-bangunan" transform="translate(0 ' . $y . ')">'
+        . '<rect x="' . (-$lebar / 2) . '" y="-11" width="' . $lebar . '" height="22" rx="11" fill="#ffffff" fill-opacity="0.95" stroke="#cbd5e1" stroke-width="1"/>'
+        . '<text x="0" y="4.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#334155">' . svg_teks($teks) . '</text>'
+        . '</g>';
+}
+
+// Cincin denyut di kaki bangunan yang paling baru dibangun. Animasinya
+// diatur di style.css lewat kelas cincin-baru.
+function cincin_baru_svg(string $varian): string
+{
+    $rx = $varian === 'balai' ? 100 : 68;
+    $ry = $varian === 'balai' ? 16 : 12;
+    return '<ellipse class="cincin-baru" cx="0" cy="2" rx="' . $rx . '" ry="' . $ry . '" fill="none" stroke="#f59e0b" stroke-width="3"/>';
+}
+
 // Grup SVG lengkap satu bangunan di titik kavlingnya, lengkap dengan atribut
-// data detail yang dibaca skrip peta saat bangunan diklik atau dipilih.
+// data detail yang dibaca skrip peta saat bangunan ditap atau dipilih.
+// Atribut data-x dan data-y menyimpan titik jangkar dunia bangunan,
+// berguna sebagai acuan posisi popover detail.
 function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): string
 {
     $varian = varian_bangunan((string) $bangunan['nama']);
@@ -234,25 +275,33 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): st
         . ' data-peminta="' . svg_teks($bangunan['diminta_oleh'] ?? '') . '"'
         . ' data-komentar="' . svg_teks($bangunan['komentar'] ?? '') . '"'
         . ' data-tanggal="' . svg_teks(format_tanggal((string) $bangunan['tanggal'])) . '"'
-        . ' data-terbaru="' . ($terbaru ? '1' : '0') . '">'
+        . ' data-terbaru="' . ($terbaru ? '1' : '0') . '"'
+        . ' data-x="' . $x . '" data-y="' . $y . '">'
         . '<title>' . svg_teks($bangunan['nama']) . '</title>'
+        . '<g class="bangunan-skala" transform="scale(' . SKALA_DUNIA . ')">'
+        . ($terbaru ? cincin_baru_svg($varian) : '')
         . '<g class="bangunan-dalam">' . gambar_bangunan($varian, $atap, (string) $bangunan['nama'], $terbaru) . '</g>'
+        . label_bangunan_svg($varian, (string) $bangunan['nama'])
+        . '</g>'
         . '</g>';
 }
 
 // Penanda kavling yang belum ada bangunannya: petak bergaris putus-putus
-// dengan papan kayu kecil bertuliskan Tanah Kosong.
+// dengan papan kayu kecil bertuliskan Tanah Kosong. Gambarnya memakai
+// koordinat lokal versi 2 lalu diskala ke dunia versi 3, sama seperti bangunan.
 function svg_tanah_kosong(array $posisi): string
 {
     $x = (int) $posisi[0];
     $y = (int) $posisi[1];
 
     return '<g class="tanah-kosong" transform="translate(' . $x . ' ' . $y . ')">'
+        . '<g class="tanah-skala" transform="scale(' . SKALA_DUNIA . ')">'
         . '<rect x="-58" y="-72" width="116" height="70" rx="12" fill="#ffffff" fill-opacity="0.16" stroke="#3f6212" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="7 6"/>'
         . '<path d="M-38,-3 c1,-5 -1,-8 -3,-11 M-33,-3 c0,-5 2,-8 4,-10" stroke="#3f6212" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>'
         . '<path d="M36,-3 c1,-5 -1,-8 -3,-11 M41,-3 c0,-5 2,-8 4,-10" stroke="#3f6212" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>'
         . '<rect x="-2" y="-33" width="4" height="31" fill="#92600f"/>'
         . '<rect x="-41" y="-53" width="82" height="21" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>'
         . '<text x="0" y="-38.5" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Tanah Kosong</text>'
+        . '</g>'
         . '</g>';
 }

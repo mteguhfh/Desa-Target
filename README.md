@@ -4,7 +4,7 @@ Situs Desa Target, rumahnya komunitas Instagram [@desatarget](https://www.instag
 
 Desa Target adalah desa fiktif untuk para UMKM. Followers Instagram menjadi **warga**, dan setiap hari komentar dengan like terbanyak di postingan desa **dibangun** menjadi usaha atau bangunan baru di desa, lalu tampil di Peta Desa situs ini. Kepala Desanya adalah Bang Uju (Si Tuju), maskot Kejar Target.
 
-Situs ini adalah versi 1 (MVP): halaman beranda, pendaftaran KTP Warga, Peta Desa, dan papan peringkat gang. Peta Desa sendiri sudah versi 2: peta ilustrasi interaktif bergaya peta permainan, bangunannya bisa diklik untuk melihat detail cerita di balik berdirinya.
+Situs ini adalah versi 1 (MVP): halaman beranda, pendaftaran KTP Warga, Peta Desa, dan papan peringkat gang. Peta Desa sendiri sudah versi 3: dunia ilustrasi 2000 x 1333 yang bisa digeser buat keliling dan di-zoom, setiap bangunan memakai label nama dan bisa ditap untuk memunculkan popover cerita di balik berdirinya, dan Bang Uju berdiri di samping Balai Desa siap ditap juga.
 
 **Production:** `https://desa.kejartarget.id`, subdomain dari situs produk Kejar Target. Alamat publik diatur di `config.php` (`APP_BASE_URL`, bisa dioverride dengan environment variable `DESA_TARGET_BASE_URL`).
 
@@ -42,7 +42,7 @@ Database dibuat otomatis di `data/desa-target.sqlite` saat pertama kali halaman 
 desa-target/
 ├── index.php                  Beranda: hero, penghitung warga, pembangunan terbaru, papan gang
 ├── ktp.php                    Formulir KTP Warga dan tampilan kartu warga
-├── peta.php                   Peta desa interaktif (adegan SVG, panel detail bangunan) dan papan gang
+├── peta.php                   Peta desa interaktif v3 (dunia SVG geser dan zoom, popover detail, Bang Uju) dan papan gang
 ├── config.php                 Konfigurasi: base URL publik, nama aplikasi, daftar gang
 ├── db.php                     Koneksi SQLite, pembuatan tabel, seed Balai Desa, fungsi kueri
 ├── .htaccess                  Tolak akses web ke config.php dan db.php, header keamanan
@@ -50,12 +50,13 @@ desa-target/
 │   ├── header.php             Kepala halaman dan navigasi bersama
 │   ├── footer.php             Kaki halaman bersama
 │   ├── papan-gang.php         Partial peringkat gang, dipakai beranda dan peta
-│   ├── peta-posisi.php        Koordinat 12 kavling pada adegan peta interaktif
-│   └── bangunan-svg.php       Gambar SVG bangunan per jenis usaha dan penanda tanah kosong
+│   ├── peta-posisi.php        Koordinat 12 kavling pada dunia peta interaktif (2000 x 1333) dan faktor skalanya
+│   └── bangunan-svg.php       Gambar SVG bangunan per jenis usaha, label nama bangunan, dan penanda tanah kosong
 ├── assets/
 │   ├── style.css              Satu stylesheet untuk semua halaman
 │   ├── bang-uju.png           Avatar Bang Uju (foto KTP dan hero)
-│   └── bang-uju-wave.png      Bang Uju melambai (hero beranda)
+│   ├── bang-uju-wave.png      Bang Uju melambai (hero beranda)
+│   └── bang-uju-peta.png      Potongan transparan Bang Uju melambai, khusus berdiri di Peta Desa
 ├── tools/
 │   └── tambah-bangunan.php    Alat admin baris perintah untuk membangun bangunan baru
 └── data/                      Tempat database SQLite (isi tidak masuk git, diblokir dari web)
@@ -113,5 +114,5 @@ ssh <ssh-anda> 'cd <docroot> && sudo -u <user-sistem> <php-cli> tools/tambah-ban
 ## Langkah berikutnya
 
 - Halaman daftar warga dan pencarian warga berdasarkan nama atau nomor
-- Peta desa yang lebih hidup: ikon bangunan per jenis usaha, bukan hanya kavling
+- Peta desa yang makin hidup: animasi dan detail suasana tambahan seiring desa makin ramai
 - Panel admin web untuk tambah bangunan, menggantikan alat CLI bila volume sudah besar
