@@ -262,40 +262,46 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
 .ajakan .tombol-utama { background: var(--amber); color: var(--teks); margin-left: auto; }
 .ajakan .tombol-utama:hover { background: #d97706; color: var(--putih); }
 
-/* Peta desa */
-.peta-grid {
+/* Peta desa interaktif: adegan ilustrasi SVG dengan panel detail */
+[hidden] { display: none !important; }
+.peta-bungkus {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.25rem;
+    align-items: start;
+}
+.peta-panggung {
     background: linear-gradient(180deg, var(--biru-muda), var(--hijau-pucat));
     border: 1px solid var(--garis);
     border-radius: 24px;
-    padding: 1.25rem;
+    padding: 0.75rem;
 }
-.kavling {
+.peta-svg { display: block; width: 100%; height: auto; border-radius: 16px; }
+.bangunan-svg { cursor: pointer; }
+.bangunan-svg:focus { outline: none; }
+.bangunan-dalam {
+    transition: transform 0.18s ease, filter 0.18s ease;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+.bangunan-svg:hover .bangunan-dalam,
+.bangunan-svg:focus .bangunan-dalam,
+.bangunan-svg.terpilih .bangunan-dalam { transform: scale(1.08); }
+.bangunan-svg.terpilih .bangunan-dalam { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.95)); }
+.tanah-kosong text { user-select: none; }
+.peta-detail {
     background: var(--putih);
-    border-radius: var(--radius);
     border: 1px solid var(--garis);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    border-left: 6px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    position: sticky;
+    top: 5.25rem;
 }
-.kavling-atap {
-    height: 18px;
-    background: var(--amber);
-    clip-path: polygon(0 100%, 50% 0, 100% 100%);
-    margin: 0.75rem 0.75rem 0;
-}
-.kavling-badan { padding: 0.75rem 1rem 1rem; }
-.kavling h3 { font-size: 1.05rem; }
-.kavling-meta { color: var(--teks-lembut); font-size: 0.9rem; margin-bottom: 0.35rem; }
-.kavling.terbaru { outline: 3px solid var(--amber); }
-.kavling.kosong {
-    background: rgba(255, 255, 255, 0.55);
-    border-style: dashed;
-    justify-content: center;
-}
-.kavling.kosong h3 { color: var(--teks-lembut); }
+.peta-detail h3 { font-size: 1.35rem; }
+.peta-detail-lencana { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.peta-detail-petunjuk { color: var(--teks-lembut); font-size: 0.9rem; margin-bottom: 0; }
+.peta-petunjuk { color: var(--teks-lembut); margin-top: 0.75rem; }
 .lencana-baru {
     display: inline-block;
     background: var(--amber-pucat);
@@ -403,12 +409,11 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
     .hero { grid-template-columns: 1fr; padding: 1.5rem; }
     .hero h1 { font-size: 2.3rem; }
     .langkah-grid { grid-template-columns: 1fr; }
-    .peta-grid { grid-template-columns: repeat(2, 1fr); }
+    .peta-bungkus { grid-template-columns: 1fr; }
+    .peta-detail { position: static; }
     .papan-baris { grid-template-columns: 2rem 1fr 6rem; }
     .papan-palangan { display: none; }
     .ajakan .tombol-utama { margin-left: 0; }
     .ktp-data div { grid-template-columns: 1fr; gap: 0; }
 }
-@media (max-width: 480px) {
-    .peta-grid { grid-template-columns: 1fr; }
-}
+
