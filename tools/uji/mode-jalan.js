@@ -89,6 +89,11 @@ const posisi = (page) => page.evaluate(() => ({
   const dW = Math.hypot(sesudahW.x - sebelumW.x, sesudahW.y - sebelumW.y);
   catat('tombol W menggerakkan pemain', dW > 15, `geser ${dW} px`);
 
+  // --- 2b. Chip masuk Balai Desa muncul saat dekat pintu ---------------
+  // Diperiksa di sini, sebelum tombol lain menggeser pemain menjauh.
+  catat('chip Masuk Balai Desa tampil saat dekat pintu',
+    await page.evaluate(() => document.getElementById('chipMasuk').classList.contains('tampil')));
+
   // --- 3. D-pad juga menggerakkan pemain (layar sentuh) -----------------
   const sebelumDpad = await posisi(page);
   await page.evaluate(() => {
@@ -105,22 +110,69 @@ const posisi = (page) => page.evaluate(() => ({
   const dDpad = Math.hypot(sesudahDpad.x - sebelumDpad.x, sesudahDpad.y - sebelumDpad.y);
   catat('tombol arah D-pad menggerakkan pemain', dDpad > 12, `geser ${dDpad} px`);
 
-  // --- 4. Arah putar mengikuti standar gim (D = 90 derajat ke kanan) ----
-  const a0 = (await posisi(page)).arah;
-  await page.keyboard.down('d');
-  await page.waitForTimeout(1200);
-  await page.keyboard.up('d');
-  await page.waitForTimeout(500);
-  const a1 = (await posisi(page)).arah;
-  const selisih = ((a1 - a0) % 360 + 360) % 360;
-  catat('D memutar pemain 90 derajat ke kanan', Math.abs(selisih - 270) <= 20 || Math.abs(selisih - 90) <= 20,
-    `${a0}° -> ${a1}°`);
+  // --- 4. D berjalan lurus ke samping, bukan berputar dalam lingkaran ----
+  // Dulu "kanan" dihitung dari arah hadap yang ikut berputar tiap bingkai,
+  // jadi tombol yang ditahan membuat pemain melingkar dan kembali ke titik
+  // awal. Yang benar: satu arah terkunci, lintasan lurus.
+  const a0 = await posisi(page);
+  // "Kanan" diukur relatif kamera, jadi yang diperiksa adalah pemain berbelok
+  // TEPAT 90 derajat dari arah hadapnya sekarang, bukan ke sudut tetap.
+  // Arah kamera menghadap = dari kamera ke pemain (kamera ada DI BELAKANG).
+  const arahDari = async () => page.evaluate(() => {
+    const d = window.__desa;
+    const depan = d.kamu.figur.position.clone().sub(d.camera.position);
+    depan.y = 0;
+    return Math.round(((Math.atan2(depan.x, depan.z) * 180) / Math.PI + 360) % 360);
+  });
+  const arahKamera = await arahDari();
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' })));
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' })));
+  await page.waitForTimeout(600);
+  const a1 = await posisi(page);
+  // Arah hadap setelah D harus 90 derajat ke KANAN dari arah kamera.
+  // Selisih ternormalisasi ke -180..180: minus berarti berbelok ke kanan.
+  const putar = ((a1.arah - arahKamera + 540) % 360) - 180;
+  catat('D memutar pemain 90 derajat ke kanan dari arah kamera', Math.abs(putar + 90) <= 15,
+    `kamera ${arahKamera}°, pemain ${a1.arah}° (selisih ${Math.round(putar)}°)`);
+  // Lintasan harus hampir lurus: perpindahan horizontal jauh lebih besar
+  // daripada perpindahan tegak lurus (dulu keduanya nyaris nol karena
+  // pemain kembali ke titik awal).
+  // Lintasan harus hampir lurus. Pemain yang melingkar kembali mendekati
+  // titik awal, jadi jarak tempuh bersihnya nyaris nol.
+  const geser = Math.hypot(a1.x - a0.x, a1.y - a0.y);
+  catat('D berjalan lurus ke samping, tidak melingkar', geser > 25,
+    `jarak tempuh bersih ${Math.round(geser)} px`);
+
+  // --- 4b. W+D bergerak serong, bukan berpusing -------------------------
+  const s0 = await posisi(page);
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+  });
+  await page.waitForTimeout(1800);
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w' }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' }));
+  });
+  await page.waitForTimeout(600);
+  const s1 = await posisi(page);
+  const dSerong = Math.hypot(s1.x - s0.x, s1.y - s0.y);
+  catat('W+D bergerak serong', dSerong > 25, `geser ${Math.round(dSerong)} px`);
 
   // --- 5. Masuk Balai Desa tanpa meninggalkan peta 3D -------------------
+  // Pemain sudah sempat berjalan menjauh; dekati pintu lagi dengan
+  // menaruhnya tepat di halaman depan sebelum menguji masuk.
+  await page.evaluate(() => {
+    const d = window.__desa;
+    d.kamu.x = d.fokus.x;
+    d.kamu.y = d.fokus.y + 200;
+  });
+  await page.waitForTimeout(700);
   const chipTampil = await page.evaluate(
     () => document.getElementById('chipMasuk').classList.contains('tampil'),
   );
-  catat('chip Masuk Balai Desa tampil saat dekat pintu', chipTampil);
+  catat('chip Masuk Balai Desa tetap tampil setelah kembali ke pintu', chipTampil);
   if (chipTampil) {
     await page.evaluate(() => document.getElementById('chipMasuk').click());
     await page.waitForTimeout(800);

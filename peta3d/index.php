@@ -1406,25 +1406,40 @@ function letakkanKamera(arah, pos, seketika) {
     camera.lookAt(pos.x, 46, pos.z);
 }
 
+// Arah "maju" & "kanan" untuk satu kombinasi tombol.
+//
+// Sudutnya DIKUNCI dari arah kamera pada saat tombol pertama kali ditekan,
+// bukan dihitung ulang tiap bingkai dari arah hadap pemain. Kalau dihitung
+// ulang, "kanan" ikut memutar pemain dan tombol yang ditahan membuat pemain
+// berputar terus dalam lingkaran (W+D berujung balik ke titik awal).
+// Dengan sudut terkunci, W+D selalu berarti "serong kanan-depan", sama
+// seperti di game 3D lain, dan hasilnya tidak bergantung pada fps.
+function sudutJalan(maju, samping) {
+    const kunci = maju + ':' + samping;
+    if (sudutJalan.kunci !== kunci) {
+        // Kamera melihat ke sasaran; "maju" = arah pandang kamera.
+        const depan = new THREE.Vector3();
+        camera.getWorldDirection(depan);
+        depan.y = 0;
+        if (depan.lengthSq() < 1e-6) depan.set(0, 0, -1);
+        depan.normalize();
+        // Sumbu x dunia bertambah ke kanan layar saat kamera menghadap -z.
+        const kanan = new THREE.Vector3(-depan.z, 0, depan.x);
+        const arah = depan.multiplyScalar(maju).add(kanan.multiplyScalar(samping));
+        sudutJalan.kunci = kunci;
+        sudutJalan.sudut = Math.atan2(arah.x, arah.z);
+    }
+    return sudutJalan.sudut;
+}
+
 function perbaruiKamu(dt) {
     const maju = (kunciDitekan['w'] || kunciDitekan['arrowup'] || tombolDitekan['maju'] ? 1 : 0) - (kunciDitekan['s'] || kunciDitekan['arrowdown'] || tombolDitekan['mundur'] ? 1 : 0);
     const samping = (kunciDitekan['d'] || kunciDitekan['arrowright'] || tombolDitekan['kanan'] ? 1 : 0) - (kunciDitekan['a'] || kunciDitekan['arrowleft'] || tombolDitekan['kiri'] ? 1 : 0);
     if (maju || samping) {
-        // Arah gerak mengikuti arah HADAP pemain, bukan arah pandang kamera.
-        // Keduanya sama saat kamera sudah di belakang bahu, tapi arah hadap
-        // tidak goyang walau kamera masih meluncur.
-        //
-        // Koordinat dunia: x = kamu.x, z = kamu.y. "Maju" berarti menambah
-        // arah hadap pada (x, z), jadi cukup sin/cos dari kamu.arah.
-        const gx = Math.sin(kamu.arah);
-        const gz = Math.cos(kamu.arah);
-        // Serong ke kanan = putar arah hadap 90 derajat.
-        const rx = Math.cos(kamu.arah);
-        const rz = -Math.sin(kamu.arah);
-        let dx = gx * maju + rx * samping;
-        let dz = gz * maju + rz * samping;
-        const panjang = Math.hypot(dx, dz);
-        if (panjang > 0) { dx /= panjang; dz /= panjang; }
+        // Koordinat dunia: x = kamu.x, z = kamu.y.
+        const sudut = sudutJalan(maju, samping);
+        const dx = Math.sin(sudut);
+        const dz = Math.cos(sudut);
         const kecepatan = 135 * dt;
         const nx = kamu.x + dx * kecepatan;
         const nz = kamu.y + dz * kecepatan;
@@ -1432,14 +1447,22 @@ function perbaruiKamu(dt) {
         // alih-alih berhenti total saat menyerempet rintangan.
         if (!tabrakanJalan(nx, kamu.y)) kamu.x = nx;
         if (!tabrakanJalan(kamu.x, nz)) kamu.y = nz;
-        // Hadapkan pemain ke arah gerak (kecuali berjalan mundur murni).
-        if (maju >= 0) kamu.arah = Math.atan2(dx, dz);
+        // Hadapkan pemain persis ke arah ia melangkah (termasuk serong).
+        kamu.arah = sudut;
+    } else {
+        sudutJalan.kunci = null;
     }
     kamu.figur.rotation.y = kamu.arah;
     const pos = KE3(kamu.x, kamu.y);
     kamu.figur.position.set(pos.x, 0, pos.z);
     letakkanKamera(kamu.arah, pos, false);
-    // Kedekatan ke pintu Balai Desa memunculkan chip masuk.
+    perbaruiChipMasuk();
+}
+
+// Kedekatan ke pintu Balai Desa memunculkan chip masuk. Dipanggil juga saat
+// pemain DIAM: dulu chip hanya diperbarui selama tombol jalan ditekan, jadi
+// pemain yang berhenti tepat di depan pintu tidak pernah melihat tombolnya.
+function perbaruiChipMasuk() {
     const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
     chipMasuk.classList.toggle('tampil', dekatPintu);
 }
@@ -2030,6 +2053,8 @@ function putaran() {
 
     if (modeJalan) {
         perbaruiKamu(dt);
+        // Chip pintu tetap dievaluasi walau pemain diam.
+        perbaruiChipMasuk();
     } else {
         controls.update();
         controls.target.x = THREE.MathUtils.clamp(controls.target.x, -1000, 1000);
