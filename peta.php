@@ -8,6 +8,5 @@
 // Pilihan mode 2D diingat lewat localStorage. Skrip pengingat ada di dalam
 // peta3d/index.php, yang memeriksa penanda <body data-pintu-peta="1">.
 $dariAkar = true;
-$tetap = isset($_GET['tetap']);
 
 require __DIR__ . '/peta3d/index.php';
