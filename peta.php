@@ -189,8 +189,12 @@ require __DIR__ . '/includes/header.php';
                 <!-- Karakter pengunjung versi 4 buat mode Keliling Desa:
                      pejalan kecil bertopi merah dan beransel, sengaja beda
                      dari Bang Uju supaya pengunjung tidak mengira dirinya
-                     Kepala Desa. Posisinya digerakkan skrip halaman ini. -->
-                <g id="karakterJalan" hidden>
+                     Kepala Desa. Posisinya digerakkan skrip halaman ini.
+                     Transform awal di markup sama persis dengan titik
+                     munculnya di skrip (depan Balai Desa), jadi karakter
+                     sudah berdiri di tempat yang benar sejak halaman
+                     dimuat, tidak menunggu tick pertama skrip. -->
+                <g id="karakterJalan" transform="translate(<?= $fokusX ?> <?= $fokusY + 88 ?>)" hidden>
                     <ellipse cx="0" cy="3" rx="21" ry="6" fill="#14532d" opacity="0.20"/>
                     <g id="karakterGoyang">
                         <g id="karakterBadan">
@@ -249,7 +253,7 @@ require __DIR__ . '/includes/header.php';
             <button type="button" id="tombolPanelGang" class="tombol-panel-gang" aria-expanded="false" aria-controls="panelGang">Papan Gang</button>
             <button type="button" id="zoomMasuk" aria-label="Perbesar peta">+</button>
             <button type="button" id="zoomKeluar" aria-label="Perkecil peta">&minus;</button>
-            <button type="button" id="zoomReset" aria-label="Kembali ke Balai Desa">&#8982;</button>
+            <button type="button" id="zoomReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
             <button type="button" id="layarPenuh" aria-label="Layar penuh">&#10530;</button>
         </div>
 
@@ -321,18 +325,30 @@ require __DIR__ . '/includes/header.php';
     // --- Kamera dunia: dunia 2000 x 1333 digeser dan di-zoom di dalam viewport.
     var DUNIA_W = 2000;
     var DUNIA_H = 1333;
-    var K_MIN = 1;
     var K_MAX = 2.5;
     var FOKUS = { x: <?= $fokusX ?>, y: <?= $fokusY ?> }; // Balai Desa
-    var k = 1;        // zoom saat ini, 1 sampai 2.5
+    var k = 1;        // zoom saat ini, relatif terhadap skala cover (baseS)
     var tx = 0;       // geser kamera dalam piksel layar
     var ty = 0;
-    var baseS = 1;    // piksel layar per satuan dunia pada zoom 1
+    var baseS = 1;    // piksel layar per satuan dunia pada zoom 1 (skala cover)
+    var containS = 1; // skala contain: seluruh dunia pas di dalam viewport
+    // Batas zoom bawah bersifat dinamis: rasio contain terhadap cover.
+    // Di layar lebar tapi pendek, kMin < 1 mengizinkan zoom keluar sampai
+    // seluruh desa terlihat. Dulu batasnya kaku di 1 (skala cover), jadi
+    // zona gang di tepi atas tidak pernah bisa terlihat dan, karena dunia
+    // menutup lebar viewport persis, geser horizontal terkunci di 0 piksel
+    // sehingga peta terasa mati digeser.
+    var kMin = 1;
 
     function hitungDasar() {
         var w = viewport.clientWidth;
         var h = viewport.clientHeight;
         baseS = Math.max(w / DUNIA_W, h / DUNIA_H);
+        containS = Math.min(w / DUNIA_W, h / DUNIA_H);
+        kMin = containS / baseS;
+        if (k < kMin) {
+            k = kMin;
+        }
         dunia.style.width = (DUNIA_W * baseS) + 'px';
         dunia.style.height = (DUNIA_H * baseS) + 'px';
     }
@@ -342,8 +358,19 @@ require __DIR__ . '/includes/header.php';
         var h = viewport.clientHeight;
         var dw = DUNIA_W * baseS * k;
         var dh = DUNIA_H * baseS * k;
-        tx = Math.min(0, Math.max(w - dw, tx));
-        ty = Math.min(0, Math.max(h - dh, ty));
+        // Sumbu yang dunianya lebih kecil dari viewport dipusatkan,
+        // bukan dijepit ke rentang terbalik (yang hasilnya kacau);
+        // sumbu yang lebih besar dijepit seperti biasa.
+        if (dw <= w) {
+            tx = (w - dw) / 2;
+        } else {
+            tx = Math.min(0, Math.max(w - dw, tx));
+        }
+        if (dh <= h) {
+            ty = (h - dh) / 2;
+        } else {
+            ty = Math.min(0, Math.max(h - dh, ty));
+        }
     }
 
     function terapkan() {
@@ -354,7 +381,7 @@ require __DIR__ . '/includes/header.php';
     // Zoom ke titik layar (px, py) yang relatif terhadap viewport,
     // titik dunia di bawahnya dijaga tetap di tempat yang sama.
     function zoomKe(kBaru, px, py) {
-        kBaru = Math.min(K_MAX, Math.max(K_MIN, kBaru));
+        kBaru = Math.min(K_MAX, Math.max(kMin, kBaru));
         var lx = (px - tx) / k;
         var ly = (py - ty) / k;
         k = kBaru;
@@ -363,10 +390,12 @@ require __DIR__ . '/includes/header.php';
         terapkan();
     }
 
-    function fokusBalai() {
-        k = 1;
-        tx = viewport.clientWidth / 2 - FOKUS.x * baseS;
-        ty = viewport.clientHeight / 2 - FOKUS.y * baseS;
+    // Bingkai seluruh desa: zoom paling luar dan dunia dipusatkan,
+    // jadi pengunjung pertama selalu melihat semua kavling dan zona gang.
+    function lihatSeluruhDesa() {
+        k = kMin;
+        tx = (viewport.clientWidth - DUNIA_W * baseS * k) / 2;
+        ty = (viewport.clientHeight - DUNIA_H * baseS * k) / 2;
         terapkan();
     }
 
@@ -516,7 +545,7 @@ require __DIR__ . '/includes/header.php';
             var d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
             var mx = (pts[0].x + pts[1].x) / 2 - r.left;
             var my = (pts[0].y + pts[1].y) / 2 - r.top;
-            k = Math.min(K_MAX, Math.max(K_MIN, cubit.k * d / cubit.d));
+            k = Math.min(K_MAX, Math.max(kMin, cubit.k * d / cubit.d));
             tx = mx - cubit.lx * k;
             ty = my - cubit.ly * k;
             terapkan();
@@ -619,7 +648,7 @@ require __DIR__ . '/includes/header.php';
     });
     document.getElementById('zoomReset').addEventListener('click', function () {
         tutupPopover();
-        fokusBalai();
+        lihatSeluruhDesa();
     });
 
     // Papan ketik: Enter atau spasi pada bangunan, Bang Uju, dan warga membuka popover.
@@ -717,6 +746,32 @@ require __DIR__ . '/includes/header.php';
         }
     }
 
+    // Satu langkah pasti sebesar kurang lebih 26 satuan dunia, dipakai
+    // ketukan singkat pada D-pad. Ketukan yang lebih pendek dari satu
+    // frame animasi tidak sempat terbaca putaran jalan (yang bergerak
+    // hanya selama tombol tertahan), jadi ketukan dulu terasa tidak
+    // menggerakkan karakter sama sekali. Batas dan rintangannya sama
+    // dengan langkah berkelanjutan di langkahKarakter.
+    function selangkah(ar) {
+        var vx = ar === 'kanan' ? 1 : (ar === 'kiri' ? -1 : 0);
+        var vy = ar === 'bawah' ? 1 : (ar === 'atas' ? -1 : 0);
+        var nx = Math.min(1950, Math.max(50, karakter.x + vx * 26));
+        var ny = Math.min(1290, Math.max(95, karakter.y + vy * 26));
+        if (!dalamRintangan(nx, karakter.y)) {
+            karakter.x = nx;
+        }
+        if (!dalamRintangan(karakter.x, ny)) {
+            karakter.y = ny;
+        }
+        if (vx < 0) {
+            hadap = -1;
+        } else if (vx > 0) {
+            hadap = 1;
+        }
+        gambarKarakter(performance.now());
+        perbaruiPrompt();
+    }
+
     function ikutiKarakter() {
         var targetTx = viewport.clientWidth / 2 - karakter.x * baseS * k;
         var targetTy = viewport.clientHeight / 2 - karakter.y * baseS * k;
@@ -771,7 +826,17 @@ require __DIR__ . '/includes/header.php';
         tombolJalan.setAttribute('aria-pressed', aktif ? 'true' : 'false');
         tombolJalan.textContent = aktif ? 'Berhenti' : 'Keliling Desa';
         dpad.hidden = !aktif;
-        karakterEl.hidden = !aktif;
+        // Karakter adalah elemen SVG <g>: properti .hidden tidak selalu
+        // terhubung ke atributnya pada elemen SVG di semua peramban,
+        // jadi atributnya dicabut dan dipasang secara eksplisit. Dengan
+        // penetapan properti saja, atribut hidden bisa tertinggal dan
+        // aturan [hidden] di stylesheet menahan karakter tetap tidak
+        // terlihat walau keadaan mode jalan sudah benar.
+        if (aktif) {
+            karakterEl.removeAttribute('hidden');
+        } else {
+            karakterEl.setAttribute('hidden', '');
+        }
         viewport.classList.toggle('mode-jalan', aktif);
         if (aktif) {
             tutupPopover();
@@ -804,12 +869,15 @@ require __DIR__ . '/includes/header.php';
         }
     });
 
-    // D-pad di layar: tekan dan tahan untuk berjalan.
+    // D-pad di layar: ketuk untuk melangkah, tekan dan tahan untuk berjalan terus.
     var tombolDpad = dpad.querySelectorAll('button[data-arah]');
     for (var td = 0; td < tombolDpad.length; td++) {
         (function (btn) {
             btn.addEventListener('pointerdown', function (e) {
                 e.preventDefault();
+                // Ketukan singkat langsung melangkah satu langkah;
+                // menahan tombol tetap berjalan terus lewat arahTekan.
+                selangkah(btn.dataset.arah);
                 arahTekan[btn.dataset.arah] = true;
             });
             var lepas = function () {
@@ -930,7 +998,7 @@ require __DIR__ . '/includes/header.php';
     }
 
     hitungDasar();
-    fokusBalai();
+    lihatSeluruhDesa();
 })();
 </script>
 
