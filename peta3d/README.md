@@ -1,28 +1,38 @@
-# Peta Desa Target 3D (Prototipe v5)
+# Peta Desa Target 3D (v5)
 
-Prototipe peta Desa Target sebagai dunia 3D low-poly sungguhan memakai
-Three.js (WebGL), menggantikan dunia SVG 2D di `peta.php` (v4.x) tanpa
-mengubah tata letak desa, data, maupun aturan mainnya. Ini prototipe
-visual dan interaksi: datanya masih contoh statis (seed), belum terhubung
-ke basis data produksi.
+Peta Desa Target sebagai dunia 3D low-poly sungguhan memakai Three.js
+(WebGL), menggantikan dunia SVG 2D di `peta.php` (v4.x) tanpa mengubah
+tata letak desa, data, maupun aturan mainnya.
+
+Sejak tahap 2, peta ini membaca data produksi sungguhan: saat halaman
+dibuka, `index.html` memanggil endpoint `data-desa.php` di folder ini,
+yang membaca basis data SQLite situs induk lewat `../db.php` (warga,
+bangunan, dan papan gang). Bila endpoint tidak bisa dibaca (halaman
+dibuka mandiri di luar situs, atau basis data galat), peta jatuh ke
+data contoh bawaan dan kartu intro menampilkan catatan "data contoh".
+Bila data langsung berhasil dimuat, catatan itu berganti keterangan
+data langsung dari balai desa.
 
 ## Cara menjalankan
 
-Cukup sajikan folder ini dengan server statis apa pun, lalu buka
-`index.html`:
+Di dalam situs (cara produksi): folder ini tinggal disajikan sebagai
+bagian dari docroot Desa Target, lalu buka `peta3d/index.html` dari
+domain situs. Endpoint PHP-nya butuh server PHP, sama seperti situs
+induknya.
+
+Mandiri (buat menilai visual saja): sajikan folder ini dengan server
+statis apa pun, lalu buka `index.html`:
 
 ```bash
-cd desa-target3d
 python3 -m http.server 8811
-# buka http://localhost:8811/index.html
+# buka http://localhost:8811/index.html (mode data contoh)
 ```
 
 Membuka berkas langsung lewat `file://` tidak bisa, karena modul ES dan
-tekstur gambar dimuat lewat HTTP. Three.js r160 dimuat dari CDN
-(unpkg, dipin lewat importmap di `index.html` dan `templates.html`);
-untuk produksi, pustaka ini wajib di-host sendiri (lihat bagian
-integrasi). Satu-satunya aset lokal adalah gambar maskot resmi
-`assets/bang-uju-peta.png`, disalin dari repo Desa Target.
+tekstur gambar dimuat lewat HTTP. Three.js r160 sudah di-host sendiri
+di `vendor/` (importmap menunjuk ke sana, tidak ada lagi CDN). Aset
+lokal lain adalah gambar maskot resmi `assets/bang-uju-peta.png`,
+disalin dari repo Desa Target.
 
 Halaman pendamping `templates.html` memamerkan kelima template bangunan
 prosedural dalam satu barisan, sebagai bukti jalur template untuk
@@ -32,9 +42,11 @@ bangunan hasil komentar.
 
 | Berkas | Isi |
 | --- | --- |
-| `index.html` | Peta 3D lengkap: dunia, kamera orbit, mode Keliling Desa, warga wara-wiri, patroli Bang Uju, panel Papan Gang, popover. |
+| `index.html` | Peta 3D lengkap: dunia, kamera orbit, mode Keliling Desa, warga wara-wiri, patroli Bang Uju, panel Papan Gang, popover. Memuat data dari `data-desa.php`, jatuh ke data contoh bila gagal. |
+| `data-desa.php` | Endpoint JSON hanya-baca: warga (nomor, nama, gang), bangunan (kavling = indeks urutan id, nama, gang, komentar, dari, tanggal), dan papan gang, dari basis data situs induk. |
 | `bangunan3d.js` | Pabrik bangunan prosedural bersama: `buatBalai`, `buatKopi`, `buatBengkel`, `buatBakery`, `buatSalon`, `buatRuko`, plus pemilih `varianBangunan(nama)` dan `buatBangunan(nama, warnaAtap)`. |
 | `templates.html` | Galeri kelima template bangunan. |
+| `vendor/` | Three.js r160 yang di-host sendiri: `three.module.js` dan `addons/controls/OrbitControls.js`. |
 | `assets/bang-uju-peta.png` | Sprite Bang Uju (billboard) untuk patroli alun-alun. |
 
 ## Model data: cerminan peta 2D
@@ -86,8 +98,8 @@ satuan dunia yang sama (2000 x 1333):
   (figur toska bertopi merah, mulai di depan Balai Desa seperti v2),
   bergerak dengan WASD / tombol panah / D-pad di layar. Tabrakan
   lingkaran lawan persegi memakai tapak Balai Desa dan penanda kavling.
-  Dekat pintu Balai Desa, chip "Masuk Balai Desa" muncul; untuk saat ini
-  chip itu stub (lihat daftar stub).
+  Dekat pintu Balai Desa, chip "Masuk Balai Desa" muncul dan mengarah
+  ke halaman Balai Desa situs induk (`../balai.php`).
 
 ## Performa
 
@@ -103,46 +115,38 @@ satuan dunia yang sama (2000 x 1333):
   karena pass bayangan menggambar ulang sebagian objek. Buka
   `index.html?stats` untuk melihat angka langsung di peramban.
 
-## Daftar stub dan batas jujur prototipe
+## Daftar stub dan batas jujur
 
-- Data warga, jumlah Papan Gang, dan isi popover adalah seed statis di
-  dalam `index.html` (10 warga contoh), bukan basis data.
-- Chip "Masuk Balai Desa" adalah stub: halaman interior Balai Desa 3D
-  belum dibangun (interior 2D di `includes/interior-balai.php` adalah
-  acuan isinya kelak).
-- Tautan Beranda, Bikin KTP Warga, Instagram, Gabung gang-mu, dan
-  tautan cadangan peta 2D semuanya placeholder `#`.
-- Three.js dimuat dari CDN; belum ada mekanisme fallback bila CDN mati
-  selain pesan WebGL tidak tersedia.
-- Hanya Balai Desa yang berdiri; kelima template bangunan lain hanya
-  tampil di `templates.html`, belum ada contoh bangunan warga di peta
-  utama (disengaja, supaya kebenaran "baru Balai yang dibangun" tetap
-  terjaga seperti produksi).
+- Data contoh (10 warga, 1 bangunan) hanya dipakai sebagai cadangan
+  bila `data-desa.php` tidak terbaca; di dalam situs, yang tampil
+  adalah data basis data sungguhan.
+- Interior Balai Desa 3D belum dibangun; chip "Masuk Balai Desa"
+  mengarah ke halaman Balai Desa 2D situs induk.
+- Bangunan dari basis data menempati kavling mengikuti urutan id,
+  persis aturan peta 2D; bila jumlah bangunan melebihi 12 kavling,
+  sisanya tidak digambar (sama seperti batas peta 2D).
+- Warga yang digambar dibatasi 80 figur (batas yang sama dengan peta
+  2D); warga selebihnya tetap terhitung di Papan Gang.
 - Suara, misi harian, poin, dan fitur v5 lain di dokumen konsep belum
   termasuk; ini murni lapisan peta.
 
 ## Jalur integrasi produksi
 
-1. Host sendiri Three.js: unduh `three.module.js` dan
-   `examples/jsm/controls/OrbitControls.js` r160 ke repo Desa Target
-   (misalnya `assets/vendor/three/`), ubah importmap di halaman peta
-   menunjuk ke sana. Tidak ada dependensi lain.
-2. Ganti badan `peta.php`: pertahankan header, panel, dan chrome UI
-   yang ada; SVG dunia diganti `<div id="panggung">` plus skrip modul
-   dari prototipe ini. PHP mencetak data sungguhan sebagai JSON
-   (daftar bangunan dari `bangunan_terbaru()` / tabel bangunan, warga
-   per gang dari basis data, posisi dari `peta-posisi.php`), menggantikan
-   konstanta seed di prototipe.
-3. Untuk tiap bangunan dari basis data, panggil
-   `buatBangunan(nama, warnaAtapGang(gang))` dari `bangunan3d.js` dan
-   taruh di `POSISI_KAVLING[indeks]`; kavling sisanya penanda Tanah
-   Kosong. Aturan kata kunci varian sudah sama dengan
+1. ~~Host sendiri Three.js~~ Selesai di tahap 2: r160 ada di `vendor/`,
+   importmap menunjuk ke berkas lokal. Tidak ada dependensi lain.
+2. ~~Data sungguhan dari basis data~~ Selesai di tahap 2 lewat
+   `data-desa.php`, tanpa mengubah `peta.php`: halaman 3D tetap berkas
+   mandiri di subfolder `peta3d/`, peta 2D tetap jadi fallback penuh
+   (termasuk pesan WebGL tidak tersedia yang mengarah ke `../peta.php`).
+3. Untuk tiap bangunan dari basis data, peta memanggil
+   `buatBangunan(nama, warnaGang(gang))` dari `bangunan3d.js` dan
+   menaruhnya di `POSISI_KAVLING[kavling]`; kavling sisanya penanda
+   Tanah Kosong. Aturan kata kunci varian sudah sama dengan
    `varian_bangunan()` di `bangunan-svg.php`, jadi bangunan yang sama
    mendapat bentuk yang setara di 2D dan 3D.
-4. Interior Balai Desa: bangun ruangan 3D sederhana (loket KTP, papan
-   pengumuman dari data bangunan terbaru, arsip dokumen) mengikuti isi
-   `interior-balai.php`, dipicu chip "Masuk Balai Desa".
-5. Pertahankan peta 2D sebagai fallback: bila WebGL gagal, tampilkan
-   pesan seperti di prototipe dan arahkan ke `peta.php` versi SVG.
-   Uji di HP kelas menengah sebelum mengganti default, dan jaga batas
-   draw call di kisaran prototipe ini.
+4. Interior Balai Desa 3D: bangun ruangan 3D sederhana (loket KTP,
+   papan pengumuman dari data bangunan terbaru, arsip dokumen)
+   mengikuti isi `interior-balai.php`, menggantikan tautan keluar chip
+   "Masuk Balai Desa".
+5. Uji di HP kelas menengah sebelum mempromosikan peta 3D jadi
+   default, dan jaga batas draw call di kisaran saat ini.

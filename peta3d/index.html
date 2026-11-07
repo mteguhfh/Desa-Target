@@ -64,6 +64,7 @@
     .kartu-intro h1 { margin: 0 24px 8px 0; font-size: 20px; color: #111827; }
     .kartu-intro p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: #4b5563; }
     .kartu-intro p.catatan { font-size: 12.5px; color: #92400e; background: #fffbeb; border-radius: 8px; padding: 7px 9px; }
+    .kartu-intro p.catatan.langsung { color: #065f46; background: #ecfdf5; }
     .tombol-tutup {
         position: absolute; top: 8px; right: 8px;
         width: 30px; height: 30px; border: none; border-radius: 999px;
@@ -202,8 +203,8 @@
 <script type="importmap">
 {
     "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        "three": "./vendor/three.module.js",
+        "three/addons/": "./vendor/addons/"
     }
 }
 </script>
@@ -213,9 +214,9 @@
 
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
-    <a class="pil-nav sembunyi-kecil" href="#">Beranda</a>
-    <a class="pil-nav" href="#">Bikin KTP Warga</a>
-    <a class="pil-nav sembunyi-kecil" href="#">Instagram</a>
+    <a class="pil-nav sembunyi-kecil" href="../index.php">Beranda</a>
+    <a class="pil-nav" href="../ktp.php">Bikin KTP Warga</a>
+    <a class="pil-nav sembunyi-kecil" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Instagram</a>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
 </div>
 
@@ -223,7 +224,7 @@
     <button type="button" class="tombol-tutup" id="introTutup" aria-label="Tutup pengantar">&times;</button>
     <h1>Peta Desa Target</h1>
     <p>Setiap bangunan di peta ini lahir dari komentar warga di Instagram. Komentar paling banyak disukai hari ini, besok paginya sudah berdiri di sini. Masih banyak tanah kosong, desa ini menunggu usulan usahamu.</p>
-    <p class="catatan">Ini prototipe peta 3D (v5) dengan data contoh. Belum terhubung ke basis data desa.</p>
+    <p class="catatan" id="catatanData">Ini prototipe peta 3D (v5) dengan data contoh. Belum terhubung ke basis data desa.</p>
 </div>
 
 <div class="kontrol">
@@ -242,7 +243,7 @@
     </div>
     <p class="deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
     <div id="isiPapanGang"></div>
-    <p class="gabung"><a href="#">Gabung gang-mu</a></p>
+    <p class="gabung"><a href="../ktp.php">Gabung gang-mu</a></p>
 </aside>
 
 <div class="popover" id="popover">
@@ -267,7 +268,7 @@
     <div class="kotak">
         <h2>Peta 3D tidak bisa dibuka</h2>
         <p>Browser kamu tidak mendukung WebGL, jadi desa tiga dimensinya tidak bisa digambar. Tenang, peta desa versi 2D tetap bisa dipakai seperti biasa.</p>
-        <p><a href="#">Buka Peta Desa 2D</a></p>
+        <p><a href="../peta.php">Buka Peta Desa 2D</a></p>
     </div>
 </div>
 
@@ -277,7 +278,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buatBalai, teksturPapan } from './bangunan3d.js';
+import { buatBalai, buatBangunan, varianBangunan, teksturPapan } from './bangunan3d.js';
 
 // ===========================================================================
 // DATA DESA: cerminan includes/peta-posisi.php peta 2D.
@@ -313,7 +314,9 @@ const RINTANGAN = POSISI_KAVLING.map(([x, y]) => ({ x1: x - 105, y1: y - 130, x2
 // Patroli Bang Uju mengelilingi alun-alun, sama seperti TITIK_PATROLI versi 4.3.
 const TITIK_PATROLI = [[1228, 715], [860, 720], [950, 795], [1180, 712]];
 
-// Warga contoh (prototipe: data statis, bukan basis data).
+// Data contoh (cadangan): dipakai hanya bila data-desa.php tidak bisa
+// dibaca, misalnya halaman dibuka mandiri di luar situs. Saat data
+// langsung berhasil dimuat, semua ini diganti isi basis data produksi.
 const WARGA_SEED = [
     { nama: 'Sari', gang: 'Gang Dagang' }, { nama: 'Budi', gang: 'Gang Dagang' }, { nama: 'Rina', gang: 'Gang Dagang' },
     { nama: 'Dedi', gang: 'Gang Kuliner' }, { nama: 'Maya', gang: 'Gang Kuliner' },
@@ -322,6 +325,20 @@ const WARGA_SEED = [
     { nama: 'Joko', gang: 'Gang Kerajinan' },
 ];
 WARGA_SEED.forEach((w, i) => { w.nomor = 'DT-' + String(i + 1).padStart(4, '0'); });
+
+// Bangunan contoh: isinya meniru baris seed Balai Desa di basis data.
+const BANGUNAN_SEED = [
+    { kavling: 0, nama: 'Balai Desa (Kantor Desa Kejar Target)', gang: 'Pusat Desa', komentar: 'Bangunan pertama Desa Target. Di sini warga mengurus surat, invoice, dan dokumen usaha lewat Kejar Target.', dari: 'Bang Uju', tanggal: '7 November 2026' },
+];
+// Papan gang contoh, bentuknya sama seperti keluaran papan_gang() di PHP.
+const PAPAN_SEED = (() => {
+    const hitung = {};
+    for (const namaGang of Object.keys(ZONA_GANG)) hitung[namaGang] = 0;
+    WARGA_SEED.forEach(w => { if (w.gang in hitung) hitung[w.gang]++; });
+    return Object.entries(hitung)
+        .map(([gang, jumlah]) => ({ gang, jumlah }))
+        .sort((a, b) => b.jumlah - a.jumlah);
+})();
 
 // RNG deterministik supaya sebaran pohon dan warga konsisten tiap muat.
 function mulberry32(a) {
@@ -579,18 +596,6 @@ let bahanAir = null;
 // ---------------------------------------------------------------------------
 let bendera = null, geoBenderaAsli = null;
 {
-    const balai = buatBalai();
-    const pos = KE3(FOKUS.x, FOKUS.y);
-    balai.position.copy(pos);
-    dunia.add(balai);
-    balai.traverse(o => { o.userData.popover = { kicker: 'DETAIL BANGUNAN', judul: 'Balai Desa (Kantor Desa Kejar Target)', lencana: null, kutipan: '“Semoga desanya makin maju.”', isi: 'Diminta oleh Bang Uju. Berdiri 7 November 2026. Tap pintunya saat mode Keliling Desa buat masuk (fitur interior menyusul di versi produksi).' }; });
-    bisaDiklik.push(balai);
-
-    // Label melayang di atas atap.
-    const label = labelNama('Balai Desa', 1.35);
-    label.position.set(pos.x, 352, pos.z);
-    dunia.add(label);
-
     // Tiang bendera di sisi timur alun-alun, dekat titik berdiri Bang Uju.
     const tiangPos = KE3(1205, 700);
     const tiang = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 250, 8), matStandar(0x92600f));
@@ -610,6 +615,63 @@ let bendera = null, geoBenderaAsli = null;
     bendera.position.set(tiangPos.x + 3, 222, tiangPos.z);
     dunia.add(bendera);
     geoBenderaAsli = geoB.attributes.position.array.slice();
+}
+
+// ---------------------------------------------------------------------------
+// Bangunan dari data: grup khusus yang dibangun (dan bisa dibangun ulang)
+// dari daftar bangunan. Sumbernya data-desa.php; selama data langsung
+// belum tiba, data contoh yang dipakai. Balai Desa tidak lagi hardcode:
+// ia baris pertama basis data, dipilih oleh varianBangunan() seperti
+// bangunan lain, menempati kavling sesuai urutan id-nya.
+// ---------------------------------------------------------------------------
+const grupBangunan = new THREE.Group();
+dunia.add(grupBangunan);
+let klikBangunan = [];
+function warnaGang(gang, cadangan = 0xf59e0b) {
+    const z = ZONA_GANG[gang];
+    return z ? z.warna : cadangan;
+}
+function cssGang(gang) {
+    const z = ZONA_GANG[gang];
+    return z ? z.css : '#64748b';
+}
+function bangunBangunan(daftar) {
+    for (const o of klikBangunan) {
+        const i = bisaDiklik.indexOf(o);
+        if (i >= 0) bisaDiklik.splice(i, 1);
+    }
+    klikBangunan = [];
+    while (grupBangunan.children.length) grupBangunan.remove(grupBangunan.children[0]);
+    const terisi = new Set();
+    const urut = [...daftar].sort((a, b) => (a.kavling ?? 0) - (b.kavling ?? 0));
+    for (const b of urut) {
+        const k = Number.isInteger(b.kavling) ? b.kavling : urut.indexOf(b);
+        if (k < 0 || k >= POSISI_KAVLING.length || terisi.has(k)) continue;
+        terisi.add(k);
+        const model = buatBangunan(b.nama, warnaGang(b.gang));
+        const pos = KE3(POSISI_KAVLING[k][0], POSISI_KAVLING[k][1]);
+        model.position.copy(pos);
+        const popover = {
+            kicker: 'DETAIL BANGUNAN',
+            judul: b.nama,
+            lencana: b.gang ? { teks: b.gang, warna: cssGang(b.gang) } : null,
+            kutipan: b.komentar ? '“' + b.komentar + '”' : null,
+            isi: (b.dari ? 'Diminta oleh ' + b.dari + '.' : '') + (b.tanggal ? ' Berdiri ' + b.tanggal + '.' : ''),
+        };
+        model.traverse(o => { o.userData.popover = popover; });
+        grupBangunan.add(model);
+        klikBangunan.push(model);
+        bisaDiklik.push(model);
+        if (varianBangunan(b.nama) === 'balai') {
+            // Label melayang di atas atap landmark desa.
+            const label = labelNama('Balai Desa', 1.35);
+            label.position.set(pos.x, 352, pos.z);
+            grupBangunan.add(label);
+        }
+    }
+    POSISI_KAVLING.forEach(([x, y], i) => {
+        if (!terisi.has(i)) grupBangunan.add(penandaKosong(x, y));
+    });
 }
 
 // Label nama melayang (sprite tekstur kanvas).
@@ -650,10 +712,12 @@ function penandaKosong(x, y) {
     papan.position.y = 64; papan.castShadow = true;
     grup.add(papan);
     grup.userData.popover = { kicker: 'KAVLING KOSONG', judul: 'Tanah Kosong', lencana: null, kutipan: null, isi: 'Kavling ini menunggu komentar pemenang. Usulkan usahamu di Instagram @desatarget, komentar paling banyak disukai dibangun di sini.' };
+    klikBangunan.push(grup);
     bisaDiklik.push(grup);
     return grup;
 }
-POSISI_KAVLING.slice(1).forEach(([x, y]) => dunia.add(penandaKosong(x, y)));
+// Bangun awal memakai data contoh; data langsung menggantikannya begitu tiba.
+bangunBangunan(BANGUNAN_SEED);
 
 // ---------------------------------------------------------------------------
 // Pepohonan dan alam: instancing supaya draw call tetap sedikit.
@@ -821,10 +885,19 @@ function buatFigur(warnaBadan, { topi = null } = {}) {
     return grup;
 }
 const agenWarga = [];
-{
+// Warga yang dirender dibatasi 80 figur, meniru batas peta 2D.
+const BATAS_WARGA = 80;
+function bangunWarga(daftar) {
+    for (const a of agenWarga) {
+        dunia.remove(a.figur);
+        const iKlik = bisaDiklik.indexOf(a.figur);
+        if (iKlik >= 0) bisaDiklik.splice(iKlik, 1);
+    }
+    agenWarga.length = 0;
     const perGang = {};
-    WARGA_SEED.forEach((w, i) => {
+    daftar.slice(0, BATAS_WARGA).forEach((w, i) => {
         const z = ZONA_GANG[w.gang];
+        if (!z) return;
         const rect = rectWara(z);
         perGang[w.gang] = perGang[w.gang] || 0;
         const idx = perGang[w.gang]++;
@@ -852,6 +925,7 @@ const agenWarga = [];
         });
     });
 }
+bangunWarga(WARGA_SEED);
 // Bang Uju: sprite billboard dari gambar resmi maskot, patroli alun-alun.
 const agenUju = { x: TITIK_PATROLI[0][0], y: TITIK_PATROLI[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
 let spriteUju = null;
@@ -1025,14 +1099,13 @@ function perbaruiKamu(dt) {
     tujuanKamera.y = 104;
     camera.position.lerp(tujuanKamera, 0.055);
     camera.lookAt(pos.x, 46, pos.z);
-    // Kedekatan ke pintu Balai Desa memunculkan chip masuk (stub).
+    // Kedekatan ke pintu Balai Desa memunculkan chip masuk.
     const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
     chipMasuk.classList.toggle('tampil', dekatPintu);
 }
 chipMasuk.addEventListener('click', () => {
-    // Stub prototipe: interior Balai Desa dibangun pada integrasi produksi.
-    chipMasuk.textContent = 'Interior Balai Desa menyusul di versi produksi';
-    setTimeout(() => { chipMasuk.textContent = 'Masuk Balai Desa'; }, 2200);
+    // Masuk ke halaman Balai Desa situs induk.
+    window.location.href = '../peta.php#interior-balai';
 });
 
 // ---------------------------------------------------------------------------
@@ -1094,20 +1167,20 @@ document.getElementById('panelGangTutup').addEventListener('click', () => {
     panelGang.classList.remove('buka');
     panelGang.setAttribute('aria-hidden', 'true');
 });
-{   // Isi papan peringkat dari data warga contoh.
-    const hitung = {};
-    for (const namaGang of Object.keys(ZONA_GANG)) hitung[namaGang] = 0;
-    WARGA_SEED.forEach(w => { hitung[w.gang]++; });
-    const urutan = Object.entries(hitung).sort((a, b) => b[1] - a[1]);
-    const maks = Math.max(1, ...urutan.map(([, j]) => j));
-    document.getElementById('isiPapanGang').innerHTML = urutan.map(([gang, jumlah], i) => `
+// Isi papan peringkat dari daftar [{ gang, jumlah }], bentuk yang sama
+// seperti keluaran papan_gang() di PHP maupun PAPAN_SEED.
+function gambarPapanGang(papan) {
+    const urutan = [...papan].sort((a, b) => b.jumlah - a.jumlah);
+    const maks = Math.max(1, ...urutan.map(p => p.jumlah));
+    document.getElementById('isiPapanGang').innerHTML = urutan.map((p, i) => `
         <div class="papan-baris">
             <span class="papan-peringkat">${i + 1}</span>
-            <span class="papan-nama">${gang}</span>
-            <span class="papan-jumlah">${jumlah} warga</span>
-            <span class="papan-palangan"><span class="papan-isi" style="width: ${Math.round(jumlah / maks * 100)}%; background: ${ZONA_GANG[gang].css}"></span></span>
+            <span class="papan-nama">${p.gang}</span>
+            <span class="papan-jumlah">${p.jumlah} warga</span>
+            <span class="papan-palangan"><span class="papan-isi" style="width: ${Math.round(p.jumlah / maks * 100)}%; background: ${cssGang(p.gang)}"></span></span>
         </div>`).join('');
 }
+gambarPapanGang(PAPAN_SEED);
 document.getElementById('introTutup').addEventListener('click', () => {
     document.getElementById('kartuIntro').style.display = 'none';
 });
@@ -1138,7 +1211,32 @@ window.addEventListener('resize', () => {
 });
 
 // Kait untuk pengujian otomatis dan tangkapan layar.
-window.__desa = { renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju };
+window.__desa = { renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju, sumberData: 'contoh', bangunBangunan, bangunWarga, gambarPapanGang };
+
+// ---------------------------------------------------------------------------
+// Data langsung: ambil data-desa.php (basis data produksi). Bila berhasil
+// dan bentuknya sah, desa dibangun ulang dari data asli dan catatan
+// "data contoh" di kartu intro diganti keterangan data langsung. Bila
+// gagal dengan cara apa pun (halaman dibuka mandiri, endpoint tidak ada,
+// basis data galat), desa contoh yang sudah berdiri dibiarkan apa adanya.
+// ---------------------------------------------------------------------------
+async function muatDataLangsung() {
+    let data = null;
+    try {
+        const respons = await fetch('data-desa.php', { headers: { 'Accept': 'application/json' } });
+        if (respons.ok) data = await respons.json();
+    } catch (e) { /* abaikan: cadangan data contoh tetap dipakai */ }
+    if (!data || data.galat || !Array.isArray(data.warga) || !Array.isArray(data.bangunan) || !Array.isArray(data.papanGang)) return;
+    tutupPopover();
+    bangunBangunan(data.bangunan);
+    bangunWarga(data.warga);
+    gambarPapanGang(data.papanGang);
+    window.__desa.sumberData = 'langsung';
+    const catatan = document.getElementById('catatanData');
+    catatan.textContent = 'Data langsung dari balai desa: ' + data.warga.length + ' warga terdaftar, ' + data.bangunan.length + ' bangunan berdiri.';
+    catatan.classList.add('langsung');
+}
+muatDataLangsung();
 
 // ---------------------------------------------------------------------------
 // Putaran utama
