@@ -49,16 +49,11 @@ $ujuY = $fokusY + 23;
 
 $judulHalaman = 'Peta Desa';
 $halamanAktif = 'peta';
+// Peta adalah layar pertama itu sendiri (versi 4.1): kepala situs biasa
+// tidak digambar, diganti bilah merek dan navigasi yang melayang di atas peta.
+$tanpaHeaderSitus = true;
 require __DIR__ . '/includes/header.php';
 ?>
-
-<section class="seksi">
-    <h1>Peta Desa Target</h1>
-    <p class="seksi-deskripsi">
-        Setiap bangunan di peta ini lahir dari komentar warga di Instagram.
-        Komentar paling banyak disukai hari ini, besok paginya sudah berdiri di sini.
-        Masih banyak tanah kosong, desa ini menunggu usulan usahamu.
-    </p>
 
     <div class="peta-viewport" id="petaViewport">
         <div class="peta-dunia" id="petaDunia">
@@ -220,13 +215,42 @@ require __DIR__ . '/includes/header.php';
             </svg>
         </div>
 
+        <!-- Bilah merek dan navigasi melayang di pojok kiri atas peta,
+             pengganti kepala situs khusus halaman peta sepenuh layar. -->
+        <div class="peta-merek-baris">
+            <a class="peta-merek" href="index.php">
+                <img src="assets/bang-uju.png" alt="" class="peta-merek-logo">
+                <span>Desa <strong>Target</strong></span>
+            </a>
+            <nav class="peta-nav" aria-label="Navigasi peta">
+                <a href="index.php">Beranda</a>
+                <a href="ktp.php">Bikin KTP Warga</a>
+                <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
+            </nav>
+        </div>
+
+        <!-- Kartu pengantar di bawah bilah merek. Bisa ditutup dengan
+             tombol silang; di ponsel dan layar pendek kartu mulai dalam
+             keadaan tertutup lewat media query di stylesheet. -->
+        <div class="peta-intro" id="petaIntro">
+            <button type="button" class="popover-tutup" id="introTutup" aria-label="Tutup pengantar">&times;</button>
+            <h1>Peta Desa Target</h1>
+            <p>
+                Setiap bangunan di peta ini lahir dari komentar warga di Instagram.
+                Komentar paling banyak disukai hari ini, besok paginya sudah berdiri di sini.
+                Masih banyak tanah kosong, desa ini menunggu usulan usahamu.
+            </p>
+        </div>
+
         <p class="peta-chip">Geser buat keliling. Tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</p>
 
         <div class="peta-kontrol">
             <button type="button" id="tombolJalan" class="tombol-jalan" aria-pressed="false">Keliling Desa</button>
+            <button type="button" id="tombolPanelGang" class="tombol-panel-gang" aria-expanded="false" aria-controls="panelGang">Papan Gang</button>
             <button type="button" id="zoomMasuk" aria-label="Perbesar peta">+</button>
             <button type="button" id="zoomKeluar" aria-label="Perkecil peta">&minus;</button>
             <button type="button" id="zoomReset" aria-label="Kembali ke Balai Desa">&#8982;</button>
+            <button type="button" id="layarPenuh" aria-label="Layar penuh">&#10530;</button>
         </div>
 
         <button type="button" class="chip-prompt" id="chipPrompt" hidden></button>
@@ -264,18 +288,21 @@ require __DIR__ . '/includes/header.php';
             <?= interior_balai_svg($bangunanTerbaru) ?>
             <button type="button" class="interior-keluar" id="tombolKeluarInterior">&larr; Keluar ke Peta</button>
         </div>
+
+        <!-- Panel Papan Gang: meluncur dari kanan di dalam bingkai peta,
+             dibuka dari tombol Papan Gang di tumpukan kontrol. Isinya sama
+             dengan papan gang lama, hanya pindah tempat dari bawah peta. -->
+        <aside class="panel-gang" id="panelGang" aria-hidden="true" aria-label="Papan peringkat gang">
+            <div class="panel-gang-kepala">
+                <h2>Papan Gang</h2>
+                <button type="button" class="popover-tutup" id="panelGangTutup" aria-label="Tutup papan gang">&times;</button>
+            </div>
+            <p class="seksi-deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
+            <?php require __DIR__ . '/includes/papan-gang.php'; ?>
+            <p class="panel-gang-gabung"><a href="ktp.php">Gabung gang-mu</a></p>
+        </aside>
     </div>
     <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Pencet tombol Keliling Desa buat jalan-jalan keliling desa dan masuk Balai Desa. Atap bangunan dan baju warga berwarna mengikuti gang-nya.</p>
-</section>
-
-<section class="seksi">
-    <div class="seksi-kepala">
-        <h2>Papan Gang</h2>
-        <a href="ktp.php">Gabung gang-mu</a>
-    </div>
-    <p class="seksi-deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
-    <?php require __DIR__ . '/includes/papan-gang.php'; ?>
-</section>
 
 <script>
 (function () {
@@ -424,6 +451,8 @@ require __DIR__ . '/includes/header.php';
         if (e.key === 'Escape') {
             if (interiorTerbuka) {
                 tutupInterior();
+            } else if (panelGangTerbuka) {
+                aturPanelGang(false);
             } else {
                 tutupPopover();
             }
@@ -440,7 +469,7 @@ require __DIR__ . '/includes/header.php';
         if (interiorTerbuka) {
             return;
         }
-        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover, .peta-dpad, .chip-prompt')) {
+        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover, .peta-dpad, .chip-prompt, .peta-merek-baris, .peta-intro, .panel-gang')) {
             return;
         }
         try {
@@ -529,7 +558,11 @@ require __DIR__ . '/includes/header.php';
     viewport.addEventListener('pointercancel', akhiriPenunjuk);
 
     // Roda mouse buat zoom mengikuti posisi kursor.
+    // Di atas panel gang, roda mouse menggulir panelnya, bukan zoom peta.
     viewport.addEventListener('wheel', function (e) {
+        if (e.target.closest && e.target.closest('.panel-gang')) {
+            return;
+        }
         e.preventDefault();
         tutupPopover();
         var r = viewport.getBoundingClientRect();
@@ -802,6 +835,59 @@ require __DIR__ . '/includes/header.php';
                 }
             });
         })(hotspotInterior[hi]);
+    }
+
+    // === Versi 4.1: tata letak sepenuh layar ===
+    // Kartu pengantar bisa ditutup; keadaan terbukanya di ponsel dan
+    // layar pendek diatur media query di stylesheet.
+    var petaIntro = document.getElementById('petaIntro');
+    document.getElementById('introTutup').addEventListener('click', function () {
+        petaIntro.classList.add('tertutup');
+    });
+
+    // Panel Papan Gang meluncur dari kanan di dalam bingkai peta.
+    var panelGang = document.getElementById('panelGang');
+    var tombolPanelGang = document.getElementById('tombolPanelGang');
+    var panelGangTerbuka = false;
+    function aturPanelGang(buka) {
+        panelGangTerbuka = buka;
+        panelGang.classList.toggle('terbuka', buka);
+        panelGang.setAttribute('aria-hidden', buka ? 'false' : 'true');
+        tombolPanelGang.classList.toggle('aktif', buka);
+        tombolPanelGang.setAttribute('aria-expanded', buka ? 'true' : 'false');
+    }
+    tombolPanelGang.addEventListener('click', function () {
+        aturPanelGang(!panelGangTerbuka);
+    });
+    document.getElementById('panelGangTutup').addEventListener('click', function () {
+        aturPanelGang(false);
+    });
+
+    // Tombol layar penuh memakai Fullscreen API pada bingkai peta.
+    // Tombol disembunyikan kalau peramban tidak mendukungnya.
+    var tombolLayarPenuh = document.getElementById('layarPenuh');
+    if (!document.fullscreenEnabled || typeof viewport.requestFullscreen !== 'function') {
+        tombolLayarPenuh.hidden = true;
+    } else {
+        tombolLayarPenuh.addEventListener('click', function () {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                var janji = viewport.requestFullscreen();
+                if (janji && typeof janji.catch === 'function') {
+                    janji.catch(function () {
+                        // Layar penuh ditolak peramban, peta tetap jalan seperti biasa.
+                    });
+                }
+            }
+        });
+        // Masuk atau keluar layar penuh mengubah ukuran viewport;
+        // hitung ulang skala dasar dan jepit kamera seperti pada resize.
+        document.addEventListener('fullscreenchange', function () {
+            hitungDasar();
+            terapkan();
+            tutupPopover();
+        });
     }
 
     hitungDasar();

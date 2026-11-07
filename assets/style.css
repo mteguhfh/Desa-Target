@@ -78,6 +78,9 @@ p { margin: 0 0 1rem; }
 
 /* Tata letak umum */
 main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+/* Halaman sepenuh layar (peta): tanpa batas lebar dan tanpa bantalan,
+   bingkai peta menempel ke semua tepi jendela. */
+main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .seksi { margin-top: 3rem; }
 .seksi.sempit { max-width: 640px; margin-left: auto; margin-right: auto; }
 .seksi-kepala {
@@ -270,15 +273,19 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
     position: relative;
     overflow: hidden;
     width: 100%;
-    aspect-ratio: 16 / 10;
-    max-height: 78vh;
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
     background: linear-gradient(180deg, var(--biru-muda), var(--hijau-pucat));
-    border: 1px solid var(--garis);
-    border-radius: 24px;
     touch-action: none;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
+}
+.peta-viewport:fullscreen {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, var(--biru-muda), var(--hijau-pucat));
 }
 .peta-viewport.menyeret { cursor: grabbing; }
 .peta-dunia {
@@ -528,7 +535,6 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
     inset: 0;
     z-index: 7;
     background: #fdf3e3;
-    border-radius: 24px;
     overflow: hidden;
 }
 .interior-svg { display: block; width: 100%; height: 100%; }
@@ -564,6 +570,133 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
 @media (prefers-reduced-motion: reduce) {
     .chip-prompt { animation: none !important; }
     .warga-dalam, .hotspot-dalam { transition: none; }
+}
+
+/* Peta desa versi 4.1: tata letak sepenuh layar. Peta adalah layar
+   pertama itu sendiri; merek, navigasi, kartu pengantar, dan panel
+   gang melayang di atasnya. Urutan tumpukan di dalam bingkai peta:
+   dunia, interior (7), popover (9), bilah melayang (10), panel (11). */
+.peta-chip { left: auto; right: 12px; top: 12px; z-index: 10; }
+.peta-kontrol { z-index: 10; }
+.peta-kontrol .tombol-panel-gang {
+    width: auto;
+    height: 44px;
+    border-radius: 999px;
+    padding: 0 1rem;
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+.peta-kontrol .tombol-panel-gang.aktif { background: var(--biru); color: var(--putih); border-color: var(--biru); }
+.peta-merek-baris {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: calc(100% - 24px);
+}
+.peta-merek {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    padding: 0.3rem 1rem 0.3rem 0.35rem;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14);
+    text-decoration: none;
+    color: var(--teks);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.peta-merek strong { color: var(--biru); }
+.peta-merek-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--biru-muda);
+}
+.peta-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.peta-nav a {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    padding: 0.42rem 0.95rem;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+    text-decoration: none;
+    color: var(--teks);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.peta-nav a:hover { background: var(--putih); color: var(--biru-gelap); }
+.peta-intro {
+    position: absolute;
+    top: 76px;
+    left: 12px;
+    z-index: 10;
+    width: 330px;
+    max-width: calc(100% - 24px);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--garis);
+    border-radius: 18px;
+    padding: 1rem 1.15rem 0.4rem;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+}
+.peta-intro h1 { font-size: 1.4rem; padding-right: 1.6rem; }
+.peta-intro p { color: var(--teks-lembut); margin-bottom: 0.75rem; }
+.peta-intro.tertutup { display: none; }
+.panel-gang {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 11;
+    width: 340px;
+    max-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    touch-action: pan-y;
+    background: rgba(255, 255, 255, 0.98);
+    border-left: 1px solid var(--garis);
+    box-shadow: -12px 0 30px rgba(15, 23, 42, 0.18);
+    padding: 1.1rem 1.15rem 1.5rem;
+    transform: translateX(105%);
+    visibility: hidden;
+    transition: transform 0.35s ease, visibility 0s linear 0.35s;
+}
+.panel-gang.terbuka {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.35s ease;
+}
+.panel-gang-kepala {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.panel-gang-kepala h2 { margin-bottom: 0.25rem; }
+.panel-gang-kepala .popover-tutup { position: static; }
+.panel-gang .seksi-deskripsi { margin-bottom: 1rem; }
+.panel-gang-gabung { margin: 1rem 0 0; font-weight: 700; }
+.main-penuh .peta-petunjuk {
+    max-width: 1080px;
+    margin: 0.75rem auto 0;
+    padding: 0 1.25rem;
+}
+/* Ponsel dan layar pendek: kartu pengantar mulai tertutup supaya
+   layar pertama murni peta, dan panel gang memenuhi lebar layar. */
+@media (max-width: 700px), (max-height: 600px) {
+    .peta-intro { display: none; }
+}
+@media (max-width: 700px) {
+    .panel-gang { width: 100%; border-left: none; }
+    /* Di layar sempit chip petunjuk disembunyikan: ruang bawah peta
+       sudah penuh tombol kontrol dan D-pad, chip akan menabraknya. */
+    .peta-chip { display: none; }
 }
 
 /* Formulir dan pesan */
@@ -662,7 +795,6 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
     .hero { grid-template-columns: 1fr; padding: 1.5rem; }
     .hero h1 { font-size: 2.3rem; }
     .langkah-grid { grid-template-columns: 1fr; }
-    .peta-viewport { aspect-ratio: 1 / 1.05; max-height: 72vh; }
     .papan-baris { grid-template-columns: 2rem 1fr 6rem; }
     .papan-palangan { display: none; }
     .ajakan .tombol-utama { margin-left: 0; }

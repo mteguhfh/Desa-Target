@@ -1,6 +1,7 @@
 <?php
 // Kepala halaman bersama untuk semua halaman publik.
-// Variabel yang bisa diatur halaman pemanggil: $judulHalaman, $deskripsiHalaman, $halamanAktif.
+// Variabel yang bisa diatur halaman pemanggil: $judulHalaman, $deskripsiHalaman, $halamanAktif,
+// dan $tanpaHeaderSitus (halaman sepenuh layar seperti peta menggambar bilah navigasinya sendiri).
 require_once __DIR__ . '/../config.php';
 
 if (!function_exists('e')) {
@@ -13,6 +14,7 @@ if (!function_exists('e')) {
 $judulHalaman = $judulHalaman ?? APP_NAME;
 $deskripsiHalaman = $deskripsiHalaman ?? 'Desa Target, desa fiktif para UMKM hebat. Follow berarti jadi warga, komen paling banyak disukai dibangun besok oleh Bang Uju.';
 $halamanAktif = $halamanAktif ?? '';
+$tanpaHeaderSitus = $tanpaHeaderSitus ?? false;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -31,6 +33,7 @@ $halamanAktif = $halamanAktif ?? '';
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+<?php if (!$tanpaHeaderSitus): ?>
 <header class="situs-header">
     <a class="merek" href="index.php">
         <img src="assets/bang-uju.png" alt="Bang Uju, Kepala Desa Target" class="merek-logo">
@@ -43,4 +46,5 @@ $halamanAktif = $halamanAktif ?? '';
         <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
     </nav>
 </header>
-<main>
+<?php endif; ?>
+<main<?= $tanpaHeaderSitus ? ' class="main-penuh"' : '' ?>>
