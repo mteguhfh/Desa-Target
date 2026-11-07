@@ -1,28 +1,28 @@
-feature,area,priority,original,clone,notes
-Peta 3D sebagai layar default yang memenuhi viewport,3d map,must,yes,no,konsep utama Desa Target; peta3d sudah ada tetapi belum jadi default
-Tombol switch antara peta 3D dan peta 2D,3d map,must,no,no,Desa Target LEBIH dari Sekolah Bebaz di sini: mereka tidak punya switch; kita menambahkannya
-Kamera orbit: geser dan zoom di sekitar desa,3d map,must,yes,no,sudah ada di peta3d
-Mode jalan keliling desa (avatar sendiri terlihat),3d map,must,yes,no,peta 2D sudah punya Keliling Desa; perlu dibawa ke 3D
-Label nama bangunan melayang di dunia 3D,3d map,must,yes,no,sudah ada lewat teksturPapan
-Label nama warga melayang di dekat avatarnya,3d map,should,yes,no,perlu dihubungkan ke tabel warga
-Tap bangunan membuka detail bangunan,3d map,must,yes,no,harus memakai data yang sama dengan peta 2D
-Masuk ke dalam bangunan (interior),3d map,should,yes,no,interior-balai.php sudah ada untuk Balai Desa di peta 2D
-Tab bar bawah: Kampus/Misi/Koperasi/Aku,shell,must,yes,no,diterjemahkan jadi tab Desa/Misi/Papan Gang/Aku
-Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,no,bukan halaman terpisah supaya dunia tidak hilang
-Bilah atas: nama desa statistik dan suasana,shell,must,yes,no,day-night sudah ada sebagai ?jam= di peta3d
-Kontrol zoom tombol plus dan minus,shell,should,yes,no,peta 2D sudah punya; tambahkan ke 3D
-Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,no,ktp.php sudah ada; cukup ditautkan dari tab Aku
-Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,no,sudah jalan di ktp.php
-Cari warga berdasarkan nama atau nomor,community,should,yes,no,cari_warga() sudah ada di db.php
-Daftar semua bangunan beserta gangnya,community,should,yes,no,untuk panel Peta desa
-Papan peringkat gang,community,should,yes,no,sudah ada di papan-gang.php dan peta 2D
-Siang dan malam mengikuti jam setempat,ambience,could,yes,no,sudah ada di peta3d
-Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,no,beda dengan mereka: kita hitung dari data sendiri
-Suara latar desa,ambience,could,no,no,mereka punya video; kita bisa suara ambient ringan
-Misi harian untuk menggerakkan komentar,gamification,could,yes,no,cocok dengan konsep komen terbanyak dibangun besok
-Pembagian warga berdasarkan huruf awal nama,community,could,yes,no,pola mereka; opsi ringan untuk panel Desa
-Koperasi afiliasi TikTok Shop,commerce,skip,yes,skip,itu perjanjian komersial mereka bukan fitur produk
-Video YouTube dan absen murid,media,skip,yes,skip,kanal mereka sendiri
-Merchandise hoodie dan hadiah fisik,commerce,skip,yes,skip,bukan perangkat lunak
-Merek aset dan karakter Pak Kepsek,branding,skip,yes,skip,milik mereka; Desa Target memakai Bang Uju
-Jaringan 50 ribu murid dan 124 ribu kartu,community,skip,yes,skip,data milik mereka dan tidak bisa disalin
+feature,area,priority,original,status,evidence,notes
+Peta 3D sebagai layar default yang memenuhi viewport,3d map,must,yes,selesai,peta.php -> peta3d/index.php,ADR-0001
+Tombol switch antara peta 3D dan peta 2D,3d map,must,no,selesai,includes/sakelar-peta.php,Melampaui pembanding: mereka tidak punya switch
+Kamera orbit: geser dan zoom di sekitar desa,3d map,must,yes,selesai,OrbitControls di peta3d/index.php,
+Mode jalan keliling desa (avatar sendiri terlihat),3d map,must,yes,selesai,aturModeJalan() baris 1230,
+Label nama bangunan melayang di dunia 3D,3d map,must,yes,selesai,labelNama() dipanggil baris 856,
+Label nama warga melayang di dekat avatarnya,3d map,should,yes,selesai,labelNama(w.nama) baris 1103,
+Tap bangunan membuka detail bangunan,3d map,must,yes,selesai,popover + bisaDiklik,Data dari data-desa.php (ADR-0004)
+Masuk ke dalam bangunan (interior),3d map,should,yes,sebagian,chipMasuk -> peta2d.php#interior-balai,Balai Desa lompat ke interior 2D; interior 3D belum ada
+Kontrol zoom tombol plus dan minus,shell,should,yes,selesai,tombolZoomIn/Out baris 1385,
+Bilah atas: nama desa statistik dan suasana,shell,must,yes,sebagian,stats + ?jam= di peta3d,Ada jam dan statistik; belum ada status ramai/sepi
+Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,belum,grep tab-bar: nihil,Navigasi masih lewat tautan header biasa
+Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,belum,grep panel-bersayap: nihil,Tanpa panel, dunia 3D hilang saat pindah halaman
+Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,sebagian,ktp.php bisa buat kartu,Tapi tidak ditautkan dari dalam peta 3D
+Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,selesai,ktp.php,
+Cari warga berdasarkan nama atau nomor,community,should,yes,belum,cari_warga() hanya cari by id; UI belum ada,Perlu fungsi cari by nama/nomor + halaman hasil
+Daftar semua bangunan beserta gangnya,community,should,yes,sebagian,data.bangunan dikirim ke 3D,Belum ada daftar yang bisa dibaca/di-scroll
+Papan peringkat gang,community,should,yes,selesai,includes/papan-gang.php + papan di peta 2D,
+Siang dan malam mengikuti jam setempat,ambience,could,yes,selesai,?jam= di peta3d baris 1427,
+Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,belum,tidak ada di kode,Bisa dihitung dari jumlah warga aktif
+Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru video pembanding
+Misi harian untuk menggerakkan komentar,gamification,could,yes,belum,tidak ada tabel misi,Butuh tabel + UI; paling dekat ke konsep komentar terbanyak
+Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding
+Koperasi afiliasi TikTok Shop,commerce,skip,yes,tidak dikerjakan,-,Perjanjian komersial mereka bukan fitur produk
+Video YouTube dan absen murid,media,skip,yes,tidak dikerjakan,-,Kanal mereka sendiri
+Merchandise hoodie dan hadiah fisik,commerce,skip,yes,tidak dikerjakan,-,Bukan perangkat lunak
+Merek aset dan karakter Pak Kepsek,branding,skip,yes,tidak dikerjakan,-,Desa Target memakai Bang Uju
+Jaringan 50 ribu murid dan 124 ribu kartu,community,skip,yes,tidak dikerjakan,-,Data milik mereka dan tidak bisa disalin

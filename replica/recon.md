@@ -111,6 +111,10 @@ Relationships: Gang 1-n Warga, Gang 1-n Bangunan, Kelas 1-n Warga.
 
 See `features.csv`. Must: 11, should: 6, could: 5, skip: 5.
 
+Kolom `status` di `features.csv` mencatat keadaan nyata di kode, bukan rencana:
+11 selesai, 4 sebagian, 7 belum, 5 sengaja tidak dikerjakan. Urutan
+pengerjaannya ada di `replica/rencana-kerja.md`.
+
 ## Out of scope (cannot or should not be cloned)
 
 - **Isi, merek, dan aset Sekolah Bebaz.** Nama, logo, karakter Pak Kepsek, dan ilustrasi mereka milik mereka. Desa Target sudah punya identitas sendiri (Bang Uju, gang UMKM).
