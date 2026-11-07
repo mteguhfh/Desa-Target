@@ -132,9 +132,11 @@ export function buatBalai() {
     g.add(kotak(150, 8, 26, coklat, 0, 152, 92));
     for (let i = -3; i <= 3; i++) g.add(kotak(6, 26, 6, coklat, i * 22, 168, 102));
     g.add(kotak(156, 6, 6, coklat, 0, 182, 102));
-    // Papan nama besar
-    const papan = papanNama('BALAI DESA', 246, 54, { ukuran: 62 });
-    papan.position.set(0, 196, 90);
+    // Papan nama besar: duduk di bibir depan slab atap teras (z=113, di depan
+    // muka prisma atap z=106) supaya tidak tertutup atap dari sudut kamera
+    // depan-atas. Lebar 220 pas dengan lebar segitiga atap di ketinggian ini.
+    const papan = papanNama('BALAI DESA', 220, 48, { ukuran: 62 });
+    papan.position.set(0, 152, 113);
     g.add(papan);
     // Pintu ganda dan tangga
     g.add(kotak(66, 86, 6, coklat, 0, 61, 88));
