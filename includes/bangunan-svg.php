@@ -328,9 +328,12 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): st
         . '</g>';
 }
 
-// Penanda kavling yang belum ada bangunannya: petak bergaris putus-putus
-// dengan papan kayu kecil bertuliskan Tanah Kosong. Gambarnya memakai
-// koordinat lokal versi 2 lalu diskala ke dunia versi 3, sama seperti bangunan.
+// Penanda kavling yang belum ada bangunannya: sejak versi 4.3 bukan lagi
+// petak bergaris putus-putus, melainkan lahan kosong yang terbaca sebagai
+// clearing: tambalan tanah lembut berbentuk elips bertumpuk tanpa garis
+// tepi sama sekali, dengan papan kayu kecil bertuliskan Tanah Kosong.
+// Gambarnya memakai koordinat lokal versi 2 lalu diskala ke dunia
+// versi 3, sama seperti bangunan.
 function svg_tanah_kosong(array $posisi): string
 {
     $x = (int) $posisi[0];
@@ -338,14 +341,54 @@ function svg_tanah_kosong(array $posisi): string
 
     return '<g class="tanah-kosong" transform="translate(' . $x . ' ' . $y . ')">'
         . '<g class="tanah-skala" transform="scale(' . SKALA_DUNIA . ')">'
-        . '<rect x="-58" y="-72" width="116" height="70" rx="12" fill="#ffffff" fill-opacity="0.16" stroke="#3f6212" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="7 6"/>'
-        . '<path d="M-38,-3 c1,-5 -1,-8 -3,-11 M-33,-3 c0,-5 2,-8 4,-10" stroke="#3f6212" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>'
-        . '<path d="M36,-3 c1,-5 -1,-8 -3,-11 M41,-3 c0,-5 2,-8 4,-10" stroke="#3f6212" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>'
+        . '<ellipse cx="0" cy="-30" rx="74" ry="45" fill="#fef9c3" fill-opacity="0.20"/>'
+        . '<ellipse cx="-4" cy="-28" rx="65" ry="38" fill="#e7d6ac" fill-opacity="0.38"/>'
+        . '<ellipse cx="7" cy="-36" rx="41" ry="24" fill="#efe3c0" fill-opacity="0.35"/>'
+        . '<ellipse cx="-34" cy="-14" rx="6" ry="3.4" fill="#d6d3d1" opacity="0.8"/>'
+        . '<ellipse cx="40" cy="-20" rx="4.6" ry="2.8" fill="#d6d3d1" opacity="0.7"/>'
+        . '<path d="M-38,-3 c1,-5 -1,-8 -3,-11 M-33,-3 c0,-5 2,-8 4,-10" stroke="#65a30d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>'
+        . '<path d="M36,-3 c1,-5 -1,-8 -3,-11 M41,-3 c0,-5 2,-8 4,-10" stroke="#65a30d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>'
         . '<rect x="-2" y="-33" width="4" height="31" fill="#92600f"/>'
         . '<rect x="-41" y="-53" width="82" height="21" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>'
         . '<text x="0" y="-38.5" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Tanah Kosong</text>'
         . '</g>'
         . '</g>';
+}
+
+// Jalur gumpalan organik untuk petak zona gang: titik-titik di sekeliling
+// bentuk superelips (persegi membulat) digeser radial secara acak semu
+// namun deterministik dari benih nama gang, lalu dihubungkan dengan kurva
+// kuadratik lewat titik tengah antar titik, sehingga tepinya halus dan
+// tidak menyisakan garis batas tegas. Tanpa stroke sama sekali; zona
+// terbaca murni dari isian warna gang yang lembut.
+function jalur_gumpal_zona(float $x, float $y, float $w, float $h, int $benih): string
+{
+    $cx = $x + $w / 2;
+    $cy = $y + $h / 2;
+    $n = 16;
+    $titik = [];
+    for ($i = 0; $i < $n; $i++) {
+        $sudut = ($i / $n) * 2 * M_PI;
+        $c = cos($sudut);
+        $s = sin($sudut);
+        $px = $cx + ($w / 2) * ($c < 0 ? -1.0 : 1.0) * pow(abs($c), 0.55);
+        $py = $cy + ($h / 2) * ($s < 0 ? -1.0 : 1.0) * pow(abs($s), 0.55);
+        $acak = sin($benih * 127.1 + $i * 311.7) * 43758.5453;
+        $acak -= floor($acak);
+        $faktor = 0.96 + $acak * 0.08;
+        $titik[] = [$cx + ($px - $cx) * $faktor, $cy + ($py - $cy) * $faktor];
+    }
+    $fmt = static fn(float $v): string => rtrim(rtrim(number_format($v, 1, '.', ''), '0'), '.');
+    $awalX = ($titik[$n - 1][0] + $titik[0][0]) / 2;
+    $awalY = ($titik[$n - 1][1] + $titik[0][1]) / 2;
+    $d = 'M' . $fmt($awalX) . ',' . $fmt($awalY);
+    for ($i = 0; $i < $n; $i++) {
+        $berikut = $titik[($i + 1) % $n];
+        $tengahX = ($titik[$i][0] + $berikut[0]) / 2;
+        $tengahY = ($titik[$i][1] + $berikut[1]) / 2;
+        $d .= ' Q' . $fmt($titik[$i][0]) . ',' . $fmt($titik[$i][1]) . ' ' . $fmt($tengahX) . ',' . $fmt($tengahY);
+    }
+    return $d . ' Z';
 }
 
 // Zona gang versi 4: petak tanah berpenanda warna gang plus papan kayu
@@ -362,8 +405,13 @@ function svg_zona_gang(string $gang, array $zona, int $totalWarga, int $berdiri)
     $tinggiPapan = $lebih > 0 ? 36 : 24;
     $atasPapan = $py - (int) ($tinggiPapan / 2);
 
+    // Sejak versi 4.3 petak zona bukan persegi bergaris tepi, melainkan
+    // gumpalan organik tanpa garis batas: warna gang tetap terbaca dari
+    // isiannya, tapi tepinya mengalir seperti semak lahan lingkungan.
+    $jalurZona = jalur_gumpal_zona($zx, $zy, $zw, $zh, abs(crc32($gang)));
+
     $svg = '<g class="zona-gang"><g transform="scale(' . SKALA_DUNIA . ')">'
-        . '<rect x="' . $zx . '" y="' . $zy . '" width="' . $zw . '" height="' . $zh . '" rx="26" fill="' . $warna . '" fill-opacity="0.10" stroke="' . $warna . '" stroke-opacity="0.38" stroke-width="2"/>'
+        . '<path d="' . $jalurZona . '" fill="' . $warna . '" fill-opacity="0.12"/>'
         . '<rect x="' . ($px - 44) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
         . '<rect x="' . ($px + 40) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
         . '<rect class="zona-papan" x="' . ($px - 66) . '" y="' . $atasPapan . '" width="132" height="' . $tinggiPapan . '" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>';
@@ -383,6 +431,12 @@ function svg_zona_gang(string $gang, array $zona, int $totalWarga, int $berdiri)
 // label nama depan di bawah kakinya. $x dan $y adalah titik kaki avatar
 // dalam koordinat lokal versi 2; grup luar menaruhnya di koordinat dunia.
 // Atribut data-* dibaca popover peta, sama seperti bangunan.
+// Sejak versi 4.3 avatar ikut sistem wara-wiri di peta.php: grup luar
+// adalah pegangan posisi yang digerakkan skrip (data-rumah-x dan
+// data-rumah-y adalah titik berdiri awal dalam koordinat dunia,
+// data-zona nama gang pemiliknya), sedangkan sosok dan labelnya dibungkus
+// grup .warga-bob yang beranimasi CSS naik turun halus (bob diam) dengan
+// tunda dan durasi berbeda per warga supaya desa tidak bergerak serempak.
 function svg_warga(array $warga, float $x, float $y): string
 {
     $warna = warna_atap_gang($warga['gang'] ?? null);
@@ -397,17 +451,25 @@ function svg_warga(array $warga, float $x, float $y): string
     $lebarLabel = (int) round(strlen($pertama) * 6.4) + 12;
     $duniaX = (int) round($x * SKALA_DUNIA);
     $duniaY = (int) round($y * SKALA_DUNIA);
+    // Irama bob per warga dari id-nya: deterministik, tidak serempak.
+    $idWarga = (int) $warga['id'];
+    $tundaBob = number_format(-((($idWarga * 137) % 40) / 10), 1, '.', '');
+    $durasiBob = number_format(3.6 + (($idWarga * 89) % 13) / 10, 1, '.', '');
 
     return '<g class="warga-svg" transform="translate(' . $duniaX . ' ' . $duniaY . ')" tabindex="0" role="button"'
         . ' aria-label="' . svg_teks('Warga ' . $nama) . '"'
         . ' data-jenis="warga"'
         . ' data-nama="' . svg_teks($nama) . '"'
         . ' data-gang="' . svg_teks($warga['gang'] ?? '') . '"'
+        . ' data-zona="' . svg_teks($warga['gang'] ?? '') . '"'
+        . ' data-rumah-x="' . $duniaX . '"'
+        . ' data-rumah-y="' . $duniaY . '"'
         . ' data-nomor="' . svg_teks(nomor_warga((int) $warga['id'])) . '"'
         . ' data-tanggal="' . svg_teks(format_tanggal((string) $warga['created_at'])) . '">'
         . '<title>' . svg_teks($nama) . '</title>'
         . '<g transform="scale(' . SKALA_DUNIA . ')">'
         . '<ellipse cx="0" cy="2" rx="13" ry="3.5" fill="#14532d" opacity="0.18"/>'
+        . '<g class="warga-bob" style="animation-delay:' . $tundaBob . 's;animation-duration:' . $durasiBob . 's">'
         . '<g class="warga-dalam">'
         . '<rect x="-8" y="-13" width="6" height="13" fill="#334155"/>'
         . '<rect x="2" y="-13" width="6" height="13" fill="#334155"/>'
@@ -422,6 +484,7 @@ function svg_warga(array $warga, float $x, float $y): string
         . '<g class="label-warga">'
         . '<rect x="' . (-$lebarLabel / 2) . '" y="7" width="' . $lebarLabel . '" height="14" rx="7" fill="#ffffff" fill-opacity="0.92" stroke="#cbd5e1" stroke-width="0.75"/>'
         . '<text x="0" y="17.5" text-anchor="middle" font-size="10.5" font-weight="600" fill="#334155">' . svg_teks($pertama) . '</text>'
+        . '</g>'
         . '</g>'
         . '</g>'
         . '</g>';

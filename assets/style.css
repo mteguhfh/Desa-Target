@@ -506,8 +506,10 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
     .awan, .bendera-balai, .riak, .bang-uju-dalam, .cincin-baru,
-    .asap-gumpal, .burung, .bendera-uju { animation: none !important; }
+    .asap-gumpal, .burung, .bendera-uju,
+    .warga-bob, .ayun, .ayun-2, .ayun-kecil { animation: none !important; }
     .bangunan-dalam { transition: none; }
+    .label-warga { transition: none; }
 }
 
 /* Peta desa versi 4: zona gang dengan avatar warga yang berdiri di peta,
@@ -537,6 +539,52 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .warga-svg.terpilih .warga-dalam { transform: scale(1.12); }
 .warga-svg.terpilih .warga-dalam { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.95)); }
 .label-warga { pointer-events: none; }
+/* Peta versi 4.3 (desa hidup): bob diam warga, pantulan sapaan saat
+   warga ditap, dan goyangan tajuk pohon. Posisi warga digerakkan skrip
+   pada grup luar .warga-svg; bob dan pantulan hidup di grup dalam
+   .warga-bob (dibungkus PHP di bangunan-svg.php) supaya transform CSS
+   tidak pernah bertabrakan dengan transform posisi dari skrip. Tunda dan
+   durasi bob ditulis sebaris per warga dari id-nya. */
+.warga-bob {
+    animation: warga-bob 4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+@keyframes warga-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2.2px); }
+}
+.warga-svg.meloncat .warga-bob { animation: warga-loncat 0.55s ease; }
+@keyframes warga-loncat {
+    0% { transform: translateY(0); }
+    35% { transform: translateY(-8px) scale(1.05); }
+    65% { transform: translateY(0); }
+    82% { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+}
+.label-warga {
+    transition: transform 0.25s ease;
+    transform-box: fill-box;
+    transform-origin: 50% 0%;
+}
+.warga-svg.labelnaik .label-warga { transform: scale(1.3); }
+.warga-svg.labelnaik .label-warga rect { fill: #fef3c7; }
+.ayun {
+    animation: goyang-pohon 5.5s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+}
+.ayun-2 { animation-duration: 6.8s; animation-delay: -2.4s; }
+.ayun-kecil { animation-duration: 4.6s; animation-delay: -1.2s; }
+@keyframes goyang-pohon {
+    from { transform: rotate(-1.1deg); }
+    to { transform: rotate(1.1deg); }
+}
+.ayun-kecil { animation-name: goyang-semak; }
+@keyframes goyang-semak {
+    from { transform: rotate(-0.7deg); }
+    to { transform: rotate(0.7deg); }
+}
 .karakter-label { pointer-events: none; }
 .chip-prompt {
     position: absolute;
