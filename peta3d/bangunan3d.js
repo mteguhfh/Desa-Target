@@ -24,17 +24,23 @@ import * as THREE from 'three';
 // Paleta material bersama. MeshStandardMaterial flatShading memberi rasa
 // mainan low-poly dan tetap murah di GPU.
 const cacheMaterial = new Map();
+// Registri material jendela menyala: material yang dibuat dengan opsi
+// { jendela: true } tercatat di sini beserta intensitas emisif dasarnya,
+// supaya peta bisa menaikkan cahaya jendela saat malam dari satu tempat.
+export const matJendela = [];
 export function matBangunan(hex, opsi = {}) {
     const kunci = hex + '|' + (opsi.emissive || '') + '|' + (opsi.emissiveIntensity || '');
     if (!cacheMaterial.has(kunci)) {
-        cacheMaterial.set(kunci, new THREE.MeshStandardMaterial({
+        const bahan = new THREE.MeshStandardMaterial({
             color: hex,
             roughness: 0.9,
             metalness: 0,
             flatShading: true,
             emissive: opsi.emissive || 0x000000,
             emissiveIntensity: opsi.emissiveIntensity || 0,
-        }));
+        });
+        if (opsi.jendela) matJendela.push({ bahan, dasar: opsi.emissiveIntensity || 0 });
+        cacheMaterial.set(kunci, bahan);
     }
     return cacheMaterial.get(kunci);
 }
@@ -146,7 +152,7 @@ export function buatBalai() {
     g.add(kotak(160, 8, 30, 0xefe3c2, 0, 6, 132));
     // Jendela depan menyala lembut
     for (const x of [-102, -58, 58, 102]) {
-        g.add(kotak(40, 52, 5, 0xbae6fd, x, 92, 87, { emissive: 0x7dd3fc, emissiveIntensity: 0.5 }));
+        g.add(kotak(40, 52, 5, 0xbae6fd, x, 92, 87, { emissive: 0x7dd3fc, emissiveIntensity: 0.5, jendela: true }));
     }
     // Pot bunga di sisi pintu
     for (const x of [-84, 84]) {
@@ -167,7 +173,7 @@ function rangkaRuko(warnaAtap, { lebar = 168, tinggi = 108, dalam = 128 } = {}) 
     g.add(atap);
     // Pintu dan jendela etalase
     g.add(kotak(44, 68, 5, 0x92400e, -lebar / 4, 46, dalam / 2 + 2));
-    g.add(kotak(64, 56, 5, 0xbae6fd, lebar / 4, 52, dalam / 2 + 2, { emissive: 0x7dd3fc, emissiveIntensity: 0.35 }));
+    g.add(kotak(64, 56, 5, 0xbae6fd, lebar / 4, 52, dalam / 2 + 2, { emissive: 0x7dd3fc, emissiveIntensity: 0.35, jendela: true }));
     return g;
 }
 

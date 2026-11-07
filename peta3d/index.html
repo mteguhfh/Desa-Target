@@ -51,6 +51,13 @@
         max-width: 430px;
     }
     @media (max-width: 900px) { .chip-petunjuk { display: none; } }
+    .chip-waktu {
+        display: inline-flex; align-items: center; white-space: nowrap;
+        background: rgba(255,255,255,0.94); border-radius: 999px;
+        padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: #374151;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
+    }
+    .chip-waktu.malam { background: rgba(30,41,59,0.92); color: #e2e8f0; }
     @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
 
     /* --- Kartu pengantar --- */
@@ -218,6 +225,7 @@
     <a class="pil-nav" href="../ktp.php">Bikin KTP Warga</a>
     <a class="pil-nav sembunyi-kecil" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Instagram</a>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
+    <span class="chip-waktu" id="chipWaktu">&#9728;&#65039; Siang</span>
 </div>
 
 <div class="kartu-intro" id="kartuIntro">
@@ -278,7 +286,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buatBalai, buatBangunan, varianBangunan, teksturPapan } from './bangunan3d.js?v=20261108-3';
+import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } from './bangunan3d.js?v=20261108-4';
 
 // ===========================================================================
 // DATA DESA: cerminan includes/peta-posisi.php peta 2D.
@@ -372,16 +380,27 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 panggung.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-{   // Langit gradasi lembut dari tekstur kanvas vertikal.
+// Langit berupa kubah gradasi raksasa (BackSide) mengelilingi dunia: warna
+// cakrawalanya menyatu dengan kabut, jadi tepi tanah memudar ke kejauhan
+// dan tidak ada lagi kesan lempengan melayang. Tekstur kanvas digambar
+// ulang oleh siklus siang-malam hanya saat warnanya berubah nyata.
+const kubah = (() => {
     const c = document.createElement('canvas'); c.width = 4; c.height = 256;
-    const g = c.getContext('2d');
-    const gr = g.createLinearGradient(0, 0, 0, 256);
-    gr.addColorStop(0, '#7cc7f2'); gr.addColorStop(0.55, '#bae6fd'); gr.addColorStop(1, '#e8f9ee');
-    g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
+    const ctx = c.getContext('2d');
+    const gr = ctx.createLinearGradient(0, 0, 0, 256);
+    gr.addColorStop(0, '#54b6f5'); gr.addColorStop(0.58, '#bae6fd'); gr.addColorStop(1, '#d6f0f7');
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, 4, 256);
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-    scene.background = tex;
-}
-scene.fog = new THREE.Fog(0xcfeefb, 1500, 3400);
+    const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(3900, 24, 14),
+        new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false, depthWrite: false })
+    );
+    mesh.renderOrder = -10;
+    scene.add(mesh);
+    return { kanvas: c, ctx, tex, kunci: '' };
+})();
+scene.background = new THREE.Color(0xd6f0f7);
+scene.fog = new THREE.Fog(0xd6f0f7, 1500, 3400);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 8000);
 const KAMERA_AWAL = new THREE.Vector3(120, 1150, 1460);
@@ -420,6 +439,8 @@ function kotak(w, h, d, bahan, x = 0, y = 0, z = 0) {
 const dunia = new THREE.Group();
 scene.add(dunia);
 const bisaDiklik = [];   // objek yang merespons tap (beserta data popover)
+// Material yang diwarnai ulang siklus siang-malam (diisi blok tanah/dekor).
+let matTanahLuar = null, bahanKepalaLampu = null;
 
 // ---------------------------------------------------------------------------
 // Tanah, zona gang, alun-alun
@@ -429,9 +450,13 @@ const bisaDiklik = [];   // objek yang merespons tap (beserta data popover)
     tanah.rotation.x = -Math.PI / 2;
     tanah.receiveShadow = true;
     dunia.add(tanah);
-    const tanahLuar = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), matStandar(0xa9dd96));
+    // Hamparan luar: jauh lebih besar dari pulau dan LEBIH GELAP dari tanah
+    // desa, membentang sampai kabut menelannya. Tidak ada garis tepi keras.
+    matTanahLuar = matStandar(0x74b45e);
+    const tanahLuar = new THREE.Mesh(new THREE.PlaneGeometry(7600, 7600), matTanahLuar);
     tanahLuar.rotation.x = -Math.PI / 2;
     tanahLuar.position.y = -0.4;
+    tanahLuar.receiveShadow = true;
     dunia.add(tanahLuar);
 }
 function bentukBulat(w, h, r) {
@@ -815,7 +840,8 @@ function jauhDariSemua(hasil, jarak) {
     const titikLampu = [[120, 648], [330, 556], [560, 622], [770, 512], [1005, 420]].map(([x, y]) => KE3(x * SKALA, y * SKALA));
     buatInstansi(new THREE.CylinderGeometry(3.5, 4.5, 66, 7), matStandar(0x475569), titikLampu,
         (p, d) => { d.position.set(p.x, 33, p.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
-    buatInstansi(new THREE.SphereGeometry(8.5, 8, 6), matStandar(0xfef08a, { emissive: 0xfacc15, emissiveIntensity: 0.7 }), titikLampu,
+    bahanKepalaLampu = matStandar(0xfef08a, { emissive: 0xfacc15, emissiveIntensity: 0.7 });
+    buatInstansi(new THREE.SphereGeometry(8.5, 8, 6), bahanKepalaLampu, titikLampu,
         (p, d) => { d.position.set(p.x, 70, p.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
     // Pagar kayu di tepi beberapa zona (garis dari peta 2D, koordinat lokal).
     const bahanPagar = matStandar(0xb45309);
@@ -1238,6 +1264,236 @@ async function muatDataLangsung() {
 }
 muatDataLangsung();
 
+// ===========================================================================
+// LINGKUNGAN: kawanan burung, bintang, dan siklus siang-malam langsung.
+// Fase dihitung dari jam lokal pengunjung; tambahkan ?jam=HH (0-24, boleh
+// pecahan) di alamat untuk memaksa jam tertentu saat meninjau malam.
+// Semua warna dan cahaya diinterpolasi halus dari jangkar waktu di bawah,
+// diperbarui tiap bingkai, tanpa lompatan mendadak.
+// ===========================================================================
+
+// Jangkar penampilan per jam: warna langit atas, cakrawala, kabut, cahaya
+// hemisfer (langit/tanah/intensitas), matahari (warna/intensitas), sudut
+// elevasi matahari dalam derajat, dan faktor malam (0 siang, 1 malam).
+const JANGKAR_WAKTU = [
+    { jam: 0.0,   atas: '#060d24', hor: '#1b2f52', kb: '#16263f', hL: '#33456b', hT: '#1d2b22', hI: 0.30, mW: '#93b8e8', mI: 0.22, el: -32, mlm: 1 },
+    { jam: 4.75,  atas: '#060d24', hor: '#1b2f52', kb: '#16263f', hL: '#33456b', hT: '#1d2b22', hI: 0.30, mW: '#93b8e8', mI: 0.22, el: -18, mlm: 1 },
+    { jam: 6.0,   atas: '#3d6fb4', hor: '#f2b879', kb: '#eec39a', hL: '#bcd6f5', hT: '#5f7a4a', hI: 0.55, mW: '#ffb066', mI: 0.85, el: 4,   mlm: 0.35 },
+    { jam: 7.5,   atas: '#5db4ef', hor: '#cdeffd', kb: '#d6f0f7', hL: '#eaf6ff', hT: '#86c06c', hI: 0.92, mW: '#ffedb8', mI: 1.55, el: 26,  mlm: 0 },
+    { jam: 12.0,  atas: '#54b6f5', hor: '#d8f6fd', kb: '#d6f0f7', hL: '#eaf6ff', hT: '#86c06c', hI: 0.95, mW: '#fff1d6', mI: 1.70, el: 62,  mlm: 0 },
+    { jam: 16.5,  atas: '#5db4ef', hor: '#cdeffd', kb: '#d6f0f7', hL: '#eaf6ff', hT: '#86c06c', hI: 0.92, mW: '#ffe9b0', mI: 1.55, el: 30,  mlm: 0 },
+    { jam: 18.0,  atas: '#46629e', hor: '#ffab5e', kb: '#f0b98a', hL: '#c3cfe8', hT: '#5d7046', hI: 0.58, mW: '#ff9448', mI: 0.80, el: 5,   mlm: 0.40 },
+    { jam: 19.25, atas: '#0a1734', hor: '#2c3a5e', kb: '#1d2c47', hL: '#3d5076', hT: '#22301f', hI: 0.33, mW: '#93b8e8', mI: 0.25, el: -14, mlm: 1 },
+    { jam: 24.0,  atas: '#060d24', hor: '#1b2f52', kb: '#16263f', hL: '#33456b', hT: '#1d2b22', hI: 0.30, mW: '#93b8e8', mI: 0.22, el: -32, mlm: 1 },
+];
+const PW = { atas: new THREE.Color(), hor: new THREE.Color(), kb: new THREE.Color(), hL: new THREE.Color(), hT: new THREE.Color(), mW: new THREE.Color(), hI: 0, mI: 0, el: 0, mlm: 0 };
+const _tmpWarna = new THREE.Color();
+function ambilWarna(tujuan, a, b, t) { tujuan.set(a); _tmpWarna.set(b); tujuan.lerp(_tmpWarna, t); }
+function propertiWaktu(jam) {
+    let a = JANGKAR_WAKTU[0], b = JANGKAR_WAKTU[JANGKAR_WAKTU.length - 1];
+    for (let i = 0; i < JANGKAR_WAKTU.length - 1; i++) {
+        if (jam >= JANGKAR_WAKTU[i].jam && jam <= JANGKAR_WAKTU[i + 1].jam) { a = JANGKAR_WAKTU[i]; b = JANGKAR_WAKTU[i + 1]; break; }
+    }
+    let t = THREE.MathUtils.clamp((jam - a.jam) / Math.max(b.jam - a.jam, 0.0001), 0, 1);
+    t = t * t * (3 - 2 * t);   // smoothstep: transisi tanpa patahan
+    ambilWarna(PW.atas, a.atas, b.atas, t);
+    ambilWarna(PW.hor, a.hor, b.hor, t);
+    ambilWarna(PW.kb, a.kb, b.kb, t);
+    ambilWarna(PW.hL, a.hL, b.hL, t);
+    ambilWarna(PW.hT, a.hT, b.hT, t);
+    ambilWarna(PW.mW, a.mW, b.mW, t);
+    PW.hI = a.hI + (b.hI - a.hI) * t;
+    PW.mI = a.mI + (b.mI - a.mI) * t;
+    PW.el = a.el + (b.el - a.el) * t;
+    PW.mlm = a.mlm + (b.mlm - a.mlm) * t;
+    return PW;
+}
+function namaFase(jam) {
+    if (jam >= 5 && jam < 7) return { teks: 'Subuh', ikon: '\u{1F305}' };
+    if (jam >= 7 && jam < 11) return { teks: 'Pagi', ikon: '\u{1F324}\u{FE0F}' };
+    if (jam >= 11 && jam < 15) return { teks: 'Siang', ikon: '\u{2600}\u{FE0F}' };
+    if (jam >= 15 && jam < 18) return { teks: 'Sore', ikon: '\u{1F324}\u{FE0F}' };
+    if (jam >= 18 && jam < 19.5) return { teks: 'Senja', ikon: '\u{1F307}' };
+    return { teks: 'Malam', ikon: '\u{1F319}' };
+}
+const paramJam = new URLSearchParams(location.search).get('jam');
+const jamPaksaMentah = paramJam === null ? NaN : parseFloat(paramJam);
+const jamPaksa = Number.isFinite(jamPaksaMentah) ? ((jamPaksaMentah % 24) + 24) % 24 : null;
+function jamSekarang() {
+    if (jamPaksa !== null) return jamPaksa;
+    const d = new Date();
+    return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+}
+
+// Bulan: cahaya arah kedua yang mengambil alih saat faktor malam naik.
+const bulan = new THREE.DirectionalLight(0xa9c6f5, 0);
+bulan.position.set(650, 1050, 380);
+scene.add(bulan);
+
+// Bintang: titik-titik di kubah dalam, hanya tampak saat malam.
+const bintang = (() => {
+    const N = 420, posisi = new Float32Array(N * 3), r = mulberry32(777);
+    for (let i = 0; i < N; i++) {
+        const theta = r() * Math.PI * 2, y = 0.16 + r() * 0.82;
+        const mendatar = Math.sqrt(Math.max(0, 1 - y * y)), R = 3600;
+        posisi[i * 3] = Math.cos(theta) * mendatar * R;
+        posisi[i * 3 + 1] = y * R;
+        posisi[i * 3 + 2] = Math.sin(theta) * mendatar * R;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(posisi, 3));
+    const bahan = new THREE.PointsMaterial({ color: 0xdbeafe, size: 4, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+    const titik = new THREE.Points(geo, bahan);
+    titik.visible = false;
+    scene.add(titik);
+    return { titik, bahan };
+})();
+
+// Cahaya lampu jalan: sprite pijar lembut di kepala tiap lampu, menyala
+// hanya saat malam (tanpa PointLight tambahan, jadi tetap murah).
+const grupGlowLampu = new THREE.Group();
+const bahanGlowLampu = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (g && g.createRadialGradient) {
+        const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+        gr.addColorStop(0, 'rgba(255,236,170,0.9)');
+        gr.addColorStop(0.4, 'rgba(254,240,138,0.35)');
+        gr.addColorStop(1, 'rgba(254,240,138,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    }
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false });
+})();
+for (const [lx, ly] of [[120, 648], [330, 556], [560, 622], [770, 512], [1005, 420]]) {
+    const p = KE3(lx * SKALA, ly * SKALA);
+    const pijar = new THREE.Sprite(bahanGlowLampu);
+    pijar.scale.set(52, 52, 1);
+    pijar.position.set(p.x, 70, p.z);
+    grupGlowLampu.add(pijar);
+}
+grupGlowLampu.visible = false;
+dunia.add(grupGlowLampu);
+
+// ---------------------------------------------------------------------------
+// Kawanan burung: padanan 3D burung SVG di peta 2D. Badan kerucut kecil dan
+// dua sayap segitiga yang mengepak dari pivot bahu; satu geometri dan satu
+// material dipakai bersama, yang bergerak hanya transformasi tiap burung.
+// ---------------------------------------------------------------------------
+const grupBurung = new THREE.Group();
+dunia.add(grupBurung);
+const bahanBurung = new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide });
+const geoBadanBurung = new THREE.ConeGeometry(4.5, 20, 6);
+geoBadanBurung.rotateX(Math.PI / 2);
+const geoSayapBurung = (() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 7, 0, 0, -6, 26, 0, -2], 3));
+    geo.computeVertexNormals();
+    return geo;
+})();
+function buatBurung() {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(geoBadanBurung, bahanBurung));
+    const pivotKiri = new THREE.Group(); pivotKiri.position.set(-3, 2, 0); pivotKiri.scale.x = -1;
+    pivotKiri.add(new THREE.Mesh(geoSayapBurung, bahanBurung));
+    const pivotKanan = new THREE.Group(); pivotKanan.position.set(3, 2, 0);
+    pivotKanan.add(new THREE.Mesh(geoSayapBurung, bahanBurung));
+    g.add(pivotKiri, pivotKanan);
+    g.userData.sayap = [pivotKiri, pivotKanan];
+    return g;
+}
+const kawanan = [];
+{
+    const pusat = KE3(FOKUS.x, FOKUS.y);
+    for (let i = 0; i < 7; i++) {
+        const figur = buatBurung();
+        grupBurung.add(figur);
+        kawanan.push({
+            figur,
+            sudut: (i / 7) * Math.PI * 2,
+            radius: 330 + (i % 4) * 85,
+            tinggi: 295 + (i % 3) * 50,
+            laju: 0.055 + (i % 3) * 0.012,
+            faseBob: i * 1.37, faseKepak: i * 0.9,
+            cx: pusat.x + ((i % 3) - 1) * 130,
+            cz: pusat.z + ((i % 2) * 2 - 1) * 90,
+        });
+    }
+}
+const _tujuanBurung = new THREE.Vector3();
+function perbaruiBurung(dt, t) {
+    for (const b of kawanan) {
+        b.sudut += b.laju * dt;
+        const x = b.cx + Math.cos(b.sudut) * b.radius;
+        const z = b.cz + Math.sin(b.sudut) * b.radius;
+        const y = b.tinggi + Math.sin(t * 0.9 + b.faseBob) * 13;
+        b.figur.position.set(x, y, z);
+        _tujuanBurung.set(b.cx + Math.cos(b.sudut + 0.05) * b.radius, y, b.cz + Math.sin(b.sudut + 0.05) * b.radius);
+        b.figur.lookAt(_tujuanBurung);
+        const kepak = Math.sin(t * 9 + b.faseKepak) * 0.75;
+        b.figur.userData.sayap[0].rotation.z = kepak;
+        b.figur.userData.sayap[1].rotation.z = kepak;
+    }
+}
+perbaruiBurung(0, 0);   // tempatkan kawanan walau pengunjung memilih gerak dikurangi
+
+// Gambar ulang gradasi kubah hanya bila warna kuantisasinya berubah.
+function gambarKubah(P) {
+    const kunci = P.atas.getHexString() + '|' + P.hor.getHexString() + '|' + P.kb.getHexString();
+    if (kunci === kubah.kunci) return;
+    kubah.kunci = kunci;
+    const gr = kubah.ctx.createLinearGradient(0, 0, 0, 256);
+    gr.addColorStop(0, '#' + P.atas.getHexString());
+    gr.addColorStop(0.58, '#' + P.hor.getHexString());
+    gr.addColorStop(1, '#' + P.kb.getHexString());
+    kubah.ctx.fillStyle = gr;
+    kubah.ctx.fillRect(0, 0, 4, 256);
+    kubah.tex.needsUpdate = true;
+}
+
+const chipWaktu = document.getElementById('chipWaktu');
+const warnaTanahLuar = new THREE.Color(0x74b45e);
+const warnaAwanPutih = new THREE.Color(0xffffff);
+let bahanAwanRef = null, faseChipTerakhir = '';
+function perbaruiLingkungan() {
+    const j = jamSekarang();
+    const P = propertiWaktu(j);
+    gambarKubah(P);
+    scene.background.copy(P.kb);
+    scene.fog.color.copy(P.kb);
+    scene.fog.near = 1500 + P.mlm * 250;
+    scene.fog.far = 3400 - P.mlm * 500;
+    cahayaHemi.color.copy(P.hL);
+    cahayaHemi.groundColor.copy(P.hT);
+    cahayaHemi.intensity = P.hI;
+    matahari.color.copy(P.mW);
+    matahari.intensity = P.mI;
+    const az = (j - 6) / 12 * Math.PI;
+    matahari.position.set(-Math.cos(az) * 950, Math.max(140, Math.sin(THREE.MathUtils.degToRad(P.el)) * 1300), -520);
+    bulan.intensity = 0.38 * P.mlm;
+    bintang.titik.visible = P.mlm > 0.03;
+    bintang.bahan.opacity = P.mlm * 0.95;
+    if (matTanahLuar) matTanahLuar.color.copy(warnaTanahLuar).lerp(P.kb, 0.55);
+    if (bahanKepalaLampu) bahanKepalaLampu.emissiveIntensity = 0.7 + 1.6 * P.mlm;
+    for (const jd of matJendela) jd.bahan.emissiveIntensity = jd.dasar + (2.1 - jd.dasar) * P.mlm;
+    bahanGlowLampu.opacity = 0.85 * P.mlm;
+    grupGlowLampu.visible = P.mlm > 0.02;
+    grupBurung.visible = P.mlm < 0.75;
+    if (!bahanAwanRef && window.__awan && window.__awan.length) bahanAwanRef = window.__awan[0].children[0].material;
+    if (bahanAwanRef) {
+        bahanAwanRef.color.copy(P.atas).lerp(warnaAwanPutih, 0.78);
+        bahanAwanRef.opacity = 0.92 - P.mlm * 0.5;
+    }
+    const f = namaFase(j);
+    if (f.teks !== faseChipTerakhir) {
+        faseChipTerakhir = f.teks;
+        chipWaktu.textContent = f.ikon + ' ' + f.teks;
+        chipWaktu.classList.toggle('malam', f.teks === 'Malam' || f.teks === 'Senja');
+    }
+}
+const lingkungan = { jamSekarang, namaFase, propertiWaktu, perbaruiLingkungan, perbaruiBurung, kawanan, bintang, grupBurung, grupGlowLampu, bulan, kubah };
+window.__desa.lingkungan = lingkungan;
+
 // ---------------------------------------------------------------------------
 // Putaran utama
 // ---------------------------------------------------------------------------
@@ -1293,8 +1549,10 @@ function putaran() {
             awan.position.x += dt * 7;
             if (awan.position.x > 1350) awan.position.x = -1350;
         }
+        perbaruiBurung(dt, t);
     }
 
+    perbaruiLingkungan();
     renderer.render(scene, camera);
 
     if (!muatSembunyi) {
