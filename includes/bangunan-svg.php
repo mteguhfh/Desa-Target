@@ -276,6 +276,7 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): st
         . ' data-komentar="' . svg_teks($bangunan['komentar'] ?? '') . '"'
         . ' data-tanggal="' . svg_teks(format_tanggal((string) $bangunan['tanggal'])) . '"'
         . ' data-terbaru="' . ($terbaru ? '1' : '0') . '"'
+        . ' data-balai="' . ($varian === 'balai' ? '1' : '0') . '"'
         . ' data-x="' . $x . '" data-y="' . $y . '">'
         . '<title>' . svg_teks($bangunan['nama']) . '</title>'
         . '<g class="bangunan-skala" transform="scale(' . SKALA_DUNIA . ')">'
@@ -302,6 +303,85 @@ function svg_tanah_kosong(array $posisi): string
         . '<rect x="-2" y="-33" width="4" height="31" fill="#92600f"/>'
         . '<rect x="-41" y="-53" width="82" height="21" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>'
         . '<text x="0" y="-38.5" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Tanah Kosong</text>'
+        . '</g>'
+        . '</g>';
+}
+
+// Zona gang versi 4: petak tanah berpenanda warna gang plus papan kayu
+// nama gang di tepi atasnya. Kalau ada warga yang belum kebagian tempat
+// berdiri (grid zona penuh atau batas render tercapai), papan menambah
+// satu baris "+N warga lainnya". Koordinat lokal versi 2, dibungkus grup
+// skala SKALA_DUNIA seperti elemen peta lainnya.
+function svg_zona_gang(string $gang, array $zona, int $totalWarga, int $berdiri): string
+{
+    $warna = warna_atap_gang($gang);
+    [$zx, $zy, $zw, $zh] = $zona['tambak'];
+    [$px, $py] = $zona['papan'];
+    $lebih = $totalWarga - $berdiri;
+    $tinggiPapan = $lebih > 0 ? 36 : 24;
+    $atasPapan = $py - (int) ($tinggiPapan / 2);
+
+    $svg = '<g class="zona-gang"><g transform="scale(' . SKALA_DUNIA . ')">'
+        . '<rect x="' . $zx . '" y="' . $zy . '" width="' . $zw . '" height="' . $zh . '" rx="26" fill="' . $warna . '" fill-opacity="0.10" stroke="' . $warna . '" stroke-opacity="0.38" stroke-width="2"/>'
+        . '<rect x="' . ($px - 44) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
+        . '<rect x="' . ($px + 40) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
+        . '<rect x="' . ($px - 66) . '" y="' . $atasPapan . '" width="132" height="' . $tinggiPapan . '" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>';
+
+    if ($lebih > 0) {
+        $svg .= '<text x="' . $px . '" y="' . ($py - 1) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">' . svg_teks($gang) . '</text>'
+            . '<text x="' . $px . '" y="' . ($py + 12) . '" text-anchor="middle" font-size="9.5" font-weight="600" fill="#b45309">+' . $lebih . ' warga lainnya</text>';
+    } else {
+        $svg .= '<text x="' . $px . '" y="' . ($py + 4) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">' . svg_teks($gang) . '</text>';
+    }
+
+    return $svg . '</g></g>';
+}
+
+// Avatar satu warga yang berdiri di zona gang-nya, versi 4. Gambar orang
+// sederhana dari bentuk dasar: kepala bulat, badan berwarna gang, dan
+// label nama depan di bawah kakinya. $x dan $y adalah titik kaki avatar
+// dalam koordinat lokal versi 2; grup luar menaruhnya di koordinat dunia.
+// Atribut data-* dibaca popover peta, sama seperti bangunan.
+function svg_warga(array $warga, float $x, float $y): string
+{
+    $warna = warna_atap_gang($warga['gang'] ?? null);
+    $nama = (string) $warga['nama'];
+    $kata = preg_split('/\s+/', trim($nama)) ?: [];
+    $pertama = ($kata[0] ?? '') !== '' ? $kata[0] : $nama;
+    if (function_exists('mb_strlen') && mb_strlen($pertama, 'UTF-8') > 10) {
+        $pertama = mb_substr($pertama, 0, 10, 'UTF-8');
+    } elseif (strlen($pertama) > 10) {
+        $pertama = substr($pertama, 0, 10);
+    }
+    $lebarLabel = (int) round(strlen($pertama) * 6.4) + 12;
+    $duniaX = (int) round($x * SKALA_DUNIA);
+    $duniaY = (int) round($y * SKALA_DUNIA);
+
+    return '<g class="warga-svg" transform="translate(' . $duniaX . ' ' . $duniaY . ')" tabindex="0" role="button"'
+        . ' aria-label="' . svg_teks('Warga ' . $nama) . '"'
+        . ' data-jenis="warga"'
+        . ' data-nama="' . svg_teks($nama) . '"'
+        . ' data-gang="' . svg_teks($warga['gang'] ?? '') . '"'
+        . ' data-nomor="' . svg_teks(nomor_warga((int) $warga['id'])) . '"'
+        . ' data-tanggal="' . svg_teks(format_tanggal((string) $warga['created_at'])) . '">'
+        . '<title>' . svg_teks($nama) . '</title>'
+        . '<g transform="scale(' . SKALA_DUNIA . ')">'
+        . '<ellipse cx="0" cy="2" rx="13" ry="3.5" fill="#14532d" opacity="0.18"/>'
+        . '<g class="warga-dalam">'
+        . '<rect x="-8" y="-13" width="6" height="13" fill="#334155"/>'
+        . '<rect x="2" y="-13" width="6" height="13" fill="#334155"/>'
+        . '<path d="M-11,-29 L-16,-17 M11,-29 L16,-17" stroke="' . $warna . '" stroke-width="4.5" stroke-linecap="round" fill="none"/>'
+        . '<rect x="-11" y="-36" width="22" height="25" rx="7" fill="' . $warna . '"/>'
+        . '<rect x="-11" y="-36" width="22" height="6" rx="3" fill="#ffffff" opacity="0.28"/>'
+        . '<circle cx="0" cy="-45" r="9.5" fill="#f6c48a"/>'
+        . '<path d="M-9.5,-45 a9.5,9.5 0 0 1 19,0 Z" fill="#40342a"/>'
+        . '<circle cx="-3.5" cy="-43.5" r="1" fill="#1e293b"/>'
+        . '<circle cx="3.5" cy="-43.5" r="1" fill="#1e293b"/>'
+        . '</g>'
+        . '<g class="label-warga">'
+        . '<rect x="' . (-$lebarLabel / 2) . '" y="7" width="' . $lebarLabel . '" height="14" rx="7" fill="#ffffff" fill-opacity="0.92" stroke="#cbd5e1" stroke-width="0.75"/>'
+        . '<text x="0" y="17.5" text-anchor="middle" font-size="10.5" font-weight="600" fill="#334155">' . svg_teks($pertama) . '</text>'
+        . '</g>'
         . '</g>'
         . '</g>';
 }

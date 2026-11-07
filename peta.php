@@ -2,12 +2,43 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/includes/peta-posisi.php';
 require_once __DIR__ . '/includes/bangunan-svg.php';
+require_once __DIR__ . '/includes/interior-balai.php';
 
 $pdo = db();
 $bangunan = semua_bangunan($pdo);
 $papanGang = papan_gang($pdo);
-$totalKavling = count(POSISI_KAVLING); // Peta interaktif v3: 12 kavling di dunia 2000 x 1333.
+$totalKavling = count(POSISI_KAVLING); // Peta interaktif: 12 kavling di dunia 2000 x 1333.
 $terbaruId = $bangunan !== [] ? (int) $bangunan[count($bangunan) - 1]['id'] : null;
+$bangunanTerbaru = bangunan_terbaru($pdo);
+
+// Warga versi 4: setiap warga terdaftar berdiri sebagai avatar di zona
+// gang-nya. Warga paling awal mendaftar didahulukan; yang dirender di
+// peta dibatasi 80 avatar dan dibatasi lagi oleh kapasitas grid zona.
+// Sisanya dihitung supaya papan zona bisa menulis "+N warga lainnya".
+$semuaWarga = $pdo->query('SELECT * FROM warga ORDER BY id ASC')->fetchAll();
+$totalPerGang = [];
+foreach ($semuaWarga as $w) {
+    $totalPerGang[$w['gang']] = ($totalPerGang[$w['gang']] ?? 0) + 1;
+}
+$wargaPerGang = [];
+$berdiriTotal = 0;
+foreach ($semuaWarga as $w) {
+    $gangWarga = (string) $w['gang'];
+    if (!isset(ZONA_GANG[$gangWarga]) || $berdiriTotal >= 80) {
+        continue;
+    }
+    $zonaWarga = ZONA_GANG[$gangWarga];
+    $indeks = count($wargaPerGang[$gangWarga] ?? []);
+    if ($indeks >= $zonaWarga['kolom'] * $zonaWarga['baris']) {
+        continue;
+    }
+    $wargaPerGang[$gangWarga][] = [
+        'warga' => $w,
+        'x' => $zonaWarga['awal'][0] + ($indeks % $zonaWarga['kolom']) * $zonaWarga['dx'],
+        'y' => $zonaWarga['awal'][1] + intdiv($indeks, $zonaWarga['kolom']) * $zonaWarga['dy'],
+    ];
+    $berdiriTotal++;
+}
 
 // Titik fokus kamera saat halaman dibuka: kavling 0, tempat Balai Desa berdiri.
 $fokusX = POSISI_KAVLING[0][0];
@@ -122,6 +153,12 @@ require __DIR__ . '/includes/header.php';
                     </g>
                 </g>
 
+                <!-- Zona gang versi 4: petak warna dan papan nama tiap gang,
+                     digambar di bawah bangunan supaya tidak menutupi kavling. -->
+                <?php foreach (ZONA_GANG as $gang => $zona): ?>
+                    <?= svg_zona_gang($gang, $zona, $totalPerGang[$gang] ?? 0, count($wargaPerGang[$gang] ?? [])) ?>
+                <?php endforeach; ?>
+
                 <!-- Kavling: bangunan yang sudah berdiri dan tanah kosong -->
                 <?php for ($i = 0; $i < $totalKavling; $i++): ?>
                     <?php if (isset($bangunan[$i])): ?>
@@ -130,6 +167,13 @@ require __DIR__ . '/includes/header.php';
                         <?= svg_tanah_kosong(POSISI_KAVLING[$i]) ?>
                     <?php endif; ?>
                 <?php endfor; ?>
+
+                <!-- Avatar para warga versi 4, berdiri di zona gang masing-masing. -->
+                <?php foreach ($wargaPerGang as $daftarWarga): ?>
+                    <?php foreach ($daftarWarga as $tempat): ?>
+                        <?= svg_warga($tempat['warga'], $tempat['x'], $tempat['y']) ?>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
 
                 <!-- Bang Uju, Kepala Desa, berdiri di samping Balai Desa.
                      Gambarnya memakai potongan transparan dari aset lambaian
@@ -146,15 +190,57 @@ require __DIR__ . '/includes/header.php';
                         <image href="assets/bang-uju-peta.png" x="-66" y="-132" width="132" height="132" preserveAspectRatio="xMidYMax meet"/>
                     </g>
                 </g>
+
+                <!-- Karakter pengunjung versi 4 buat mode Keliling Desa:
+                     pejalan kecil bertopi merah dan beransel, sengaja beda
+                     dari Bang Uju supaya pengunjung tidak mengira dirinya
+                     Kepala Desa. Posisinya digerakkan skrip halaman ini. -->
+                <g id="karakterJalan" hidden>
+                    <ellipse cx="0" cy="3" rx="21" ry="6" fill="#14532d" opacity="0.20"/>
+                    <g id="karakterGoyang">
+                        <g id="karakterBadan">
+                            <rect x="-21" y="-56" width="13" height="24" rx="5" fill="#d97706"/>
+                            <rect x="-21" y="-56" width="13" height="8" rx="4" fill="#b45309"/>
+                            <rect x="-10" y="-16" width="8" height="16" rx="2" fill="#334155"/>
+                            <rect x="3" y="-16" width="8" height="16" rx="2" fill="#334155"/>
+                            <rect x="-19" y="-54" width="7" height="24" rx="3.5" fill="#0f766e"/>
+                            <rect x="12" y="-54" width="7" height="24" rx="3.5" fill="#0f766e"/>
+                            <rect x="-14" y="-58" width="28" height="44" rx="9" fill="#0d9488"/>
+                            <rect x="-14" y="-58" width="28" height="10" rx="5" fill="#0f766e"/>
+                            <circle cx="0" cy="-70" r="13" fill="#f6c48a"/>
+                            <path d="M-13,-72 a13,13 0 0 1 26,0 Z" fill="#dc2626"/>
+                            <rect x="-3" y="-74" width="22" height="5" rx="2.5" fill="#b91c1c"/>
+                        </g>
+                        <g class="karakter-label">
+                            <rect x="-26" y="-112" width="52" height="21" rx="10.5" fill="#ffffff" fill-opacity="0.95" stroke="#cbd5e1"/>
+                            <text x="0" y="-97.5" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Kamu</text>
+                        </g>
+                    </g>
+                </g>
             </svg>
         </div>
 
-        <p class="peta-chip">Geser buat keliling. Tap bangunan atau Bang Uju.</p>
+        <p class="peta-chip">Geser buat keliling. Tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</p>
 
         <div class="peta-kontrol">
+            <button type="button" id="tombolJalan" class="tombol-jalan" aria-pressed="false">Keliling Desa</button>
             <button type="button" id="zoomMasuk" aria-label="Perbesar peta">+</button>
             <button type="button" id="zoomKeluar" aria-label="Perkecil peta">&minus;</button>
             <button type="button" id="zoomReset" aria-label="Kembali ke Balai Desa">&#8982;</button>
+        </div>
+
+        <button type="button" class="chip-prompt" id="chipPrompt" hidden></button>
+
+        <div class="peta-dpad" id="petaDpad" hidden aria-label="Tombol arah buat jalan-jalan">
+            <span></span>
+            <button type="button" data-arah="atas" aria-label="Jalan ke atas">&#9650;</button>
+            <span></span>
+            <button type="button" data-arah="kiri" aria-label="Jalan ke kiri">&#9664;</button>
+            <span></span>
+            <button type="button" data-arah="kanan" aria-label="Jalan ke kanan">&#9654;</button>
+            <span></span>
+            <button type="button" data-arah="bawah" aria-label="Jalan ke bawah">&#9660;</button>
+            <span></span>
         </div>
 
         <div class="peta-popover" id="petaPopover" hidden role="dialog" aria-label="Detail di peta">
@@ -168,12 +254,18 @@ require __DIR__ . '/includes/header.php';
             </p>
             <p class="kartu-komentar" id="popKomentarBaris" hidden>&ldquo;<span id="popKomentar"></span>&rdquo;</p>
             <p class="kartu-meta" id="popPemintaBaris" hidden>Diminta oleh <strong id="popPeminta"></strong></p>
-            <p class="kartu-meta" id="popTanggalBaris" hidden>Berdiri <span id="popTanggal"></span></p>
+            <p class="kartu-meta" id="popNomorBaris" hidden>Warga <strong id="popNomor"></strong></p>
+            <p class="kartu-meta" id="popTanggalBaris" hidden><span id="popTanggalKata">Berdiri</span> <span id="popTanggal"></span></p>
             <p class="pop-info" id="popInfo" hidden></p>
             <p class="pop-tautan" id="popTautanBaris" hidden><a id="popTautan" href="#" target="_blank" rel="noopener"></a></p>
         </div>
+
+        <div class="peta-interior" id="petaInterior" hidden>
+            <?= interior_balai_svg($bangunanTerbaru) ?>
+            <button type="button" class="interior-keluar" id="tombolKeluarInterior">&larr; Keluar ke Peta</button>
+        </div>
     </div>
-    <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Atap bangunan berwarna mengikuti gang pemiliknya.</p>
+    <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Pencet tombol Keliling Desa buat jalan-jalan keliling desa dan masuk Balai Desa. Atap bangunan dan baju warga berwarna mengikuti gang-nya.</p>
 </section>
 
 <section class="seksi">
@@ -256,7 +348,10 @@ require __DIR__ . '/includes/header.php';
     var popKomentar = document.getElementById('popKomentar');
     var popPemintaBaris = document.getElementById('popPemintaBaris');
     var popPeminta = document.getElementById('popPeminta');
+    var popNomorBaris = document.getElementById('popNomorBaris');
+    var popNomor = document.getElementById('popNomor');
     var popTanggalBaris = document.getElementById('popTanggalBaris');
+    var popTanggalKata = document.getElementById('popTanggalKata');
     var popTanggal = document.getElementById('popTanggal');
     var popInfo = document.getElementById('popInfo');
     var popTautanBaris = document.getElementById('popTautanBaris');
@@ -264,7 +359,7 @@ require __DIR__ . '/includes/header.php';
 
     function tutupPopover() {
         popover.hidden = true;
-        var lama = document.querySelectorAll('.bangunan-svg.terpilih, .bang-uju.terpilih');
+        var lama = document.querySelectorAll('.bangunan-svg.terpilih, .bang-uju.terpilih, .warga-svg.terpilih, .hotspot-interior.terpilih');
         for (var i = 0; i < lama.length; i++) {
             lama[i].classList.remove('terpilih');
         }
@@ -276,7 +371,9 @@ require __DIR__ . '/includes/header.php';
 
         var d = el.dataset;
         var kades = d.jenis === 'kades';
-        popLabel.textContent = kades ? 'Kepala Desa' : 'Detail Bangunan';
+        var warga = d.jenis === 'warga';
+        var papan = d.jenis === 'papan';
+        popLabel.textContent = kades ? 'Kepala Desa' : (warga ? 'Warga Desa' : (papan ? 'Pengumuman Desa' : 'Detail Bangunan'));
         popNama.textContent = d.nama || '';
         popGang.textContent = d.gang || '';
         popGang.hidden = kades || !d.gang;
@@ -285,7 +382,10 @@ require __DIR__ . '/includes/header.php';
         popKomentar.textContent = d.komentar || '';
         popKomentarBaris.hidden = !d.komentar;
         popPeminta.textContent = d.peminta || '';
-        popPemintaBaris.hidden = kades || !d.peminta;
+        popPemintaBaris.hidden = !d.peminta;
+        popNomor.textContent = d.nomor || '';
+        popNomorBaris.hidden = !warga;
+        popTanggalKata.textContent = warga ? 'Bergabung' : 'Berdiri';
         popTanggal.textContent = d.tanggal || '';
         popTanggalBaris.hidden = kades || !d.tanggal;
         popInfo.textContent = d.info || '';
@@ -322,7 +422,11 @@ require __DIR__ . '/includes/header.php';
     document.getElementById('popoverTutup').addEventListener('click', tutupPopover);
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            tutupPopover();
+            if (interiorTerbuka) {
+                tutupInterior();
+            } else {
+                tutupPopover();
+            }
         }
     });
 
@@ -333,7 +437,10 @@ require __DIR__ . '/includes/header.php';
     var cubit = null;
 
     viewport.addEventListener('pointerdown', function (e) {
-        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover')) {
+        if (interiorTerbuka) {
+            return;
+        }
+        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover, .peta-dpad, .chip-prompt')) {
             return;
         }
         try {
@@ -344,7 +451,9 @@ require __DIR__ . '/includes/header.php';
         penunjuk[e.pointerId] = { x: e.clientX, y: e.clientY };
         jumlahPenunjuk++;
         if (jumlahPenunjuk === 1) {
-            seret = { x: e.clientX, y: e.clientY, tx: tx, ty: ty, gerak: false, target: e.target };
+            // Di mode Keliling Desa, seretan hanya dibaca sebagai tap:
+            // kamera mengikuti karakter, bukan geseran jari.
+            seret = { x: e.clientX, y: e.clientY, tx: tx, ty: ty, gerak: false, target: e.target, tanpaGeser: jalanAktif };
             viewport.classList.add('menyeret');
         } else if (jumlahPenunjuk === 2) {
             var pts = Object.values(penunjuk);
@@ -384,7 +493,7 @@ require __DIR__ . '/includes/header.php';
                 seret.gerak = true;
                 tutupPopover();
             }
-            if (seret.gerak) {
+            if (seret.gerak && !seret.tanpaGeser) {
                 tx = seret.tx + dx;
                 ty = seret.ty + dy;
                 terapkan();
@@ -406,7 +515,7 @@ require __DIR__ . '/includes/header.php';
             if (seret && !seret.gerak) {
                 // Gerakan pendek tanpa geser berarti tap.
                 var t = seret.target;
-                var el = (t && t.closest) ? t.closest('.bangunan-svg, .bang-uju') : null;
+                var el = (t && t.closest) ? t.closest('.bangunan-svg, .bang-uju, .warga-svg') : null;
                 if (el) {
                     bukaPopover(el);
                 } else {
@@ -441,8 +550,8 @@ require __DIR__ . '/includes/header.php';
         fokusBalai();
     });
 
-    // Papan ketik: Enter atau spasi pada bangunan dan Bang Uju membuka popover.
-    var interaktif = document.querySelectorAll('.bangunan-svg, .bang-uju');
+    // Papan ketik: Enter atau spasi pada bangunan, Bang Uju, dan warga membuka popover.
+    var interaktif = document.querySelectorAll('.bangunan-svg, .bang-uju, .warga-svg');
     for (var i = 0; i < interaktif.length; i++) {
         (function (el) {
             el.addEventListener('keydown', function (e) {
@@ -459,6 +568,241 @@ require __DIR__ . '/includes/header.php';
         terapkan();
         tutupPopover();
     });
+
+    // === Versi 4: mode Keliling Desa dan interior Balai Desa ===
+    var tombolJalan = document.getElementById('tombolJalan');
+    var dpad = document.getElementById('petaDpad');
+    var chipPrompt = document.getElementById('chipPrompt');
+    var karakterEl = document.getElementById('karakterJalan');
+    var karakterGoyang = document.getElementById('karakterGoyang');
+    var karakterBadan = document.getElementById('karakterBadan');
+    var interior = document.getElementById('petaInterior');
+    var gerakDikurangi = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    var jalanAktif = false;
+    var interiorTerbuka = false;
+    var rafId = null;
+    var capWaktu = 0;
+    var hadap = 1;
+    var sedangJalan = false;
+    // Karakter mulai berdiri di alun-alun, tepat di depan Balai Desa.
+    var karakter = { x: FOKUS.x, y: FOKUS.y + 88 };
+    var arahTekan = { atas: false, bawah: false, kiri: false, kanan: false };
+    var promptTarget = null;
+    var promptBalai = false;
+
+    // Rintangan sederhana untuk kaki karakter: kolam (persegi kasar)
+    // dan tapak tiap bangunan yang sudah berdiri.
+    var rintangan = [[1530, 1075, 2010, 1320]];
+    var tapakBangunan = [
+        <?php foreach ($bangunan as $i => $b): ?>
+        [<?= (int) POSISI_KAVLING[$i][0] ?>, <?= (int) POSISI_KAVLING[$i][1] ?>],
+        <?php endforeach; ?>
+    ];
+    for (var tb = 0; tb < tapakBangunan.length; tb++) {
+        rintangan.push([tapakBangunan[tb][0] - 98, tapakBangunan[tb][1] - 120, tapakBangunan[tb][0] + 98, tapakBangunan[tb][1] + 2]);
+    }
+
+    function dalamRintangan(x, y) {
+        for (var i = 0; i < rintangan.length; i++) {
+            var r = rintangan[i];
+            if (x > r[0] && x < r[2] && y > r[1] && y < r[3]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function gambarKarakter(waktu) {
+        var bob = (sedangJalan && !gerakDikurangi) ? Math.sin(waktu / 90) * 3.2 : 0;
+        karakterEl.setAttribute('transform', 'translate(' + karakter.x + ' ' + karakter.y + ')');
+        karakterGoyang.setAttribute('transform', 'translate(0 ' + bob.toFixed(1) + ')');
+        karakterBadan.setAttribute('transform', 'scale(' + hadap + ' 1)');
+    }
+
+    function langkahKarakter(dt) {
+        var vx = (arahTekan.kanan ? 1 : 0) - (arahTekan.kiri ? 1 : 0);
+        var vy = (arahTekan.bawah ? 1 : 0) - (arahTekan.atas ? 1 : 0);
+        sedangJalan = vx !== 0 || vy !== 0;
+        if (!sedangJalan) {
+            return;
+        }
+        var panjang = Math.hypot(vx, vy) || 1;
+        var jarak = 265 * dt;
+        var nx = karakter.x + vx / panjang * jarak;
+        var ny = karakter.y + vy / panjang * jarak;
+        nx = Math.min(1950, Math.max(50, nx));
+        ny = Math.min(1290, Math.max(95, ny));
+        if (!dalamRintangan(nx, karakter.y)) {
+            karakter.x = nx;
+        }
+        if (!dalamRintangan(karakter.x, ny)) {
+            karakter.y = ny;
+        }
+        if (vx < 0) {
+            hadap = -1;
+        } else if (vx > 0) {
+            hadap = 1;
+        }
+    }
+
+    function ikutiKarakter() {
+        var targetTx = viewport.clientWidth / 2 - karakter.x * baseS * k;
+        var targetTy = viewport.clientHeight / 2 - karakter.y * baseS * k;
+        tx += (targetTx - tx) * 0.16;
+        ty += (targetTy - ty) * 0.16;
+        terapkan();
+    }
+
+    function perbaruiPrompt() {
+        var els = document.querySelectorAll('.bangunan-svg');
+        var terbaik = null;
+        var jarakTerbaik = 160;
+        for (var i = 0; i < els.length; i++) {
+            var d = Math.hypot(parseFloat(els[i].dataset.x) - karakter.x, parseFloat(els[i].dataset.y) - karakter.y);
+            if (d < jarakTerbaik) {
+                jarakTerbaik = d;
+                terbaik = els[i];
+            }
+        }
+        if (!terbaik) {
+            promptTarget = null;
+            chipPrompt.hidden = true;
+            return;
+        }
+        promptTarget = terbaik;
+        promptBalai = terbaik.dataset.balai === '1';
+        chipPrompt.textContent = promptBalai ? 'Masuk Balai Desa' : 'Lihat ' + (terbaik.dataset.nama || 'bangunan');
+        chipPrompt.style.left = (tx + karakter.x * baseS * k) + 'px';
+        chipPrompt.style.top = (ty + (karakter.y - 108) * baseS * k) + 'px';
+        chipPrompt.hidden = false;
+    }
+
+    function putaranJalan(waktu) {
+        if (!jalanAktif) {
+            rafId = null;
+            return;
+        }
+        var dt = Math.min(0.05, capWaktu ? (waktu - capWaktu) / 1000 : 0);
+        capWaktu = waktu;
+        if (!interiorTerbuka) {
+            langkahKarakter(dt);
+            gambarKarakter(waktu);
+            ikutiKarakter();
+            perbaruiPrompt();
+        }
+        rafId = requestAnimationFrame(putaranJalan);
+    }
+
+    function aturJalan(aktif) {
+        jalanAktif = aktif;
+        tombolJalan.classList.toggle('aktif', aktif);
+        tombolJalan.setAttribute('aria-pressed', aktif ? 'true' : 'false');
+        tombolJalan.textContent = aktif ? 'Berhenti' : 'Keliling Desa';
+        dpad.hidden = !aktif;
+        karakterEl.hidden = !aktif;
+        viewport.classList.toggle('mode-jalan', aktif);
+        if (aktif) {
+            tutupPopover();
+            gambarKarakter(0);
+            capWaktu = 0;
+            if (!rafId) {
+                rafId = requestAnimationFrame(putaranJalan);
+            }
+        } else {
+            arahTekan = { atas: false, bawah: false, kiri: false, kanan: false };
+            promptTarget = null;
+            chipPrompt.hidden = true;
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+    }
+    tombolJalan.addEventListener('click', function () {
+        aturJalan(!jalanAktif);
+    });
+    chipPrompt.addEventListener('click', function () {
+        if (!promptTarget) {
+            return;
+        }
+        if (promptBalai) {
+            bukaInterior();
+        } else {
+            bukaPopover(promptTarget);
+        }
+    });
+
+    // D-pad di layar: tekan dan tahan untuk berjalan.
+    var tombolDpad = dpad.querySelectorAll('button[data-arah]');
+    for (var td = 0; td < tombolDpad.length; td++) {
+        (function (btn) {
+            btn.addEventListener('pointerdown', function (e) {
+                e.preventDefault();
+                arahTekan[btn.dataset.arah] = true;
+            });
+            var lepas = function () {
+                arahTekan[btn.dataset.arah] = false;
+            };
+            btn.addEventListener('pointerup', lepas);
+            btn.addEventListener('pointerleave', lepas);
+            btn.addEventListener('pointercancel', lepas);
+            btn.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        })(tombolDpad[td]);
+    }
+
+    // Papan ketik buat berjalan: panah dan WASD, E buat memakai prompt.
+    var petaArah = { ArrowUp: 'atas', KeyW: 'atas', ArrowDown: 'bawah', KeyS: 'bawah', ArrowLeft: 'kiri', KeyA: 'kiri', ArrowRight: 'kanan', KeyD: 'kanan' };
+    document.addEventListener('keydown', function (e) {
+        if (!jalanAktif || interiorTerbuka) {
+            return;
+        }
+        if (petaArah[e.code]) {
+            arahTekan[petaArah[e.code]] = true;
+            e.preventDefault();
+        } else if (e.code === 'KeyE' && promptTarget && !chipPrompt.hidden) {
+            chipPrompt.click();
+        }
+    });
+    document.addEventListener('keyup', function (e) {
+        if (petaArah[e.code]) {
+            arahTekan[petaArah[e.code]] = false;
+        }
+    });
+
+    // Interior Balai Desa: tampil menutupi viewport, keadaan kamera dan
+    // posisi karakter tidak berubah, jadi keluar berarti kembali persis
+    // ke tempat semula.
+    function bukaInterior() {
+        interiorTerbuka = true;
+        tutupPopover();
+        chipPrompt.hidden = true;
+        interior.hidden = false;
+    }
+    function tutupInterior() {
+        interiorTerbuka = false;
+        tutupPopover();
+        interior.hidden = true;
+    }
+    document.getElementById('tombolKeluarInterior').addEventListener('click', tutupInterior);
+
+    // Titik interaktif di dalam interior yang membuka popover
+    // (Papan Pengumuman dan Bang Uju; loket dan arsip adalah tautan).
+    var hotspotInterior = interior.querySelectorAll('.hotspot-interior[data-nama]');
+    for (var hi = 0; hi < hotspotInterior.length; hi++) {
+        (function (el) {
+            el.addEventListener('click', function () {
+                bukaPopover(el);
+            });
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    bukaPopover(el);
+                }
+            });
+        })(hotspotInterior[hi]);
+    }
 
     hitungDasar();
     fokusBalai();
