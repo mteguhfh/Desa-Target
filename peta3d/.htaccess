@@ -1,0 +1,3 @@
+# Peta 3D: halaman utamanya index.php (bukan index.html). Dinyatakan tegas
+# supaya Apache dan Plesk tidak mencari index.html yang sudah tidak ada.
+DirectoryIndex index.php
