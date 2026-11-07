@@ -31,6 +31,7 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
 $PAPAN_GANG_SERVER = [];
 $BANGUNAN_SERVER = [];
 $TOTAL_WARGA_SERVER = 0;
+$MISI_SERVER = [];
 $KAVLING_BANGUNAN = [];
 try {
     require_once __DIR__ . '/../db.php';
@@ -38,6 +39,7 @@ try {
     $PAPAN_GANG_SERVER = papan_gang($pdoPanel);
     $BANGUNAN_SERVER = semua_bangunan($pdoPanel);
     $TOTAL_WARGA_SERVER = hitung_warga($pdoPanel);
+    $MISI_SERVER = daftar_misi($pdoPanel);
     // Kavling mengikuti urutan id, sama seperti yang dipakai dunia 3D.
     foreach ($BANGUNAN_SERVER as $i => $b) {
         $KAVLING_BANGUNAN[(int) $b['id']] = $i;
@@ -388,6 +390,7 @@ $panelBangunan = $BANGUNAN_SERVER;
 $panelKavling = $KAVLING_BANGUNAN;
 $panelPapanGang = $PAPAN_GANG_SERVER;
 $panelTotalWarga = $TOTAL_WARGA_SERVER;
+$panelMisi = $MISI_SERVER;
 require __DIR__ . '/../includes/panel-bersayap.php';
 require __DIR__ . '/../includes/tab-bar.php';
 ?>
@@ -441,6 +444,7 @@ require __DIR__ . '/../includes/tab-bar.php';
 <?php require __DIR__ . '/../includes/sakelar-peta-skrip.php'; ?>
 <?php require __DIR__ . '/../includes/tab-bar-skrip.php'; ?>
 <?php require __DIR__ . '/../includes/cari-warga-skrip.php'; ?>
+<?php $awalanMisi = $awalan; require __DIR__ . '/../includes/misi-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
@@ -1171,12 +1175,17 @@ function bangunWarga(daftar) {
         figur.position.copy(KE3(rumah.x, rumah.y));
         const label = labelNama(w.nama, 0.82);
         label.position.y = 92;
+        // Label ikut jarak kamera: saat seluruh desa dilihat dari jauh, label
+        // semua warga akan saling menimpa jadi gumpalan tak terbaca. Label
+        // disembunyikan bila kamera terlalu jauh, lalu muncul lagi saat
+        // pengunjung mendekat. Aturannya di perbaruiLabelWarga().
+        label.userData.labelWarga = true;
         figur.add(label);
         figur.userData.popover = { kicker: 'WARGA DESA', judul: w.nama, lencana: { teks: w.gang, warna: z.css }, kutipan: null, isi: 'Nomor warga ' + w.nomor + '. Warga ' + w.gang + ' yang sedang keliling lingkungan gang-nya.' };
         dunia.add(figur);
         bisaDiklik.push(figur);
         agenWarga.push({
-            figur, dalam: figur.userData.dalam, rect,
+            figur, label, dalam: figur.userData.dalam, rect,
             x: rumah.x, y: rumah.y, rumah: { ...rumah },
             target: null, kecepatan: 26 + acak() * 18,
             tunggu: 1 + i * 1.7 + acak() * 4, fase: acak() * Math.PI * 2,
@@ -1206,12 +1215,23 @@ let spriteUju = null;
     dunia.add(label);
 }
 // Pengunjung "Kamu" untuk mode Keliling Desa.
-const kamu = { x: FOKUS.x, y: FOKUS.y + 88, arah: Math.PI, figur: null };
+//
+// Titik lahir sengaja di depan halaman Balai Desa, BUKAN di dalam tapaknya.
+// Rumus lama (FOKUS.y + 88) jatuh di dalam kotak tapak gedung (566..818),
+// jadi setiap langkah ditolak tabrakanJalan() dan pemain terkunci di tempat
+// walau tombol jalan sudah menyala. y = FOKUS.y + 200 menaruhnya di halaman,
+// beberapa langkah dari pintu supaya chip "Masuk Balai Desa" tetap dekat.
+const kamu = { x: FOKUS.x, y: FOKUS.y + 200, arah: Math.PI, figur: null };
 {
     kamu.figur = buatFigur(0x0d9488, { topi: 0xdc2626 });
     kamu.figur.position.copy(KE3(kamu.x, kamu.y));
     const label = labelNama('Kamu', 0.82);
     label.position.y = 92;
+    // Label ini tidak pernah ditampilkan di mode jalan: kamera sudah berada
+    // di belakang Kamu, jadi nama besar di atas kepala hanya menghalangi
+    // pandangan. Disimpan supaya bisa diatur lagi bila perlu.
+    label.visible = false;
+    kamu.label = label;
     kamu.figur.add(label);
     kamu.figur.visible = false;
     dunia.add(kamu.figur);
@@ -1296,6 +1316,23 @@ function tabrakanJalan(x, y) {
     if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 14) return true;
     return RINTANGAN_JALAN.some(r => x > r.x1 - 14 && x < r.x2 + 14 && y > r.y1 - 14 && y < r.y2 + 14);
 }
+
+// Titik aman terdekat dari (x, y): dipakai sebagai titik lahir mode jalan
+// supaya pemain tidak pernah mulai dari dalam rintangan. Bila sudah aman,
+// titiknya tidak digeser sama sekali.
+function titikJalanAman(x, y) {
+    if (!tabrakanJalan(x, y)) return { x, y };
+    for (let jari = 24; jari <= 400; jari += 24) {
+        // Cincin di sekeliling titik: mulai dari selatan (depan gedung).
+        for (let i = 0; i < 16; i++) {
+            const sudut = Math.PI / 2 + (i * Math.PI * 2) / 16;
+            const nx = x + Math.cos(sudut) * jari;
+            const ny = y + Math.sin(sudut) * jari;
+            if (!tabrakanJalan(nx, ny)) return { x: nx, y: ny };
+        }
+    }
+    return { x, y };
+}
 function aturModeJalan(nyala) {
     modeJalan = nyala;
     tombolJalan.textContent = nyala ? 'Berhenti' : 'Keliling Desa';
@@ -1306,9 +1343,24 @@ function aturModeJalan(nyala) {
     kamu.figur.visible = nyala;
     controls.enabled = !nyala;
     if (nyala) {
+        // Jaga-jaga bila titik lahir (atau posisi terakhir) jatuh di dalam
+        // rintangan karena data desa berubah: pindahkan ke titik aman
+        // terdekat sebelum pemain mencoba berjalan.
+        const aman = titikJalanAman(kamu.x, kamu.y);
+        kamu.x = aman.x;
+        kamu.y = aman.y;
+        // Hadapkan pemain ke Balai Desa supaya langkah pertama terasa
+        // menuju sesuatu, bukan membelakangi desa.
+        const kePusat = Math.atan2(FOKUS.x - kamu.x, FOKUS.y - kamu.y);
+        kamu.arah = kePusat;
         const pos = KE3(kamu.x, kamu.y);
         kamu.figur.position.set(pos.x, 0, pos.z);
-        kamu.figur.rotation.y = Math.PI;
+        kamu.figur.rotation.y = kamu.arah;
+        // Kamera langsung dipasang di belakang bahu. Dulu kamera dibiarkan
+        // meluncur dari posisi orbitnya, dan selama peluncuran itu arah
+        // pandang kamera masih berubah-ubah. Akibatnya W/D mendorong pemain
+        // ke arah yang salah dan terasa seperti "tidak bisa jalan".
+        letakkanKamera(kamu.arah, pos, true);
     } else {
         camera.position.copy(KAMERA_AWAL);
         controls.target.copy(TARGET_AWAL);
@@ -1333,31 +1385,60 @@ dpad.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('pointerleave', off);
     btn.addEventListener('pointercancel', off);
 });
+// Kamera orang ketiga di belakang bahu pemain.
+//   seketika = true  -> dipasang langsung (saat mode jalan baru dinyalakan)
+//   seketika = false -> meluncur lembut mengikuti pemain
+// Peluncuran memakai faktor per detik, bukan per bingkai, supaya di ponsel
+// yang bingkainya jarang tetap terasa responsif.
+function letakkanKamera(arah, pos, seketika) {
+    const belakang = new THREE.Vector3(Math.sin(arah), 0, Math.cos(arah));
+    const tujuan = new THREE.Vector3(pos.x, 0, pos.z).addScaledVector(belakang, -178);
+    tujuan.y = 104;
+    if (seketika) {
+        camera.position.copy(tujuan);
+    } else {
+        const sekarang = performance.now();
+        const dt = Math.min((sekarang - (letakkanKamera.terakhir || sekarang)) / 1000, 0.1);
+        letakkanKamera.terakhir = sekarang;
+        // Sekitar 92% jarak ditempuh dalam seperempat detik.
+        camera.position.lerp(tujuan, 1 - Math.pow(0.0001, dt));
+    }
+    camera.lookAt(pos.x, 46, pos.z);
+}
+
 function perbaruiKamu(dt) {
     const maju = (kunciDitekan['w'] || kunciDitekan['arrowup'] || tombolDitekan['maju'] ? 1 : 0) - (kunciDitekan['s'] || kunciDitekan['arrowdown'] || tombolDitekan['mundur'] ? 1 : 0);
     const samping = (kunciDitekan['d'] || kunciDitekan['arrowright'] || tombolDitekan['kanan'] ? 1 : 0) - (kunciDitekan['a'] || kunciDitekan['arrowleft'] || tombolDitekan['kiri'] ? 1 : 0);
     if (maju || samping) {
-        // Arah gerak relatif terhadap arah pandang kamera, seperti gim 3D umumnya.
-        const depan = new THREE.Vector3();
-        camera.getWorldDirection(depan); depan.y = 0; depan.normalize();
-        const kanan = new THREE.Vector3().crossVectors(depan, new THREE.Vector3(0, 1, 0)).negate();
-        const gerak = depan.multiplyScalar(maju).add(kanan.multiplyScalar(samping)).normalize();
+        // Arah gerak mengikuti arah HADAP pemain, bukan arah pandang kamera.
+        // Keduanya sama saat kamera sudah di belakang bahu, tapi arah hadap
+        // tidak goyang walau kamera masih meluncur.
+        //
+        // Koordinat dunia: x = kamu.x, z = kamu.y. "Maju" berarti menambah
+        // arah hadap pada (x, z), jadi cukup sin/cos dari kamu.arah.
+        const gx = Math.sin(kamu.arah);
+        const gz = Math.cos(kamu.arah);
+        // Serong ke kanan = putar arah hadap 90 derajat.
+        const rx = Math.cos(kamu.arah);
+        const rz = -Math.sin(kamu.arah);
+        let dx = gx * maju + rx * samping;
+        let dz = gz * maju + rz * samping;
+        const panjang = Math.hypot(dx, dz);
+        if (panjang > 0) { dx /= panjang; dz /= panjang; }
         const kecepatan = 135 * dt;
-        const nx = kamu.x + gerak.x * kecepatan;
-        const nz = kamu.y + gerak.z * kecepatan;
+        const nx = kamu.x + dx * kecepatan;
+        const nz = kamu.y + dz * kecepatan;
+        // Gerak per sumbu supaya pemain bisa "menggeser" di sepanjang dinding
+        // alih-alih berhenti total saat menyerempet rintangan.
         if (!tabrakanJalan(nx, kamu.y)) kamu.x = nx;
         if (!tabrakanJalan(kamu.x, nz)) kamu.y = nz;
-        kamu.arah = Math.atan2(gerak.x, gerak.z);
+        // Hadapkan pemain ke arah gerak (kecuali berjalan mundur murni).
+        if (maju >= 0) kamu.arah = Math.atan2(dx, dz);
     }
     kamu.figur.rotation.y = kamu.arah;
     const pos = KE3(kamu.x, kamu.y);
     kamu.figur.position.set(pos.x, 0, pos.z);
-    // Kamera mengikuti dari belakang bahu Kamu.
-    const belakang = new THREE.Vector3(Math.sin(kamu.arah), 0, Math.cos(kamu.arah));
-    const tujuanKamera = new THREE.Vector3(pos.x, 0, pos.z).addScaledVector(belakang, -178);
-    tujuanKamera.y = 104;
-    camera.position.lerp(tujuanKamera, 0.055);
-    camera.lookAt(pos.x, 46, pos.z);
+    letakkanKamera(kamu.arah, pos, false);
     // Kedekatan ke pintu Balai Desa memunculkan chip masuk.
     const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
     chipMasuk.classList.toggle('tampil', dekatPintu);
@@ -1418,6 +1499,42 @@ if (interior3d) {
         });
     });
 }
+
+// ---------------------------------------------------------------------------
+// Keterbacaan label warga.
+//
+// Label nama melayang di atas kepala tiap warga. Saat kamera jauh (melihat
+// seluruh desa), label semua warga bergabung jadi gumpalan yang tidak terbaca
+// dan justru menutupi bangunan. Jadi label hanya ditampilkan saat kamera cukup
+// dekat: makin dekat, makin banyak yang terbaca. Batu uji dibuat longgar
+// supaya di layar ponsel pun tidak terasa "hilang".
+// ---------------------------------------------------------------------------
+const JARAK_LABEL_PENUH = 620;   // lebih dekat dari ini: semua label tampil
+const JARAK_LABEL_MATI = 1500;   // lebih jauh dari ini: semua label disembunyikan
+
+function perbaruiLabelWarga() {
+    // Di mode jalan kamera tidak mengorbit controls.target, jadi jarak acuan
+    // diukur dari pemain. Kalau tetap memakai controls.target, semua label
+    // warga dinilai "jauh" dan hilang padahal pemain berjalan di sebelahnya.
+    const jarak = modeJalan
+        ? camera.position.distanceTo(kamu.figur.position)
+        : camera.position.distanceTo(controls.target);
+    // 0 = semua disembunyikan, 1 = semua tampil.
+    const tampil = 1 - Math.min(1, Math.max(0, (jarak - JARAK_LABEL_PENUH) / (JARAK_LABEL_MATI - JARAK_LABEL_PENUH)));
+    for (const a of agenWarga) {
+        if (!a.label) continue;
+        // Semakin jauh, label memudar; hilang total setelah ambang mati.
+        a.label.visible = tampil > 0.02;
+        if (a.label.visible) {
+            a.label.material.opacity = tampil;
+            // Ukuran bertambah sedikit saat dekat supaya tetap terbaca.
+            const s = 0.95 + 0.25 * tampil;
+            a.label.scale.set(104 * 0.82 * s, 29 * 0.82 * s, 1);
+        }
+    }
+    if (window.__desa) window.__desa.labelTampil = Math.round(tampil * 100) / 100;
+}
+if (window.__desa) window.__desa.perbaruiLabelWarga = perbaruiLabelWarga;
 
 // ---------------------------------------------------------------------------
 // Popover hasil tap, panel Papan Gang, dan tombol UI
@@ -1559,9 +1676,10 @@ function sorotKavling(kavling) {
     // dan kamera mendekat dari arah yang sama seperti pandangan awal.
     const sasaran = new THREE.Vector3(pusat.x, 60, pusat.z);
     const arah = camera.position.clone().sub(controls.target).normalize();
-    const jarak = 420;
+    // Cukup jauh supaya seluruh bangunan muat di layar, termasuk atapnya.
+    const jarak = 640;
     const posTujuan = sasaran.clone().add(arah.multiplyScalar(jarak));
-    posTujuan.y = Math.max(posTujuan.y, sasaran.y + 210);
+    posTujuan.y = Math.max(posTujuan.y, sasaran.y + 330);
 
     if (animasiSorot) cancelAnimationFrame(animasiSorot);
     const t0 = performance.now();
@@ -1901,7 +2019,13 @@ let muatSembunyi = false;
 
 function putaran() {
     requestAnimationFrame(putaran);
-    const dt = Math.min(jam.getDelta(), 0.05);
+    // Batas dt menjaga animasi ambien tetap stabil saat tab kembali dibuka.
+    // Batas 0,05 s (20 fps) dulu juga membatasi KECEPATAN JALAN: di ponsel
+    // yang hanya 15-20 fps, pemain merayap karena waktu yang dipakai selalu
+    // dipotong. Jadi batasnya dilonggarkan ke 0,15 s; animasi ambien sendiri
+    // memakai dtKecil supaya tidak melompat.
+    const dt = Math.min(jam.getDelta(), 0.15);
+    const dtKecil = Math.min(dt, 0.05);
     const t = jam.elapsedTime;
 
     if (modeJalan) {
@@ -1920,11 +2044,11 @@ function putaran() {
         let bergerak = agenWarga.filter(a => a.target && a.tunggu <= 0 && !a.jedaPopover).length;
         for (const agen of agenWarga) {
             if (!agen.target && agen.tunggu <= 0 && bergerak >= 12) agen.tunggu = 0.6;
-            gerakkanAgen(agen, dt);
+            gerakkanAgen(agen, dtKecil);
             terapkanAgen(agen, t);
             if (agen.target) bergerak++;
         }
-        gerakkanAgen(agenUju, dt, true);
+        gerakkanAgen(agenUju, dtKecil, true);
         const posU = KE3(agenUju.x, agenUju.y);
         spriteUju.position.set(posU.x, 84 + Math.sin(t * 2.2) * 2.5, posU.z);
         if (labelUju) labelUju.position.set(posU.x, 196 + Math.sin(t * 2.2) * 2.5, posU.z);
@@ -1940,13 +2064,14 @@ function putaran() {
         }
         if (bahanAir) bahanAir.opacity = 0.87 + Math.sin(t * 1.4) * 0.05;
         for (const awan of window.__awan) {
-            awan.position.x += dt * 7;
+            awan.position.x += dtKecil * 7;
             if (awan.position.x > 1350) awan.position.x = -1350;
         }
-        perbaruiBurung(dt, t);
+        perbaruiBurung(dtKecil, t);
     }
 
     perbaruiLingkungan();
+    perbaruiLabelWarga();
     renderer.render(scene, camera);
 
     if (!muatSembunyi) {

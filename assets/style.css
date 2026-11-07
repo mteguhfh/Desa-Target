@@ -1259,3 +1259,39 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
     .cincin-sorot { animation: none; }
 }
+
+/* --- Misi harian di panel (Tahap 3) ------------------------------------- */
+.daftar-misi { list-style: none; margin: 0 0 14px; padding: 0; }
+.misi-baris {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+    padding: 11px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.misi-tanda {
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    border: 2px solid var(--garis);
+    background: var(--putih);
+    color: var(--putih);
+    font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+}
+.misi-baris.selesai .misi-tanda { background: var(--hijau); border-color: var(--hijau); }
+.misi-teks { display: flex; flex-direction: column; gap: 3px; }
+.misi-judul { font-weight: 700; font-size: 14.5px; color: var(--teks); }
+.misi-baris.selesai .misi-judul { color: var(--teks-lembut); text-decoration: line-through; text-decoration-thickness: 1px; }
+.misi-keterangan { font-size: 13px; line-height: 1.5; color: var(--teks-lembut); }
+.misi-status {
+    flex: none;
+    font-size: 12px; font-weight: 700;
+    color: var(--teks-lembut);
+    background: #f1f5f9;
+    border-radius: 999px;
+    padding: 3px 9px;
+    margin-top: 1px;
+}
+.misi-baris.selesai .misi-status { color: #047857; background: #d1fae5; }

@@ -1497,8 +1497,11 @@ $panelKavling = [];
 foreach ($bangunan as $i => $b) { $panelKavling[(int) $b['id']] = $i; }
 $panelPapanGang = $papanGang;
 $panelTotalWarga = $totalWarga ?? hitung_warga($pdo);
+$panelMisi = daftar_misi($pdo);
 require __DIR__ . '/panel-bersayap.php';
 require __DIR__ . '/tab-bar.php';
 require __DIR__ . '/tab-bar-skrip.php';
 require __DIR__ . '/cari-warga-skrip.php';
+$awalanMisi = '';
+require __DIR__ . '/misi-skrip.php';
 ?>

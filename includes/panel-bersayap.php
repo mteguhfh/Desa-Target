@@ -11,6 +11,7 @@
 //   $panelTotalWarga    jumlah warga terdaftar
 //   $panelKavling       peta id bangunan -> indeks kavling, supaya ketukan
 //                       pada daftar bisa menyorot bangunan yang tepat
+//   $panelMisi          hasil daftar_misi(), tampil di tab Misi
 //
 // Semua isi berasal dari data yang sudah dibaca halaman. Tidak ada permintaan
 // jaringan tambahan, jadi panel tidak bisa menampilkan angka yang berbeda
@@ -27,6 +28,7 @@ $panelBangunan = $panelBangunan ?? [];
 $panelPapanGang = $panelPapanGang ?? [];
 $panelTotalWarga = $panelTotalWarga ?? 0;
 $panelKavling = $panelKavling ?? []; // id bangunan -> indeks kavling
+$panelMisi = $panelMisi ?? [];
 
 $jumlahTerbanyak = 0;
 foreach ($panelPapanGang as $barisPapan) {
@@ -55,12 +57,24 @@ foreach ($panelPapanGang as $barisPapan) {
         </div>
 
         <div class="panel-isi" data-isi="misi" hidden>
-            <p class="panel-deskripsi">Misi harian desa belum dibuka. Untuk sekarang, satu misi yang selalu ada:</p>
-            <div class="kartu-misi">
-                <h3>Usulkan usaha impianmu</h3>
-                <p>Komentar usaha yang paling banyak disukai hari ini dibangun Bang Uju besok pagi. Buka Instagram, tulis usahamu, minta temanmu menyukai komentarnya.</p>
-                <a class="tombol-panel-utama" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Buka Instagram</a>
-            </div>
+            <?php $ringkasMisi = ringkasan_misi($panelMisi); ?>
+            <p class="panel-deskripsi">
+                <strong id="misiRingkasan"><?= (int) $ringkasMisi['selesai'] ?> dari <?= (int) $ringkasMisi['total'] ?></strong> misi hari ini sudah selesai.
+                Misi dihitung dari yang benar-benar terjadi di desa, bukan dari tombol yang bisa diklik bebas.
+            </p>
+            <ul class="daftar-misi" id="daftarMisi">
+                <?php foreach ($panelMisi as $m): ?>
+                    <li class="misi-baris<?= $m['selesai'] ? ' selesai' : '' ?>" data-kode="<?= e($m['kode']) ?>">
+                        <span class="misi-tanda" aria-hidden="true"><?= $m['selesai'] ? '&#10003;' : '' ?></span>
+                        <span class="misi-teks">
+                            <span class="misi-judul"><?= e($m['judul']) ?></span>
+                            <span class="misi-keterangan"><?= e($m['keterangan']) ?></span>
+                        </span>
+                        <span class="misi-status"><?= $m['selesai'] ? 'Selesai' : 'Belum' ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <a class="tombol-panel-utama" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Buka Instagram</a>
         </div>
 
         <div class="panel-isi" data-isi="papan-gang" hidden>

@@ -40,6 +40,39 @@ function db(): PDO
         )"
     );
 
+    // Misi harian. Satu baris per (kode misi, tanggal), jadi menandai misi
+    // selesai untuk hari ini tidak menghapus riwayat kemarin. Kodenya dipakai
+    // di kode PHP, judulnya dibaca dari tabel ini supaya bisa diubah tanpa
+    // mengubah program.
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS misi (
+            kode TEXT PRIMARY KEY,
+            judul TEXT NOT NULL,
+            keterangan TEXT NOT NULL,
+            urutan INTEGER NOT NULL DEFAULT 0
+        )"
+    );
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS misi_selesai (
+            kode TEXT NOT NULL,
+            tanggal TEXT NOT NULL,
+            PRIMARY KEY (kode, tanggal)
+        )"
+    );
+    $daftarMisi = [
+        ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
+        ['dukung-teman', 'Dukung komentar warga lain', 'Sukai komentar warga lain yang idenya bagus. Like terbanyak besok pagi dibangun jadi bangunan.', 2],
+        ['bikin-ktp', 'Tinggalkan namamu di desa', 'Bikin KTP Warga supaya namamu berdiri di peta sebagai warga resmi Desa Target.', 3],
+        ['keliling-desa', 'Keliling desa sekali', 'Buka peta desa, tekan Keliling Desa, dan jalankan Kamu sampai melihat Balai Desa dari dekat.', 4],
+    ];
+    $stmtMisi = $pdo->prepare(
+        'INSERT INTO misi (kode, judul, keterangan, urutan) VALUES (?, ?, ?, ?)
+         ON CONFLICT(kode) DO UPDATE SET judul = excluded.judul, keterangan = excluded.keterangan, urutan = excluded.urutan'
+    );
+    foreach ($daftarMisi as $m) {
+        $stmtMisi->execute($m);
+    }
+
     // Seed bangunan pertama: Balai Desa, kantornya Bang Uju.
     $jumlahBangunan = (int) $pdo->query('SELECT COUNT(*) FROM bangunan')->fetchColumn();
     if ($jumlahBangunan === 0) {
@@ -173,4 +206,80 @@ function cari_warga_berdasarkan(PDO $pdo, string $kunci, int $batas = 40): array
     $stmt->execute();
 
     return $stmt->fetchAll();
+}
+
+// ---------------------------------------------------------------------------
+// Misi harian
+//
+// Misi dihitung dari tindakan nyata yang sudah tercatat di basis data, bukan
+// dari tombol "selesai" yang bisa diklik bebas. Aturannya:
+//   usulkan-usaha : sudah ada bangunan yang berdiri hari ini
+//   dukung-teman  : ada minimal dua bangunan (berarti ada ide yang didukung
+//                   lalu dipilih untuk dibangun)
+//   bikin-ktp     : ada warga terdaftar
+//   keliling-desa : ditandai bila pengunjung menekan Keliling Desa hari ini
+//
+// Baris di misi_selesai hanya dipakai untuk yang tidak bisa dibuktikan dari
+// data (keliling-desa). Sisanya dihitung langsung, jadi tidak ada angka
+// yang bisa berbeda dengan kenyataan desa.
+// ---------------------------------------------------------------------------
+
+function daftar_misi(PDO $pdo): array
+{
+    $hariIni = date('Y-m-d');
+
+    $bangunanHariIni = (int) $pdo->query(
+        'SELECT COUNT(*) FROM bangunan WHERE tanggal = ' . $pdo->quote($hariIni)
+    )->fetchColumn();
+    $totalBangunan = hitung_bangunan($pdo);
+    $totalWarga = hitung_warga($pdo);
+
+    $buktiOtomatis = [
+        'usulkan-usaha' => $bangunanHariIni > 0,
+        'dukung-teman' => $totalBangunan >= 2,
+        'bikin-ktp' => $totalWarga > 0,
+    ];
+
+    $ditandai = [];
+    $stmt = $pdo->prepare('SELECT kode FROM misi_selesai WHERE tanggal = ?');
+    $stmt->execute([$hariIni]);
+    foreach ($stmt->fetchAll() as $r) {
+        $ditandai[$r['kode']] = true;
+    }
+
+    $hasil = [];
+    foreach ($pdo->query('SELECT kode, judul, keterangan, urutan FROM misi ORDER BY urutan ASC') as $m) {
+        $selesai = $buktiOtomatis[$m['kode']] ?? isset($ditandai[$m['kode']]);
+        $hasil[] = [
+            'kode' => $m['kode'],
+            'judul' => $m['judul'],
+            'keterangan' => $m['keterangan'],
+            'selesai' => $selesai,
+        ];
+    }
+    return $hasil;
+}
+
+// Tandai satu misi selesai hari ini. Hanya boleh untuk kode yang memang ada.
+function tandai_misi(PDO $pdo, string $kode): bool
+{
+    $ada = $pdo->prepare('SELECT 1 FROM misi WHERE kode = ?');
+    $ada->execute([$kode]);
+    if ($ada->fetchColumn() === false) {
+        return false;
+    }
+    $stmt = $pdo->prepare('INSERT INTO misi_selesai (kode, tanggal) VALUES (?, ?) ON CONFLICT(kode, tanggal) DO NOTHING');
+    $stmt->execute([$kode, date('Y-m-d')]);
+    return true;
+}
+
+function ringkasan_misi(array $daftar): array
+{
+    $selesai = 0;
+    foreach ($daftar as $m) {
+        if ($m['selesai']) {
+            $selesai++;
+        }
+    }
+    return ['selesai' => $selesai, 'total' => count($daftar)];
 }

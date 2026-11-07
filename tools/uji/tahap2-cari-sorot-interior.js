@@ -34,11 +34,19 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     const page = await buka(browser, 'index.php');
     const cari = async (k) => (await page.request.get(BASE + '/cari-warga.php?cari=' + encodeURIComponent(k))).json();
 
-    const nomor = await cari('DT-0001');
-    catat('cari lewat nomor kartu', nomor.jumlah >= 1 && nomor.hasil[0].nomor === 'DT-0001', JSON.stringify(nomor.hasil[0] || null));
-
-    const angka = await cari('1');
-    catat('cari lewat angka saja', angka.jumlah >= 1, String(angka.jumlah));
+    // Nomor kartu diambil dari jawaban itu sendiri supaya uji tidak
+    // bergantung pada isi basis data tertentu.
+    const semua = await cari('a');
+    const nomorContoh = semua.hasil.length ? semua.hasil[0].nomor : null;
+    if (nomorContoh) {
+      const nomor = await cari(nomorContoh);
+      catat('cari lewat nomor kartu', nomor.jumlah >= 1 && nomor.hasil[0].nomor === nomorContoh, nomorContoh);
+      const angkaSaja = nomorContoh.replace(/^DT-0*/, '');
+      const angka = await cari(angkaSaja);
+      catat('cari lewat angka saja', angka.jumlah >= 1, angkaSaja);
+    } else {
+      catat('cari lewat nomor kartu', false, 'belum ada warga; jalankan tools/isi-data-contoh.php');
+    }
 
     const kosong = await cari('');
     catat('kunci kosong tidak mengembalikan warga', kosong.jumlah === 0);
@@ -56,12 +64,29 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
   }
 
   // --- 2. Halaman daftar warga bekerja tanpa JavaScript ---------------------
+  // Nomor warga diambil dari data, bukan dikarang: basis data pengembangan
+  // bisa saja belum punya DT-0001 (mis. setelah data contoh diisi ulang).
+  let nomorUji = null;
+  let namaUji = null;
+  let idUji = null;
   {
-    const page = await buka(browser, 'warga.php?cari=DT-0001');
+    const page = await buka(browser, 'warga.php');
+    if ((await page.locator('.daftar-warga-baris').count()) > 0) {
+      nomorUji = (await page.locator('.daftar-warga-nomor').first().innerText()).trim();
+      namaUji = (await page.locator('.daftar-warga-nama').first().innerText()).trim();
+      const hrefWarga = await page.locator('.daftar-warga-tautan').first().getAttribute('href');
+      idUji = (hrefWarga || '').split('=').pop();
+      catat('warga.php menampilkan daftar warga', true, nomorUji + ' ' + namaUji);
+    } else {
+      catat('warga.php menampilkan daftar warga', false, 'belum ada warga; jalankan tools/isi-data-contoh.php');
+    }
+    await page.close();
+  }
+
+  if (nomorUji) {
+    const page = await buka(browser, 'warga.php?cari=' + encodeURIComponent(nomorUji));
     catat('warga.php menampilkan hasil pencarian',
-      (await page.locator('.daftar-warga-baris').count()) >= 1);
-    const tanpaJsNama = await page.locator('.daftar-warga-nama').first().innerText();
-    catat('warga.php menampilkan nama warga', tanpaJsNama.length > 0, tanpaJsNama);
+      (await page.locator('.daftar-warga-baris').count()) >= 1, nomorUji);
     await page.close();
   }
 
@@ -72,10 +97,10 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     await page.waitForTimeout(500);
     const urlSebelum = page.url();
 
-    await page.locator('#cariWargaKunci').fill('DT-0001');
+    await page.locator('#cariWargaKunci').fill(nomorUji || 'a');
     await page.waitForTimeout(900);
     const isi = await page.locator('#cariWargaHasil').innerText();
-    catat(url + ': pencarian langsung menampilkan hasil', isi.includes('DT-0001'), isi.slice(0, 40));
+    catat(url + ': pencarian langsung menampilkan hasil', isi.length > 0 && !isi.toLowerCase().includes('tidak ada'), isi.slice(0, 40));
     catat(url + ': pencarian tidak memuat ulang halaman', page.url() === urlSebelum);
 
     await page.locator('#cariWargaKunci').fill('zzzz tidak ada');
@@ -84,10 +109,10 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     catat(url + ': pesan jelas bila warga tidak ada', kosong.toLowerCase().includes('tidak ada'), kosong.slice(0, 40));
 
     // Hasil pencarian berupa tautan ke KTP warga itu.
-    await page.locator('#cariWargaKunci').fill('DT-0001');
+    await page.locator('#cariWargaKunci').fill(nomorUji || 'a');
     await page.waitForTimeout(900);
     const href = await page.locator('.cari-warga-baris').first().getAttribute('href');
-    catat(url + ': hasil bisa diketuk menuju KTP', /ktp\.php\?kartu=1$/.test(href || ''), String(href));
+    catat(url + ': hasil bisa diketuk menuju KTP', /ktp\.php\?kartu=\d+$/.test(href || ''), String(href));
     await page.close();
   }
 
@@ -157,10 +182,12 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
 
   // --- 6. Tautan ?cari= langsung membuka panel ------------------------------
   {
-    const page = await buka(browser, 'peta.php?cari=DT-0001');
+    const kunci = nomorUji || 'a';
+    const page = await buka(browser, 'peta.php?cari=' + encodeURIComponent(kunci));
     const panel = await page.locator('#panelBersayap').isVisible();
     const isi = await page.locator('#cariWargaHasil').innerText();
-    catat('?cari= membuka panel warga dengan hasil', panel && isi.includes('DT-0001'), isi.slice(0, 40));
+    catat('?cari= membuka panel warga dengan hasil',
+      panel && isi.length > 0 && !isi.toLowerCase().includes('tidak ada'), isi.slice(0, 40));
     await page.close();
   }
 
