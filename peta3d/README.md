@@ -5,7 +5,7 @@ Peta Desa Target sebagai dunia 3D low-poly sungguhan memakai Three.js
 tata letak desa, data, maupun aturan mainnya.
 
 Sejak tahap 2, peta ini membaca data produksi sungguhan: saat halaman
-dibuka, `index.html` memanggil endpoint `data-desa.php` di folder ini,
+dibuka, `index.php` memanggil endpoint `data-desa.php` di folder ini,
 yang membaca basis data SQLite situs induk lewat `../db.php` (warga,
 bangunan, dan papan gang). Bila endpoint tidak bisa dibaca (halaman
 dibuka mandiri di luar situs, atau basis data galat), peta jatuh ke
@@ -16,16 +16,16 @@ data langsung dari balai desa.
 ## Cara menjalankan
 
 Di dalam situs (cara produksi): folder ini tinggal disajikan sebagai
-bagian dari docroot Desa Target, lalu buka `peta3d/index.html` dari
+bagian dari docroot Desa Target, lalu buka `peta3d/index.php` dari
 domain situs. Endpoint PHP-nya butuh server PHP, sama seperti situs
 induknya.
 
 Mandiri (buat menilai visual saja): sajikan folder ini dengan server
-statis apa pun, lalu buka `index.html`:
+statis apa pun, lalu buka `index.php`:
 
 ```bash
 python3 -m http.server 8811
-# buka http://localhost:8811/index.html (mode data contoh)
+# buka http://localhost:8811/index.php (mode data contoh)
 ```
 
 Membuka berkas langsung lewat `file://` tidak bisa, karena modul ES dan
@@ -34,7 +34,7 @@ di `vendor/` (importmap menunjuk ke sana, tidak ada lagi CDN). Aset
 lokal lain adalah gambar maskot resmi `assets/bang-uju-peta.png`,
 disalin dari repo Desa Target.
 
-Halaman pendamping `templates.html` memamerkan kelima template bangunan
+Halaman pendamping `templates.php` memamerkan kelima template bangunan
 prosedural dalam satu barisan, sebagai bukti jalur template untuk
 bangunan hasil komentar.
 
@@ -42,10 +42,10 @@ bangunan hasil komentar.
 
 | Berkas | Isi |
 | --- | --- |
-| `index.html` | Peta 3D lengkap: dunia, kamera orbit, mode Keliling Desa, warga wara-wiri, patroli Bang Uju, panel Papan Gang, popover. Memuat data dari `data-desa.php`, jatuh ke data contoh bila gagal. |
+| `index.php` | Peta 3D lengkap: dunia, kamera orbit, mode Keliling Desa, warga wara-wiri, patroli Bang Uju, panel Papan Gang, popover. Memuat data dari `data-desa.php`, jatuh ke data contoh bila gagal. |
 | `data-desa.php` | Endpoint JSON hanya-baca: warga (nomor, nama, gang), bangunan (kavling = indeks urutan id, nama, gang, komentar, dari, tanggal), dan papan gang, dari basis data situs induk. |
 | `bangunan3d.js` | Pabrik bangunan prosedural bersama: `buatBalai`, `buatKopi`, `buatBengkel`, `buatBakery`, `buatSalon`, `buatRuko`, plus pemilih `varianBangunan(nama)` dan `buatBangunan(nama, warnaAtap)`. |
-| `templates.html` | Galeri kelima template bangunan. |
+| `templates.php` | Galeri kelima template bangunan. |
 | `vendor/` | Three.js r160 yang di-host sendiri: `three.module.js` dan `addons/controls/OrbitControls.js`. |
 | `assets/bang-uju-peta.png` | Sprite Bang Uju (billboard) untuk patroli alun-alun. |
 
@@ -113,7 +113,7 @@ satuan dunia yang sama (2000 x 1333):
   222 draw call dan 39.253 segitiga untuk seluruh desa termasuk
   bayangan dimatikan; angka render WebGL sungguhan bisa sedikit berbeda
   karena pass bayangan menggambar ulang sebagian objek. Buka
-  `index.html?stats` untuk melihat angka langsung di peramban.
+  `index.php?stats` untuk melihat angka langsung di peramban.
 
 ## Daftar stub dan batas jujur
 

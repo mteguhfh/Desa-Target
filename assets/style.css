@@ -934,3 +934,50 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     .ktp-data div { grid-template-columns: 1fr; gap: 0; }
 }
 
+
+/* --- Sakelar tampilan peta 3D / 2D (ADR-0001) ---
+   Satu komponen, dipakai di peta 3D maupun peta 2D. Ditempatkan mengapung
+   di sudut supaya tidak memakan ruang peta yang sudah penuh tombol. */
+.sakelar-peta {
+    position: fixed;
+    left: 12px;
+    bottom: 12px; /* sudut kiri bawah: kosong di mode 3D maupun 2D */
+    z-index: 30;
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+}
+.sakelar-opsi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font: 800 13px/1 system-ui, sans-serif;
+    letter-spacing: 0.3px;
+    color: var(--teks-lembut);
+    text-decoration: none;
+    transition: background 160ms ease, color 160ms ease;
+}
+.sakelar-opsi:hover { background: var(--biru-pucat); color: var(--biru-gelap); }
+.sakelar-opsi.aktif {
+    background: var(--biru);
+    color: var(--putih);
+}
+/* Fokus keyboard harus selalu kelihatan: ini kontrol utama perpindahan mode. */
+.sakelar-opsi:focus-visible {
+    outline: 3px solid var(--biru-gelap);
+    outline-offset: 2px;
+}
+@media (max-width: 700px) {
+    /* Di ponsel sudut kiri bawah dipakai D-pad, jadi sakelar naik. */
+    .sakelar-peta { bottom: auto; top: 62px; left: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sakelar-opsi { transition: none; }
+}

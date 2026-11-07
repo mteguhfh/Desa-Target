@@ -1,5 +1,5 @@
 <?php
-// Endpoint data desa untuk Peta Desa 3D (peta3d/index.html).
+// Endpoint data desa untuk Peta Desa 3D (peta3d/index.php).
 //
 // Membaca basis data SQLite produksi lewat db.php situs induk (folder
 // peta3d berada di dalam docroot, jadi jalur relatif ../ benar), lalu

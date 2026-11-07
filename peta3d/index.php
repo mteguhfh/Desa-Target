@@ -1,3 +1,30 @@
+<?php
+// Peta Desa 3D.
+//
+// Berkas ini bisa dijalankan dari dua tempat:
+//   - /peta3d/          langsung, untuk meninjau peta 3D sendiri
+//   - /peta.php         sebagai pintu masuk peta (mode default, ADR-0001),
+//                       lewat require di peta.php dengan $dariAkar = true
+//
+// Dua variabel di bawah menyesuaikan alamat aset dan tautan menurut tempat
+// berkas ini dijalankan: $awalan untuk tautan ke halaman situs, $folder3d
+// untuk tautan ke berkas di dalam peta3d/.
+$dariAkar = $dariAkar ?? false;
+$awalan = $dariAkar ? '' : '../';
+$folder3d = $dariAkar ? 'peta3d/' : './';
+
+// Berkas ini sengaja PHP, bukan HTML statis, supaya penanda versi modul
+// bangunan3d.js dihitung dari waktu ubah berkasnya (filemtime). Setiap
+// deploy yang mengubah bangunan3d.js otomatis mengganti URL-nya, jadi
+// peramban tidak lagi menyajikan modul lama dari cache.
+$versiBangunan3d = (int) (@filemtime(__DIR__ . '/bangunan3d.js') ?: 1);
+$versiStyle = (int) (@filemtime(__DIR__ . '/../assets/style.css') ?: 1);
+// Import map wajib berisi alamat URL yang eksplisit (diawali ./ atau /),
+// bukan jalur relatif polos: "peta3d/vendor/..." ditolak browser sebagai
+// bare specifier. Dipakai untuk importmap dan modul bangunan3d.js.
+$akarUrl = $dariAkar ? './' : '../';
+$folder3dUrl = $dariAkar ? './peta3d/' : './';
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -206,23 +233,74 @@
         transition: opacity 0.4s ease;
     }
     .muat.hilang { opacity: 0; pointer-events: none; }
+
+    /* --- Sakelar tampilan peta 3D / 2D (ADR-0001) ---
+       Halaman 3D memakai stylesheet sendiri di dalam berkas ini (sengaja,
+       supaya tetap hidup kalau style.css situs induk gagal dimuat), jadi
+       gaya sakelar ditulis di sini juga. Warna mengikuti merek situs. */
+    .sakelar-peta {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        z-index: 40;
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 999px;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+    }
+    .sakelar-opsi {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font: 800 13px/1 system-ui, sans-serif;
+        letter-spacing: 0.3px;
+        color: #64748b;
+        text-decoration: none;
+        transition: background 160ms ease, color 160ms ease;
+    }
+    .sakelar-opsi:hover { background: #eff6ff; color: #1d4ed8; }
+    .sakelar-opsi.aktif { background: #2563eb; color: #fff; }
+    .sakelar-opsi:focus-visible {
+        outline: 3px solid #1d4ed8;
+        outline-offset: 2px;
+    }
+    /* Di layar sempit sudut kiri bawah dipakai D-pad, jadi sakelar naik. */
+    @media (max-width: 700px) {
+        .sakelar-peta { bottom: auto; top: 62px; left: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .sakelar-opsi { transition: none; }
+    }
 </style>
 <script type="importmap">
 {
     "imports": {
-        "three": "./vendor/three.module.js",
-        "three/addons/": "./vendor/addons/"
+        "three": "<?= $folder3dUrl ?>vendor/three.module.js",
+        "three/addons/": "<?= $folder3dUrl ?>vendor/addons/"
     }
 }
 </script>
 </head>
-<body>
+<body<?= $dariAkar ? ' data-pintu-peta="1"' : '' ?>>
 <div id="panggung" aria-label="Peta Desa Target tiga dimensi"></div>
+
+<?php
+// Sakelar 3D/2D (ADR-0001). Ditempatkan di dalam bilah atas supaya tetap
+// terlihat dan terjangkau saat dunia 3D memenuhi layar.
+$modePeta = '3d';
+require __DIR__ . '/../includes/sakelar-peta.php';
+?>
 
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
-    <a class="pil-nav sembunyi-kecil" href="../index.php">Beranda</a>
-    <a class="pil-nav" href="../ktp.php">Bikin KTP Warga</a>
+    <a class="pil-nav sembunyi-kecil" href="<?= $awalan ?>index.php">Beranda</a>
+    <a class="pil-nav" href="<?= $awalan ?>ktp.php">Bikin KTP Warga</a>
     <a class="pil-nav sembunyi-kecil" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Instagram</a>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
     <span class="chip-waktu" id="chipWaktu">&#9728;&#65039; Siang</span>
@@ -232,7 +310,7 @@
     <button type="button" class="tombol-tutup" id="introTutup" aria-label="Tutup pengantar">&times;</button>
     <h1>Peta Desa Target</h1>
     <p>Setiap bangunan di peta ini lahir dari komentar warga di Instagram. Komentar paling banyak disukai hari ini, besok paginya sudah berdiri di sini. Masih banyak tanah kosong, desa ini menunggu usulan usahamu.</p>
-    <p class="catatan" id="catatanData">Ini prototipe peta 3D (v5) dengan data contoh. Belum terhubung ke basis data desa.</p>
+    <p class="catatan" id="catatanData">Sedang memuat data desa dari balai desa…</p>
 </div>
 
 <div class="kontrol">
@@ -251,7 +329,7 @@
     </div>
     <p class="deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
     <div id="isiPapanGang"></div>
-    <p class="gabung"><a href="../ktp.php">Gabung gang-mu</a></p>
+    <p class="gabung"><a href="<?= $awalan ?>ktp.php">Gabung gang-mu</a></p>
 </aside>
 
 <div class="popover" id="popover">
@@ -276,17 +354,19 @@
     <div class="kotak">
         <h2>Peta 3D tidak bisa dibuka</h2>
         <p>Browser kamu tidak mendukung WebGL, jadi desa tiga dimensinya tidak bisa digambar. Tenang, peta desa versi 2D tetap bisa dipakai seperti biasa.</p>
-        <p><a href="../peta.php">Buka Peta Desa 2D</a></p>
+        <p><a href="<?= $awalan ?>peta2d.php">Buka Peta Desa 2D</a></p>
     </div>
 </div>
 
 <div id="stats"></div>
 <div class="muat" id="layarMuat">Membangun desa 3D...</div>
 
+<?php require __DIR__ . '/../includes/sakelar-peta-skrip.php'; ?>
+
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } from './bangunan3d.js?v=20261108-4';
+import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } from '<?= $folder3dUrl ?>bangunan3d.js?v=<?= $versiBangunan3d ?>';
 
 // ===========================================================================
 // DATA DESA: cerminan includes/peta-posisi.php peta 2D.
@@ -1130,8 +1210,9 @@ function perbaruiKamu(dt) {
     chipMasuk.classList.toggle('tampil', dekatPintu);
 }
 chipMasuk.addEventListener('click', () => {
-    // Masuk ke halaman Balai Desa situs induk.
-    window.location.href = '../peta.php#interior-balai';
+    // Interior Balai Desa hanya ada di peta 2D, jadi tombol ini membawa
+    // pengunjung ke sana lalu memilih mode 2D secara sengaja.
+    window.location.href = '<?= $awalan ?>peta2d.php?tetap=1#interior-balai';
 });
 
 // ---------------------------------------------------------------------------
@@ -1249,7 +1330,7 @@ window.__desa = { renderer, scene, camera, controls, aturModeJalan, kamu, agenWa
 async function muatDataLangsung() {
     let data = null;
     try {
-        const respons = await fetch('data-desa.php', { headers: { 'Accept': 'application/json' } });
+        const respons = await fetch('<?= $folder3d ?>data-desa.php', { headers: { 'Accept': 'application/json' } });
         if (respons.ok) data = await respons.json();
     } catch (e) { /* abaikan: cadangan data contoh tetap dipakai */ }
     if (!data || data.galat || !Array.isArray(data.warga) || !Array.isArray(data.bangunan) || !Array.isArray(data.papanGang)) return;

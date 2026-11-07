@@ -1,3 +1,8 @@
+<?php
+// Galeri template bangunan 3D. Sama seperti index.php: berkas ini PHP supaya
+// penanda versi bangunan3d.js dihitung otomatis dari filemtime.
+$versiBangunan3d = (int) (@filemtime(__DIR__ . '/bangunan3d.js') ?: 1);
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -33,7 +38,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buatBalai, buatKopi, buatBengkel, buatBakery, buatSalon, buatRuko, varianBangunan } from './bangunan3d.js?v=20261108-4';
+import { buatBalai, buatKopi, buatBengkel, buatBakery, buatSalon, buatRuko, varianBangunan } from './bangunan3d.js?v=<?= $versiBangunan3d ?>';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
