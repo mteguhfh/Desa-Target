@@ -1,10 +1,18 @@
 <?php
-// Tab bar bawah: Desa · Misi · Papan Gang · Aku.
+// Tab bar bawah: Desa · Warga · Gang · Aku.
+//
+// Di halaman peta, tab "Desa" diganti tombol "Bangunan" yang membuka daftar
+// bangunan di panel: mengetuk salah satunya menyorot bangunan itu di dunia.
+// Di luar peta, "Desa" tetap beranda. Perilaku ini diatur halaman pemanggil
+// lewat $tabDesaPanel.
 //
 // Penanda tab aktif dibaca dari $tabAktif yang diatur halaman pemanggil.
 // Bila tidak diatur, tidak ada tab yang disorot. Tab "Desa" dan "Aku" adalah
-// tautan biasa (beranda dan KTP); "Misi" dan "Papan Gang" membuka panel di
+// tautan biasa (beranda dan KTP); "Warga" dan "Gang" membuka panel di
 // halaman ini lewat data-panel, supaya dunia 3D tidak hilang saat diketuk.
+// Pencarian warga lebih berguna daripada daftar misi yang belum ada, jadi
+// slot Misi dipakai untuk Warga. Misi tetap ada sebagai isi panel tersembunyi
+// sampai fiturnya dibuat (lihat replica/rencana-kerja.md Tahap 3).
 //
 // Variabel yang dipakai:
 //   $tabAktif   id tab yang disorot: desa | misi | gang | aku
@@ -22,10 +30,13 @@ if (!function_exists('e')) {
 
 $tabAktif = $tabAktif ?? '';
 $tabAwalan = $tabAwalan ?? '';
+$tabDesaPanel = $tabDesaPanel ?? false;
 $daftarTab = [
-    ['id' => 'desa', 'ikon' => '&#127968;', 'teks' => 'Desa', 'href' => $tabAwalan . 'index.php'],
-    ['id' => 'misi', 'ikon' => '&#127919;', 'teks' => 'Misi', 'panel' => 'misi'],
-    ['id' => 'gang', 'ikon' => '&#128200;', 'teks' => 'Papan Gang', 'panel' => 'papan-gang'],
+    $tabDesaPanel
+        ? ['id' => 'bangunan', 'ikon' => '&#127970;', 'teks' => 'Bangunan', 'panel' => 'bangunan']
+        : ['id' => 'desa', 'ikon' => '&#127968;', 'teks' => 'Desa', 'href' => $tabAwalan . 'index.php'],
+    ['id' => 'warga', 'ikon' => '&#128269;', 'teks' => 'Warga', 'panel' => 'warga'],
+    ['id' => 'gang', 'ikon' => '&#128200;', 'teks' => 'Gang', 'panel' => 'papan-gang'],
     ['id' => 'aku', 'ikon' => '&#129470;', 'teks' => 'Aku', 'href' => $tabAwalan . 'ktp.php'],
 ];
 ?>

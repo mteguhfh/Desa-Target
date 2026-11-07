@@ -88,12 +88,12 @@ function tumpang(a, b) {
       await page.waitForTimeout(600);
       catat(label + ': ketuk tab yang sama menutup panel', await page.locator('#panelBersayap').isHidden());
 
-      // Tab Misi berganti isi tanpa memuat ulang halaman.
+      // Tab Warga berganti isi tanpa memuat ulang halaman.
       const urlSebelum = page.url();
-      await page.locator('.tab-item[data-panel="misi"]').click();
+      await page.locator('.tab-item[data-panel="warga"]').click();
       await page.waitForTimeout(600);
       const judul = await page.locator('#panelBersayapJudul').innerText();
-      catat(label + ': tab Misi menampilkan isi misi', judul.toLowerCase().includes('misi'), judul);
+      catat(label + ': tab Warga menampilkan pencarian', judul.toLowerCase().includes('cari'), judul);
       catat(label + ': tidak ada muat ulang halaman', page.url() === urlSebelum);
 
       // Esc menutup panel.
@@ -114,9 +114,11 @@ function tumpang(a, b) {
   // Tab Desa dan Aku adalah tautan biasa menuju halaman yang benar.
   for (const ukuran of [UKURAN[0], UKURAN[2]]) {
     const page = await bukaPeta(browser, 'peta.php', ukuran);
-    const hrefDesa = await page.locator('#tabBar a.tab-item').first().getAttribute('href');
+    // Di halaman peta, slot "Desa" dipakai tombol Bangunan, jadi tautan yang
+    // tersisa di tab bar adalah Aku.
+    catat('tab Bangunan tersedia di peta (' + ukuran.width + 'px)',
+      (await page.locator('#tabBar .tab-item[data-panel="bangunan"]').count()) === 1);
     const hrefAku = await page.locator('#tabBar a.tab-item').last().getAttribute('href');
-    catat('tautan tab Desa benar (' + ukuran.width + 'px)', hrefDesa === 'index.php', String(hrefDesa));
     catat('tautan tab Aku benar (' + ukuran.width + 'px)', hrefAku === 'ktp.php', String(hrefAku));
     await page.close();
   }

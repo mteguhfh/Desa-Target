@@ -384,7 +384,7 @@
                 <!-- Kavling: bangunan yang sudah berdiri dan tanah kosong -->
                 <?php for ($i = 0; $i < $totalKavling; $i++): ?>
                     <?php if (isset($bangunan[$i])): ?>
-                        <?= svg_bangunan($bangunan[$i], POSISI_KAVLING[$i], (int) $bangunan[$i]['id'] === $terbaruId) ?>
+                        <?= svg_bangunan($bangunan[$i], POSISI_KAVLING[$i], (int) $bangunan[$i]['id'] === $terbaruId, $i) ?>
                     <?php else: ?>
                         <?= svg_tanah_kosong(POSISI_KAVLING[$i]) ?>
                     <?php endif; ?>
@@ -1491,10 +1491,14 @@
 // Tab bar dan panel bersayap (sama seperti di peta 3D).
 $tabAktif = '';
 $tabAwalan = '';
+$tabDesaPanel = true;
 $panelBangunan = $bangunan;
+$panelKavling = [];
+foreach ($bangunan as $i => $b) { $panelKavling[(int) $b['id']] = $i; }
 $panelPapanGang = $papanGang;
 $panelTotalWarga = $totalWarga ?? hitung_warga($pdo);
 require __DIR__ . '/panel-bersayap.php';
 require __DIR__ . '/tab-bar.php';
 require __DIR__ . '/tab-bar-skrip.php';
+require __DIR__ . '/cari-warga-skrip.php';
 ?>

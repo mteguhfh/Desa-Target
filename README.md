@@ -94,6 +94,16 @@ ini dipakai peta 3D maupun 2D: `includes/tab-bar.php`,
 `assets/style.css`; `peta3d/index.php` memuat stylesheet itu khusus untuk
 komponen ini dan tetap memakai gaya dunianya sendiri.
 
+Mencari warga tidak pernah memuat ulang halaman saat dilakukan dari peta:
+panel Warga memanggil `cari-warga.php` (hanya membaca) dan menulis hasilnya ke
+panel. Halaman `warga.php` menyediakan jalur yang sama untuk pengunjung tanpa
+JavaScript dan untuk tautan langsung. Keduanya memakai
+`cari_warga_berdasarkan()` di `db.php`, jadi hasilnya tidak mungkin berbeda.
+
+Interior Balai Desa tampil di dalam peta 3D (`peta3d/interior-balai.php`)
+memakai `interior_balai_svg()` yang sama dengan peta 2D. Pengunjung tidak lagi
+dilempar ke mode 2D saat masuk balai.
+
 Uji perilaku peta di peramban ada di `tools/uji/` (Playwright). Lihat `tools/uji/README.md`.
 
 ## Cara loop hariannya bekerja

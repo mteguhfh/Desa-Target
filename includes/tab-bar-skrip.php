@@ -25,6 +25,7 @@
     var tabTerakhir = null;
 
     var JUDUL = {
+        'warga': 'Cari Warga',
         'misi': 'Misi Desa',
         'papan-gang': 'Papan Gang',
         'bangunan': 'Bangunan Desa',

@@ -933,5 +933,50 @@
 
     hitungDasar();
     lihatSeluruhDesa();
+
+    // --- Sorot bangunan dari daftar di panel (tab Bangunan).
+    // Mengetuk nama bangunan di panel menggulir dan memperbesar peta ke
+    // bangunan itu, lalu membuka kartu detailnya. Dipakai bersama dunia 3D.
+    var cincinSorot = null;
+    function sorotKavling(kavling) {
+        var semuaBangunan = document.querySelectorAll('.bangunan-svg');
+        var tujuan = null;
+        for (var i = 0; i < semuaBangunan.length; i++) {
+            if (Number(semuaBangunan[i].dataset.kavling) === kavling) { tujuan = semuaBangunan[i]; break; }
+        }
+        if (!tujuan) return false;
+
+        // Kamera dunia: pusatkan pada bangunan lalu perbesar.
+        var bx = parseFloat(tujuan.dataset.x);
+        var by = parseFloat(tujuan.dataset.y);
+        k = Math.min(K_MAX, Math.max(kMin, 1.6));
+        tx = viewport.clientWidth / 2 - bx * baseS * k;
+        ty = viewport.clientHeight / 2 - by * baseS * k;
+        terapkan();
+
+        if (cincinSorot) cincinSorot.remove();
+        cincinSorot = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        cincinSorot.setAttribute('class', 'cincin-sorot');
+        cincinSorot.setAttribute('cx', bx);
+        cincinSorot.setAttribute('cy', by + 6);
+        cincinSorot.setAttribute('rx', 70);
+        cincinSorot.setAttribute('ry', 26);
+        var lapis = document.querySelector('#petaDunia .bangunan');
+        (lapis || document.querySelector('#petaDunia')).appendChild(cincinSorot);
+
+        bukaPopover(tujuan);
+        document.querySelectorAll('.daftar-bangunan-tombol').forEach(function (b) {
+            b.classList.toggle('aktif', Number(b.getAttribute('data-kavling')) === kavling);
+        });
+        return true;
+    }
+    document.addEventListener('click', function (e) {
+        var tombol = e.target.closest ? e.target.closest('.daftar-bangunan-tombol') : null;
+        if (!tombol) return;
+        var kavling = tombol.getAttribute('data-kavling');
+        if (kavling === '') return;
+        sorotKavling(Number(kavling));
+    });
+    window.__peta2d = { sorotKavling: sorotKavling };
 })();
 </script>

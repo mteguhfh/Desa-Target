@@ -31,12 +31,17 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
 $PAPAN_GANG_SERVER = [];
 $BANGUNAN_SERVER = [];
 $TOTAL_WARGA_SERVER = 0;
+$KAVLING_BANGUNAN = [];
 try {
     require_once __DIR__ . '/../db.php';
     $pdoPanel = db();
     $PAPAN_GANG_SERVER = papan_gang($pdoPanel);
     $BANGUNAN_SERVER = semua_bangunan($pdoPanel);
     $TOTAL_WARGA_SERVER = hitung_warga($pdoPanel);
+    // Kavling mengikuti urutan id, sama seperti yang dipakai dunia 3D.
+    foreach ($BANGUNAN_SERVER as $i => $b) {
+        $KAVLING_BANGUNAN[(int) $b['id']] = $i;
+    }
 } catch (Throwable $e) {
     // biarkan kosong
 }
@@ -249,6 +254,37 @@ try {
     }
     .webgl-gagal a { color: #2563eb; font-weight: 700; }
 
+    /* --- Interior Balai Desa (Tahap 2) ---
+       Lapisan penuh di atas kanvas 3D. Isi ruangannya sama dengan interior
+       peta 2D (interior_balai_svg dipakai bersama), jadi yang diatur di sini
+       hanya bingkai dan tombol keluarnya. */
+    .interior-3d {
+        position: fixed; inset: 0; z-index: 68;
+        background: #fdf3e3;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .interior-3d[hidden] { display: none; }
+    .interior-3d-bingkai {
+        position: relative;
+        width: min(1200px, 100vw);
+        aspect-ratio: 1200 / 750;
+        max-height: 100dvh;
+        overflow: hidden;
+        border-radius: 0;
+    }
+    .interior-3d-bingkai .interior-svg { display: block; width: 100%; height: 100%; }
+    .interior-3d-keluar {
+        position: absolute; top: 14px; left: 14px;
+        z-index: 2;
+        border: none; cursor: pointer;
+        border-radius: 999px; padding: 11px 18px;
+        background: #ffffff; color: #1e3a8a;
+        font: 700 14px system-ui, sans-serif;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.25);
+    }
+    .interior-3d-keluar:hover { background: #eff6ff; }
+    /* Hotspot interior dipakai bersama dengan peta 2D; gayanya ada di
+       assets/style.css yang dimuat halaman ini. */
     #stats {
         position: fixed; left: 12px; bottom: 78px; z-index: 40; display: none;
         background: rgba(17,24,39,0.85); color: #a7f3d0; border-radius: 10px;
@@ -347,7 +383,9 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 // saat pengunjung berpindah isi: panel membuka di bawah, bukan halaman baru.
 $tabAktif = '';
 $tabAwalan = $awalan;
+$tabDesaPanel = true;
 $panelBangunan = $BANGUNAN_SERVER;
+$panelKavling = $KAVLING_BANGUNAN;
 $panelPapanGang = $PAPAN_GANG_SERVER;
 $panelTotalWarga = $TOTAL_WARGA_SERVER;
 require __DIR__ . '/../includes/panel-bersayap.php';
@@ -395,11 +433,14 @@ require __DIR__ . '/../includes/tab-bar.php';
     </div>
 </div>
 
+<?php require __DIR__ . '/interior-balai.php'; ?>
+
 <div id="stats"></div>
 <div class="muat" id="layarMuat">Membangun desa 3D...</div>
 
 <?php require __DIR__ . '/../includes/sakelar-peta-skrip.php'; ?>
 <?php require __DIR__ . '/../includes/tab-bar-skrip.php'; ?>
+<?php require __DIR__ . '/../includes/cari-warga-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
@@ -874,6 +915,7 @@ function bangunBangunan(daftar) {
             kutipan: b.komentar ? '“' + b.komentar + '”' : null,
             isi: (b.dari ? 'Diminta oleh ' + b.dari + '.' : '') + (b.tanggal ? ' Berdiri ' + b.tanggal + '.' : ''),
         };
+        model.userData.kavling = k;
         model.traverse(o => { o.userData.popover = popover; });
         grupBangunan.add(model);
         klikBangunan.push(model);
@@ -1320,11 +1362,62 @@ function perbaruiKamu(dt) {
     const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
     chipMasuk.classList.toggle('tampil', dekatPintu);
 }
-chipMasuk.addEventListener('click', () => {
-    // Interior Balai Desa hanya ada di peta 2D, jadi tombol ini membawa
-    // pengunjung ke sana lalu memilih mode 2D secara sengaja.
-    window.location.href = '<?= $awalan ?>peta2d.php?tetap=1#interior-balai';
-});
+// ---------------------------------------------------------------------------
+// Interior Balai Desa langsung di dalam peta 3D.
+//
+// Sebelumnya tombol "Masuk Balai Desa" membuang pengunjung ke peta 2D. Sekarang
+// ruangannya tampil sebagai lapisan di atas kanvas: kamera, posisi Kamu, dan
+// pilihan mode tidak berubah, jadi keluar berarti kembali persis ke tempat
+// semula. Isi ruangan sama dengan peta 2D karena memakai interior_balai_svg().
+// ---------------------------------------------------------------------------
+const interior3d = document.getElementById('interior3d');
+let interiorTerbuka3d = false;
+
+function bukaInterior3d() {
+    if (!interior3d) return;
+    interiorTerbuka3d = true;
+    aturModeJalan(false);
+    tutupPopover();
+    interior3d.hidden = false;
+    const keluar = document.getElementById('tombolKeluarInterior3d');
+    if (keluar) keluar.focus();
+}
+function tutupInterior3d() {
+    if (!interior3d) return;
+    interiorTerbuka3d = false;
+    interior3d.hidden = true;
+    // Fokus kembali ke tombol yang membuka ruangan.
+    if (chipMasuk) chipMasuk.focus();
+}
+chipMasuk.addEventListener('click', bukaInterior3d);
+
+document.getElementById('tombolKeluarInterior3d')?.addEventListener('click', tutupInterior3d);
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && interiorTerbuka3d) {
+        e.stopPropagation();
+        tutupInterior3d();
+    }
+}, true);
+
+// Hotspot di dalam interior: yang membuka kartu (Papan Pengumuman, Bang Uju)
+// memakai popover yang sama dengan dunia; yang berupa tautan dibiarkan.
+if (interior3d) {
+    interior3d.querySelectorAll('.hotspot-interior[data-nama]').forEach((el) => {
+        const buka = () => {
+            bukaPopover({
+                kicker: el.dataset.jenis === 'kades' ? 'KEPALA DESA' : 'PENGUMUMAN DESA',
+                judul: el.dataset.nama || '',
+                lencana: null,
+                kutipan: el.dataset.komentar ? '“' + el.dataset.komentar + '”' : null,
+                isi: el.dataset.info || '',
+            }, null, window.innerWidth / 2 - 150, window.innerHeight / 2 - 60);
+        };
+        el.addEventListener('click', buka);
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); buka(); }
+        });
+    });
+}
 
 // ---------------------------------------------------------------------------
 // Popover hasil tap, panel Papan Gang, dan tombol UI
@@ -1415,6 +1508,103 @@ document.getElementById('tombolLayarPenuh').addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen().catch(() => {});
 });
+
+// ---------------------------------------------------------------------------
+// Sorot bangunan dari daftar di panel.
+//
+// Mengetuk nama bangunan di tab Bangunan harus terasa seperti "bawa saya ke
+// sana": kamera terbang ke bangunan itu, sebuah cincin menyala di bawahnya,
+// dan kartu detailnya terbuka. Tujuannya menjawab pertanyaan "yang mana?"
+// tanpa pengunjung harus mencari sendiri di antara 12 kavling.
+// ---------------------------------------------------------------------------
+let cincinSorot = null;
+let animasiSorot = null;
+
+function buatCincinSorot() {
+    if (cincinSorot) return cincinSorot;
+    // Cincin tipis di alas, bukan piringan besar: tujuannya menunjuk bangunan,
+    // bukan menutupinya.
+    const geo = new THREE.RingGeometry(100, 112, 48);
+    const mat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false,
+    });
+    cincinSorot = new THREE.Mesh(geo, mat);
+    cincinSorot.rotation.x = -Math.PI / 2;
+    cincinSorot.visible = false;
+    dunia.add(cincinSorot);
+    return cincinSorot;
+}
+
+function bangunDariKavling(kavling) {
+    return klikBangunan.find(m => m.userData.kavling === kavling) || null;
+}
+
+function sorotKavling(kavling) {
+    if (!Number.isInteger(kavling) || kavling < 0 || kavling >= POSISI_KAVLING.length) return false;
+    const model = bangunDariKavling(kavling);
+    if (!model) return false;
+
+    if (modeJalan) aturModeJalan(false);
+
+    const [x, y] = POSISI_KAVLING[kavling];
+    const pusat = KE3(x, y);
+
+    // Cincin menyala di alas bangunan.
+    const cincin = buatCincinSorot();
+    cincin.position.set(pusat.x, 0.6, pusat.z);
+    cincin.material.opacity = 0.8;
+    cincin.visible = true;
+
+    // Terbang ke sana: sasaran digeser sedikit ke atas supaya atap ikut terlihat,
+    // dan kamera mendekat dari arah yang sama seperti pandangan awal.
+    const sasaran = new THREE.Vector3(pusat.x, 60, pusat.z);
+    const arah = camera.position.clone().sub(controls.target).normalize();
+    const jarak = 420;
+    const posTujuan = sasaran.clone().add(arah.multiplyScalar(jarak));
+    posTujuan.y = Math.max(posTujuan.y, sasaran.y + 210);
+
+    if (animasiSorot) cancelAnimationFrame(animasiSorot);
+    const t0 = performance.now();
+    const posAwal = camera.position.clone();
+    const targetAwal = controls.target.clone();
+    const durasi = 650;
+
+    function langkah(sekarang) {
+        const t = Math.min(1, (sekarang - t0) / durasi);
+        // Kurva halus: cepat di awal, lembut saat berhenti.
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        camera.position.lerpVectors(posAwal, posTujuan, e);
+        controls.target.lerpVectors(targetAwal, sasaran, e);
+        controls.update();
+        if (t < 1) {
+            animasiSorot = requestAnimationFrame(langkah);
+        } else {
+            animasiSorot = null;
+            controls.update();
+        }
+    }
+    animasiSorot = requestAnimationFrame(langkah);
+
+    // Kartu detail bangunannya, ditempatkan di tengah atas layar.
+    const data = model.userData.popover;
+    if (data) bukaPopover(data, model, window.innerWidth / 2 - 150, window.innerHeight * 0.55);
+
+    // Tandai tombol yang aktif di daftar.
+    document.querySelectorAll('.daftar-bangunan-tombol').forEach((b) => {
+        b.classList.toggle('aktif', Number(b.getAttribute('data-kavling')) === kavling);
+    });
+    if (window.__desa) window.__desa.kavlingDisorot = kavling;
+    return true;
+}
+
+document.addEventListener('click', (e) => {
+    const tombol = e.target.closest ? e.target.closest('.daftar-bangunan-tombol') : null;
+    if (!tombol) return;
+    const kavling = tombol.getAttribute('data-kavling');
+    if (kavling === '') return; // bangunan di luar tabel kavling
+    sorotKavling(Number(kavling));
+});
+if (window.__desa) window.__desa.sorotKavling = sorotKavling;
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

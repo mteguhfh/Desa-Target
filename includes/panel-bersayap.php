@@ -9,6 +9,8 @@
 //   $panelBangunan      daftar bangunan (dari semua_bangunan()), boleh kosong
 //   $panelPapanGang     peringkat gang (dari papan_gang())
 //   $panelTotalWarga    jumlah warga terdaftar
+//   $panelKavling       peta id bangunan -> indeks kavling, supaya ketukan
+//                       pada daftar bisa menyorot bangunan yang tepat
 //
 // Semua isi berasal dari data yang sudah dibaca halaman. Tidak ada permintaan
 // jaringan tambahan, jadi panel tidak bisa menampilkan angka yang berbeda
@@ -24,6 +26,7 @@ $tabAwalan = $tabAwalan ?? '';
 $panelBangunan = $panelBangunan ?? [];
 $panelPapanGang = $panelPapanGang ?? [];
 $panelTotalWarga = $panelTotalWarga ?? 0;
+$panelKavling = $panelKavling ?? []; // id bangunan -> indeks kavling
 
 $jumlahTerbanyak = 0;
 foreach ($panelPapanGang as $barisPapan) {
@@ -36,6 +39,20 @@ foreach ($panelPapanGang as $barisPapan) {
         <button type="button" class="panel-bersayap-tutup" id="panelBersayapTutup" aria-label="Tutup panel">&times;</button>
     </div>
     <div class="panel-bersayap-isi">
+
+        <div class="panel-isi" data-isi="warga" hidden>
+            <p class="panel-deskripsi">Cari warga berdasarkan nama atau nomor kartu. Contoh: "sari" atau "DT-0007".</p>
+            <form class="cari-warga" id="cariWargaForm" method="get" action="<?= e($tabAwalan) ?>warga.php"
+                  data-endpoint="<?= e($tabAwalan) ?>cari-warga.php">
+                <label class="sr-saja" for="cariWargaKunci">Nama atau nomor warga</label>
+                <input class="cari-warga-isian" id="cariWargaKunci" name="cari" type="search"
+                       placeholder="Nama atau DT-0007" autocomplete="off"
+                       maxlength="50" enterkeyhint="search">
+                <button class="tombol-panel-utama cari-warga-tombol" type="submit">Cari</button>
+            </form>
+            <div class="cari-warga-hasil" id="cariWargaHasil" aria-live="polite"></div>
+            <p class="panel-catatan">Semua warga juga bisa dilihat di <a href="<?= e($tabAwalan) ?>warga.php">daftar warga desa</a>.</p>
+        </div>
 
         <div class="panel-isi" data-isi="misi" hidden>
             <p class="panel-deskripsi">Misi harian desa belum dibuka. Untuk sekarang, satu misi yang selalu ada:</p>
@@ -67,13 +84,19 @@ foreach ($panelPapanGang as $barisPapan) {
                 <p class="panel-deskripsi">Belum ada bangunan berdiri. Usulkan usaha impianmu lewat komentar Instagram.</p>
             <?php else: ?>
                 <p class="panel-deskripsi"><?= count($panelBangunan) ?> bangunan berdiri di desa, urut dari yang paling baru.</p>
+                <p class="panel-catatan panel-catatan-atas">Di peta, ketuk nama bangunan untuk menyorotnya di dunia.</p>
                 <ul class="daftar-bangunan">
                     <?php foreach (array_reverse($panelBangunan) as $b): ?>
-                        <li class="daftar-bangunan-baris" data-bangunan="<?= (int) $b['id'] ?>">
-                            <span class="daftar-bangunan-nama"><?= e($b['nama']) ?></span>
-                            <?php if (!empty($b['gang'])): ?>
-                                <span class="daftar-bangunan-gang"><?= e($b['gang']) ?></span>
-                            <?php endif; ?>
+                        <?php $kavling = $panelKavling[$b['id']] ?? null; ?>
+                        <li class="daftar-bangunan-baris">
+                            <button type="button" class="daftar-bangunan-tombol"
+                                    data-bangunan="<?= (int) $b['id'] ?>"
+                                    data-kavling="<?= $kavling === null ? '' : (int) $kavling ?>">
+                                <span class="daftar-bangunan-nama"><?= e($b['nama']) ?></span>
+                                <?php if (!empty($b['gang'])): ?>
+                                    <span class="daftar-bangunan-gang"><?= e($b['gang']) ?></span>
+                                <?php endif; ?>
+                            </button>
                         </li>
                     <?php endforeach; ?>
                 </ul>

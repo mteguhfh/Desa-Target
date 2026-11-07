@@ -128,3 +128,49 @@ function cari_warga(PDO $pdo, int $id): ?array
     $row = $stmt->fetch();
     return $row === false ? null : $row;
 }
+
+// Cari warga berdasarkan nama ATAU nomor warga.
+//
+// Warga mengetik nama seperti "sari", atau nomor seperti "DT-0007" atau
+// "7" saja. Ketiga bentuk itu harus menemukan orang yang sama, karena nomor
+// di kartu mereka tertulis DT-0007.
+//
+// Hasil diurutkan: cocok persis nama dulu, lalu yang namanya diawali kata
+// kunci, lalu sisanya. Di dalam kelompok yang sama, pendaftar terlama dulu.
+// Batas $batas menjaga query tetap ringan walau warga desa nanti ribuan.
+function cari_warga_berdasarkan(PDO $pdo, string $kunci, int $batas = 40): array
+{
+    $kunci = trim($kunci);
+    if ($kunci === '') {
+        return [];
+    }
+
+    // Nomor warga: "DT-0007", "dt-7", atau "7" -> id 7.
+    $idDariNomor = null;
+    if (preg_match('/^(?:dt)?[\s-]*0*(\d{1,9})$/i', $kunci, $cocok)) {
+        $idDariNomor = (int) $cocok[1];
+    }
+
+    $pola = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $kunci) . '%';
+
+    $stmt = $pdo->prepare(
+        "SELECT * FROM warga
+         WHERE nama LIKE :pola ESCAPE '\\'" . ($idDariNomor !== null ? ' OR id = :id' : '') . "
+         ORDER BY
+             CASE WHEN LOWER(nama) = LOWER(:kunci) THEN 0
+                  WHEN LOWER(nama) LIKE LOWER(:awal) ESCAPE '\\' THEN 1
+                  ELSE 2 END,
+             id ASC
+         LIMIT :batas"
+    );
+    $stmt->bindValue(':pola', $pola, PDO::PARAM_STR);
+    $stmt->bindValue(':kunci', $kunci, PDO::PARAM_STR);
+    $stmt->bindValue(':awal', str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $kunci) . '%', PDO::PARAM_STR);
+    $stmt->bindValue(':batas', $batas, PDO::PARAM_INT);
+    if ($idDariNomor !== null) {
+        $stmt->bindValue(':id', $idDariNomor, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    return $stmt->fetchAll();
+}

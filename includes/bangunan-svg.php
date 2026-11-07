@@ -302,7 +302,7 @@ function cincin_baru_svg(string $varian): string
 // data detail yang dibaca skrip peta saat bangunan ditap atau dipilih.
 // Atribut data-x dan data-y menyimpan titik jangkar dunia bangunan,
 // berguna sebagai acuan posisi popover detail.
-function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): string
+function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false, ?int $kavling = null): string
 {
     $varian = varian_bangunan((string) $bangunan['nama']);
     $atap = $varian === 'balai' ? '#f59e0b' : warna_atap_gang($bangunan['gang'] ?? null);
@@ -318,7 +318,9 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false): st
         . ' data-tanggal="' . svg_teks(format_tanggal((string) $bangunan['tanggal'])) . '"'
         . ' data-terbaru="' . ($terbaru ? '1' : '0') . '"'
         . ' data-balai="' . ($varian === 'balai' ? '1' : '0') . '"'
-        . ' data-x="' . $x . '" data-y="' . $y . '">'
+        . ' data-x="' . $x . '" data-y="' . $y . '"'
+        . ($kavling === null ? '' : ' data-kavling="' . $kavling . '"')
+        . '>'
         . '<title>' . svg_teks($bangunan['nama']) . '</title>'
         . '<g class="bangunan-skala" transform="scale(' . SKALA_DUNIA . ')">'
         . ($terbaru ? cincin_baru_svg($varian) : '')

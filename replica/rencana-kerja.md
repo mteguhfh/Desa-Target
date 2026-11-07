@@ -7,8 +7,9 @@ pekerjaan yang benar-benar belum ada.
 Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
-**Perbarui 2026-11-08:** Tahap 1 selesai. Sekarang 16 selesai, 2 sebagian,
-4 belum, 5 sengaja tidak dikerjakan. Yang tersisa semuanya Tahap 2 dan 3.
+**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai. Sekarang 19 selesai,
+0 sebagian, 3 belum, 5 sengaja tidak dikerjakan. Yang tersisa semuanya
+Tahap 3, dan semuanya prioritas `could`.
 
 ## Prinsip urutan
 
@@ -60,14 +61,28 @@ Dunia peta tetap terlihat di atas panel.
 
 Tab bar tanpa isi hanya kulit. Di sini isinya diisi.
 
-| # | pekerjaan | status awal | yang perlu dibuat |
+| # | pekerjaan | status | bukti |
 | --- | --- | --- | --- |
-| 2.1 | Daftar semua bangunan beserta gangnya | sebagian | Daftar sudah bisa dibaca di panel `data-isi="bangunan"`; sisa: ketuk baris untuk menyorot bangunan di dunia |
-| 2.2 | Cari warga berdasarkan nama atau nomor | belum | Helper baru di `db.php` (`cari_warga_berdasarkan()`), halaman hasil, dipakai tab Desa |
-| 2.3 | Interior Balai Desa di dalam 3D | sebagian | Sekarang masih lompat ke `peta2d.php#interior-balai`; perlu tampilan interior tanpa keluar dari peta 3D |
+| 2.1 | Daftar bangunan + sorot di dunia | **selesai** | tab Bangunan; ketuk baris → kamera terbang, cincin menyala, kartu detail terbuka |
+| 2.2 | Cari warga berdasarkan nama atau nomor | **selesai** | `cari_warga_berdasarkan()` + `cari-warga.php` (panel) + `warga.php` (tanpa JavaScript) |
+| 2.3 | Interior Balai Desa di dalam 3D | **selesai** | `peta3d/interior-balai.php`; tidak lagi melompat ke peta 2D |
 
-**Selesai bila:** tiga tab punya isi nyata, dan ketukan pada daftar bangunan
-menyorot bangunan yang benar di dunia 3D.
+**Hasil:** ketiga tab punya isi nyata, dan pencarian tidak pernah memuat ulang
+halaman di peta.
+
+**Keputusan yang diambil di tahap ini:**
+
+- Slot tab "Misi" dipakai untuk **Warga**, karena pencarian lebih berguna
+  daripada daftar misi yang belum ada. Misi tetap tersedia sebagai isi panel
+  tersembunyi (`data-isi="misi"`) sampai fiturnya dibuat.
+- Di halaman peta, tab "Desa" diganti **Bangunan** yang membuka daftar. Di luar
+  peta, "Desa" tetap beranda. Diatur halaman lewat `$tabDesaPanel`.
+- Pencarian di dalam peta memakai endpoint `cari-warga.php` yang **hanya
+  membaca**. Kunci tidak pernah masuk SQL selain lewat parameter terikat, dan
+  `%` / `_` diperlakukan sebagai huruf biasa, bukan wildcard.
+
+**Uji:** `tools/uji/tahap2-cari-sorot-interior.js`, 30 pemeriksaan — termasuk
+percobaan injeksi SQL, wildcard, dan pemotongan kunci panjang.
 
 ---
 
