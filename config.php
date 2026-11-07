@@ -1,3 +1,4 @@
+<?php
 # Konfigurasi aplikasi Desa Target.
 
 // Alamat publik aplikasi. Target production: https://desa.kejartarget.id
