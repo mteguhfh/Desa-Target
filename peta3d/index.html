@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Peta Desa Target 3D (Prototipe v5)</title>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #d8f6e0;
+        color: #1f2937;
+    }
+    #panggung { position: fixed; inset: 0; }
+    #panggung canvas { display: block; }
+
+    /* --- Lencana merek dan navigasi melayang, sama seperti peta 2D --- */
+    .bar-atas {
+        position: fixed; top: 12px; left: 12px; right: 12px;
+        display: flex; align-items: flex-start; gap: 8px;
+        pointer-events: none; z-index: 20;
+    }
+    .bar-atas > * { pointer-events: auto; }
+    .lencana-merek {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #ffffff; border-radius: 999px; padding: 9px 16px 9px 12px;
+        font-weight: 800; font-size: 17px; color: #1e3a8a;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+        white-space: nowrap;
+    }
+    .lencana-merek .target { color: #2563eb; }
+    .lencana-merek .versi {
+        background: #2563eb; color: #fff; font-size: 11px; font-weight: 800;
+        border-radius: 999px; padding: 2px 8px; letter-spacing: 0.4px;
+    }
+    .pil-nav {
+        display: inline-flex; align-items: center;
+        background: #ffffff; border: none; cursor: pointer; text-decoration: none;
+        border-radius: 999px; padding: 10px 16px;
+        font: 600 14px system-ui, sans-serif; color: #1f2937;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
+        white-space: nowrap;
+    }
+    .pil-nav:hover { background: #eff6ff; }
+    .chip-petunjuk {
+        margin-left: auto;
+        background: rgba(255,255,255,0.94); border-radius: 999px;
+        padding: 10px 16px; font-size: 13.5px; font-weight: 600; color: #374151;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
+        max-width: 430px;
+    }
+    @media (max-width: 900px) { .chip-petunjuk { display: none; } }
+    @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
+
+    /* --- Kartu pengantar --- */
+    .kartu-intro {
+        position: fixed; top: 66px; left: 12px; z-index: 19;
+        width: min(336px, calc(100vw - 24px));
+        background: #ffffff; border-radius: 16px;
+        box-shadow: 0 10px 32px rgba(30, 58, 138, 0.22);
+        padding: 16px 18px 14px;
+    }
+    .kartu-intro h1 { margin: 0 24px 8px 0; font-size: 20px; color: #111827; }
+    .kartu-intro p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: #4b5563; }
+    .kartu-intro p.catatan { font-size: 12.5px; color: #92400e; background: #fffbeb; border-radius: 8px; padding: 7px 9px; }
+    .tombol-tutup {
+        position: absolute; top: 8px; right: 8px;
+        width: 30px; height: 30px; border: none; border-radius: 999px;
+        background: #f3f4f6; color: #4b5563; font-size: 17px; cursor: pointer; line-height: 1;
+    }
+    .tombol-tutup:hover { background: #e5e7eb; }
+    @media (max-width: 700px) { .kartu-intro { display: none; } .kartu-intro.paksa-tampil { display: block; } }
+
+    /* --- Tumpukan kontrol kanan --- */
+    .kontrol {
+        position: fixed; right: 12px; bottom: 88px; z-index: 20;
+        display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    }
+    .kontrol button {
+        border: none; cursor: pointer; background: #ffffff; color: #1f2937;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+        font: 700 14px system-ui, sans-serif;
+    }
+    .kontrol .pil { border-radius: 999px; padding: 11px 18px; }
+    .kontrol .pil.utama { background: #2563eb; color: #ffffff; }
+    .kontrol .pil.utama.aktif { background: #dc2626; }
+    .kontrol .bulat {
+        width: 44px; height: 44px; border-radius: 999px;
+        font-size: 20px; display: flex; align-items: center; justify-content: center;
+    }
+    .kontrol button:hover { filter: brightness(0.96); }
+
+    /* --- Panel Papan Gang --- */
+    .panel-gang {
+        position: fixed; top: 0; right: 0; z-index: 30;
+        width: min(340px, 92vw); height: 100dvh;
+        background: #ffffff; box-shadow: -12px 0 32px rgba(30, 58, 138, 0.25);
+        transform: translateX(105%); transition: transform 0.32s ease;
+        padding: 18px 18px 24px; overflow-y: auto;
+    }
+    .panel-gang.buka { transform: translateX(0); }
+    @media (max-width: 700px) { .panel-gang { width: 100vw; } }
+    .panel-gang .kepala { display: flex; align-items: center; justify-content: space-between; }
+    .panel-gang h2 { margin: 0; font-size: 19px; }
+    .panel-gang .kepala .tombol-tutup { position: static; }
+    .panel-gang .deskripsi { font-size: 13.5px; color: #6b7280; line-height: 1.5; }
+    .papan-baris {
+        display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto;
+        grid-template-areas: "peringkat nama jumlah" "peringkat palangan palangan";
+        align-items: center; column-gap: 0.6rem; row-gap: 0.3rem;
+        padding: 0.55rem 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .papan-peringkat {
+        grid-area: peringkat; width: 1.7rem; height: 1.7rem; border-radius: 999px;
+        background: #eff6ff; color: #2563eb; font-weight: 800; font-size: 13px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .papan-nama { grid-area: nama; font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .papan-jumlah { grid-area: jumlah; font-size: 13px; color: #6b7280; white-space: nowrap; }
+    .papan-palangan { grid-area: palangan; height: 8px; border-radius: 999px; background: #f3f4f6; overflow: hidden; }
+    .papan-isi { display: block; height: 100%; border-radius: 999px; }
+    .panel-gang .gabung { margin-top: 14px; font-size: 14px; }
+    .panel-gang .gabung a { color: #2563eb; font-weight: 700; }
+
+    /* --- Kartu popover hasil tap --- */
+    .popover {
+        position: fixed; z-index: 25; width: min(300px, calc(100vw - 24px));
+        background: #ffffff; border-radius: 14px;
+        box-shadow: 0 12px 34px rgba(30, 58, 138, 0.28);
+        padding: 14px 16px 12px; display: none;
+    }
+    .popover.tampil { display: block; }
+    .popover .kicker { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; color: #2563eb; margin: 0 0 3px; }
+    .popover h3 { margin: 0 26px 6px 0; font-size: 17px; }
+    .popover p { margin: 0 0 5px; font-size: 13.5px; color: #4b5563; line-height: 1.5; }
+    .popover .kutipan { font-style: italic; color: #374151; }
+    .popover .lencana {
+        display: inline-block; font-size: 11.5px; font-weight: 700; color: #fff;
+        border-radius: 999px; padding: 2px 9px; margin-bottom: 6px;
+    }
+
+    /* --- Mode Keliling Desa --- */
+    .dpad {
+        position: fixed; left: 14px; bottom: 18px; z-index: 22;
+        display: none; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
+        gap: 5px; touch-action: none;
+    }
+    .dpad.tampil { display: grid; }
+    .dpad button {
+        border: none; border-radius: 14px; background: rgba(255,255,255,0.92);
+        box-shadow: 0 4px 14px rgba(30,58,138,0.22); font-size: 19px; color: #1e3a8a;
+        cursor: pointer; user-select: none; -webkit-user-select: none;
+    }
+    .dpad button.tertekan { background: #bfdbfe; }
+    .dpad .atas { grid-area: 1 / 2; } .dpad .kiri { grid-area: 2 / 1; }
+    .dpad .kanan { grid-area: 2 / 3; } .dpad .bawah { grid-area: 3 / 2; }
+    .chip-masuk {
+        position: fixed; left: 50%; bottom: 108px; transform: translateX(-50%);
+        z-index: 22; display: none;
+        background: #2563eb; color: #fff; border: none; cursor: pointer;
+        font: 700 15px system-ui, sans-serif; border-radius: 999px; padding: 13px 24px;
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+    }
+    .chip-masuk.tampil { display: block; }
+    .chip-petunjuk-jalan {
+        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+        z-index: 21; display: none;
+        background: rgba(17,24,39,0.82); color: #f9fafb; border-radius: 999px;
+        padding: 9px 16px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .chip-petunjuk-jalan.tampil { display: block; }
+    @media (max-width: 700px) { .chip-petunjuk-jalan { display: none !important; } }
+
+    /* --- Cadangan bila WebGL tidak tersedia --- */
+    .webgl-gagal {
+        position: fixed; inset: 0; z-index: 50; display: none;
+        align-items: center; justify-content: center; padding: 20px;
+        background: linear-gradient(#bae6fd, #dcfce7);
+    }
+    .webgl-gagal.tampil { display: flex; }
+    .webgl-gagal .kotak {
+        background: #fff; border-radius: 16px; padding: 24px; max-width: 420px;
+        box-shadow: 0 12px 34px rgba(30,58,138,0.25); text-align: center;
+    }
+    .webgl-gagal a { color: #2563eb; font-weight: 700; }
+
+    #stats {
+        position: fixed; left: 12px; bottom: 12px; z-index: 40; display: none;
+        background: rgba(17,24,39,0.85); color: #a7f3d0; border-radius: 10px;
+        font: 12px ui-monospace, monospace; padding: 8px 11px; white-space: pre;
+    }
+    .muat {
+        position: fixed; inset: 0; z-index: 45; display: flex;
+        align-items: center; justify-content: center;
+        background: linear-gradient(#bae6fd, #dcfce7);
+        font-weight: 700; color: #1e3a8a; font-size: 17px;
+        transition: opacity 0.4s ease;
+    }
+    .muat.hilang { opacity: 0; pointer-events: none; }
+</style>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+</head>
+<body>
+<div id="panggung" aria-label="Peta Desa Target tiga dimensi"></div>
+
+<div class="bar-atas">
+    <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
+    <a class="pil-nav sembunyi-kecil" href="#">Beranda</a>
+    <a class="pil-nav" href="#">Bikin KTP Warga</a>
+    <a class="pil-nav sembunyi-kecil" href="#">Instagram</a>
+    <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
+</div>
+
+<div class="kartu-intro" id="kartuIntro">
+    <button type="button" class="tombol-tutup" id="introTutup" aria-label="Tutup pengantar">&times;</button>
+    <h1>Peta Desa Target</h1>
+    <p>Setiap bangunan di peta ini lahir dari komentar warga di Instagram. Komentar paling banyak disukai hari ini, besok paginya sudah berdiri di sini. Masih banyak tanah kosong, desa ini menunggu usulan usahamu.</p>
+    <p class="catatan">Ini prototipe peta 3D (v5) dengan data contoh. Belum terhubung ke basis data desa.</p>
+</div>
+
+<div class="kontrol">
+    <button type="button" class="pil utama" id="tombolJalan">Keliling Desa</button>
+    <button type="button" class="pil" id="tombolPapan">Papan Gang</button>
+    <button type="button" class="bulat" id="tombolZoomIn" aria-label="Zoom masuk">+</button>
+    <button type="button" class="bulat" id="tombolZoomOut" aria-label="Zoom keluar">&minus;</button>
+    <button type="button" class="bulat" id="tombolReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
+    <button type="button" class="bulat" id="tombolLayarPenuh" aria-label="Layar penuh">&#9974;</button>
+</div>
+
+<aside class="panel-gang" id="panelGang" aria-hidden="true" aria-label="Papan peringkat gang">
+    <div class="kepala">
+        <h2>Papan Gang</h2>
+        <button type="button" class="tombol-tutup" id="panelGangTutup" aria-label="Tutup papan gang">&times;</button>
+    </div>
+    <p class="deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
+    <div id="isiPapanGang"></div>
+    <p class="gabung"><a href="#">Gabung gang-mu</a></p>
+</aside>
+
+<div class="popover" id="popover">
+    <button type="button" class="tombol-tutup" id="popoverTutup" aria-label="Tutup detail">&times;</button>
+    <p class="kicker" id="popKicker">DETAIL</p>
+    <h3 id="popJudul">Balai Desa</h3>
+    <span class="lencana" id="popLencana" hidden></span>
+    <p class="kutipan" id="popKutipan" hidden></p>
+    <p id="popIsi"></p>
+</div>
+
+<div class="dpad" id="dpad" aria-label="Tombol arah jalan">
+    <button type="button" class="atas" data-arah="maju" aria-label="Jalan ke depan">&#9650;</button>
+    <button type="button" class="kiri" data-arah="kiri" aria-label="Jalan ke kiri">&#9664;</button>
+    <button type="button" class="kanan" data-arah="kanan" aria-label="Jalan ke kanan">&#9654;</button>
+    <button type="button" class="bawah" data-arah="mundur" aria-label="Jalan ke belakang">&#9660;</button>
+</div>
+<button type="button" class="chip-masuk" id="chipMasuk">Masuk Balai Desa</button>
+<div class="chip-petunjuk-jalan" id="chipJalan">WASD atau tombol panah buat jalan. Esc buat berhenti.</div>
+
+<div class="webgl-gagal" id="webglGagal">
+    <div class="kotak">
+        <h2>Peta 3D tidak bisa dibuka</h2>
+        <p>Browser kamu tidak mendukung WebGL, jadi desa tiga dimensinya tidak bisa digambar. Tenang, peta desa versi 2D tetap bisa dipakai seperti biasa.</p>
+        <p><a href="#">Buka Peta Desa 2D</a></p>
+    </div>
+</div>
+
+<div id="stats"></div>
+<div class="muat" id="layarMuat">Membangun desa 3D...</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { buatBalai, teksturPapan } from './bangunan3d.js';
+
+// ===========================================================================
+// DATA DESA: cerminan includes/peta-posisi.php peta 2D.
+// Dunia 2000 x 1333 satuan. Koordinat 2D (x, y) dipetakan ke 3D sebagai
+// (x - 1000, 0, y - 666.5): utara peta 2D menjadi -Z, selatan menjadi +Z,
+// jadi fasad bangunan yang menghadap selatan (+Z) terlihat dari kamera awal.
+// ===========================================================================
+const SKALA = 1.6667;
+const KE3 = (x, y) => new THREE.Vector3(x - 1000, 0, y - 666.5);
+
+const POSISI_KAVLING = [
+    [1017, 692], [283, 500], [650, 325], [1425, 342], [1767, 492], [233, 867],
+    [583, 758], [758, 1200], [1250, 1117], [1592, 1017], [425, 1250], [1833, 967],
+];
+const FOKUS = { x: 1017, y: 692 };           // Balai Desa
+const KOLAM = { x: 1775, y: 1197, r: 187 };  // dari elips 2D (1065, 718) x SKALA
+
+const ZONA_GANG = {
+    'Gang Dagang':     { tambak: [495, 20, 210, 168],  papan: [600, 32],   warna: 0x2563eb, css: '#2563eb' },
+    'Gang Kuliner':    { tambak: [952, 16, 205, 162],  papan: [1054, 28],  warna: 0xea580c, css: '#ea580c' },
+    'Gang Jasa':       { tambak: [26, 302, 205, 148],  papan: [128, 314],  warna: 0x0891b2, css: '#0891b2' },
+    'Gang Freelancer': { tambak: [30, 24, 240, 150],   papan: [150, 36],   warna: 0x7c3aed, css: '#7c3aed' },
+    'Gang Kerajinan':  { tambak: [772, 290, 185, 140], papan: [864, 302],  warna: 0xdb2777, css: '#db2777' },
+};
+// Rect wara-wiri dihitung persis seperti $zonaUntukJs di peta.php versi 4.3:
+// margin sisi 14 satuan lokal, atas 18, bawah 12 (dikalikan SKALA_DUNIA).
+function rectWara(z) {
+    const t = z.tambak, mx = 14 * SKALA, mt = 18 * SKALA, mb = 12 * SKALA;
+    return { x: t[0] * SKALA + mx, y: t[1] * SKALA + mt, w: t[2] * SKALA - 2 * mx, h: t[3] * SKALA - mt - mb };
+}
+// Tapak kavling yang dihindari warga saat memilih jalur lurus (RINTANGAN_WARA).
+const RINTANGAN = POSISI_KAVLING.map(([x, y]) => ({ x1: x - 105, y1: y - 130, x2: x + 105, y2: y + 6 }));
+// Patroli Bang Uju mengelilingi alun-alun, sama seperti TITIK_PATROLI versi 4.3.
+const TITIK_PATROLI = [[1228, 715], [860, 720], [950, 795], [1180, 712]];
+
+// Warga contoh (prototipe: data statis, bukan basis data).
+const WARGA_SEED = [
+    { nama: 'Sari', gang: 'Gang Dagang' }, { nama: 'Budi', gang: 'Gang Dagang' }, { nama: 'Rina', gang: 'Gang Dagang' },
+    { nama: 'Dedi', gang: 'Gang Kuliner' }, { nama: 'Maya', gang: 'Gang Kuliner' },
+    { nama: 'Agus', gang: 'Gang Jasa' }, { nama: 'Fitri', gang: 'Gang Jasa' },
+    { nama: 'Rian', gang: 'Gang Freelancer' }, { nama: 'Dewi', gang: 'Gang Freelancer' },
+    { nama: 'Joko', gang: 'Gang Kerajinan' },
+];
+WARGA_SEED.forEach((w, i) => { w.nomor = 'DT-' + String(i + 1).padStart(4, '0'); });
+
+// RNG deterministik supaya sebaran pohon dan warga konsisten tiap muat.
+function mulberry32(a) {
+    return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+const acak = mulberry32(20261107);
+const kurangGerak = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ===========================================================================
+// PANGGUNG
+// ===========================================================================
+const panggung = document.getElementById('panggung');
+let renderer = null;
+try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+} catch (e) { /* ditangani di bawah */ }
+if (!renderer) {
+    document.getElementById('webglGagal').classList.add('tampil');
+    document.getElementById('layarMuat').classList.add('hilang');
+    throw new Error('WebGL tidak tersedia');
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+panggung.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{   // Langit gradasi lembut dari tekstur kanvas vertikal.
+    const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 256);
+    gr.addColorStop(0, '#7cc7f2'); gr.addColorStop(0.55, '#bae6fd'); gr.addColorStop(1, '#e8f9ee');
+    g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    scene.background = tex;
+}
+scene.fog = new THREE.Fog(0xcfeefb, 1500, 3400);
+
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 8000);
+const KAMERA_AWAL = new THREE.Vector3(120, 1150, 1460);
+const TARGET_AWAL = KE3(1017, 760);
+camera.position.copy(KAMERA_AWAL);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(TARGET_AWAL);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 240;
+controls.maxDistance = 2500;
+controls.maxPolarAngle = 1.35;
+controls.update();
+
+const cahayaHemi = new THREE.HemisphereLight(0xeaf6ff, 0x86c06c, 0.95);
+scene.add(cahayaHemi);
+const matahari = new THREE.DirectionalLight(0xfff1d6, 1.7);
+matahari.position.set(-750, 950, -520);
+matahari.castShadow = true;
+matahari.shadow.mapSize.set(2048, 2048);
+matahari.shadow.camera.left = -1250; matahari.shadow.camera.right = 1250;
+matahari.shadow.camera.top = 1250; matahari.shadow.camera.bottom = -1250;
+matahari.shadow.camera.far = 3200;
+matahari.shadow.bias = -0.0006;
+scene.add(matahari);
+
+// Material tanah bersama.
+const matStandar = (hex, opsi = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.95, metalness: 0, flatShading: true, ...opsi });
+function kotak(w, h, d, bahan, x = 0, y = 0, z = 0) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bahan);
+    m.position.set(x, y, z);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+}
+const dunia = new THREE.Group();
+scene.add(dunia);
+const bisaDiklik = [];   // objek yang merespons tap (beserta data popover)
+
+// ---------------------------------------------------------------------------
+// Tanah, zona gang, alun-alun
+// ---------------------------------------------------------------------------
+{
+    const tanah = new THREE.Mesh(new THREE.PlaneGeometry(2000, 1333), matStandar(0x8fd07a));
+    tanah.rotation.x = -Math.PI / 2;
+    tanah.receiveShadow = true;
+    dunia.add(tanah);
+    const tanahLuar = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), matStandar(0xa9dd96));
+    tanahLuar.rotation.x = -Math.PI / 2;
+    tanahLuar.position.y = -0.4;
+    dunia.add(tanahLuar);
+}
+function bentukBulat(w, h, r) {
+    const s = new THREE.Shape();
+    const x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y);
+    s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+    s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+    return s;
+}
+for (const [namaGang, z] of Object.entries(ZONA_GANG)) {
+    const [tx, ty, tw, th] = z.tambak.map(v => v * SKALA);
+    const tambak = new THREE.Mesh(
+        new THREE.ShapeGeometry(bentukBulat(tw, th, 60)),
+        new THREE.MeshStandardMaterial({ color: z.warna, transparent: true, opacity: 0.22, roughness: 1, depthWrite: false })
+    );
+    tambak.rotation.x = -Math.PI / 2;
+    const tengah = KE3(tx + tw / 2, ty + th / 2);
+    tambak.position.set(tengah.x, 0.35, tengah.z);
+    tambak.receiveShadow = true;
+    dunia.add(tambak);
+
+    // Papan kayu nama gang di tepi atas petak.
+    const papanGrup = new THREE.Group();
+    const posPapan = KE3(z.papan[0] * SKALA, z.papan[1] * SKALA);
+    papanGrup.position.copy(posPapan);
+    const bahanKayu = matStandar(0x92600f);
+    papanGrup.add(kotak(7, 58, 7, bahanKayu, -52, 29, 0));
+    papanGrup.add(kotak(7, 58, 7, bahanKayu, 52, 29, 0));
+    const papan = new THREE.Mesh(
+        new THREE.BoxGeometry(168, 46, 6),
+        [bahanKayu, bahanKayu, bahanKayu, bahanKayu,
+         new THREE.MeshStandardMaterial({ map: teksturPapan(namaGang, { ukuran: 52, latar: '#fef3c7' }), roughness: 0.85 }),
+         bahanKayu]
+    );
+    papan.position.y = 62; papan.castShadow = true;
+    papanGrup.add(papan);
+    dunia.add(papanGrup);
+}
+{   // Alun-alun paving di depan Balai Desa.
+    const plaza = KE3(FOKUS.x, 714);
+    const paving = new THREE.Mesh(new THREE.CircleGeometry(178, 40), matStandar(0xefe7d2));
+    paving.rotation.x = -Math.PI / 2; paving.position.set(plaza.x, 0.3, plaza.z);
+    paving.receiveShadow = true;
+    dunia.add(paving);
+    const bingkai = new THREE.Mesh(new THREE.RingGeometry(178, 190, 40), matStandar(0xe0cfa1));
+    bingkai.rotation.x = -Math.PI / 2; bingkai.position.set(plaza.x, 0.28, plaza.z);
+    bingkai.receiveShadow = true;
+    dunia.add(bingkai);
+    // Bangku dan papan pengumuman plaza (posisi dari peta 2D).
+    const bahanKayu = matStandar(0x92600f);
+    for (const [bx, by] of [[842, 770], [1192, 770]]) {
+        const b = KE3(bx, by);
+        const bangku = new THREE.Group();
+        bangku.add(kotak(64, 7, 20, bahanKayu, 0, 16, 0));
+        bangku.add(kotak(8, 16, 18, bahanKayu, -24, 8, 0));
+        bangku.add(kotak(8, 16, 18, bahanKayu, 24, 8, 0));
+        bangku.position.copy(b);
+        dunia.add(bangku);
+    }
+    const pp = KE3(780, 707);
+    const papanPengumuman = new THREE.Group();
+    papanPengumuman.add(kotak(6, 62, 6, bahanKayu, 0, 31, 0));
+    const isi = new THREE.Mesh(new THREE.BoxGeometry(76, 48, 5),
+        [bahanKayu, bahanKayu, bahanKayu, bahanKayu,
+         new THREE.MeshStandardMaterial({ map: teksturPapan('PENGUMUMAN', { ukuran: 40 }), roughness: 0.9 }), bahanKayu]);
+    isi.position.y = 72; isi.castShadow = true;
+    papanPengumuman.add(isi);
+    papanPengumuman.position.copy(pp);
+    dunia.add(papanPengumuman);
+}
+
+// ---------------------------------------------------------------------------
+// Jalan utama melengkung dan jalan setapak tanah
+// ---------------------------------------------------------------------------
+const TITIK_JALAN = [[-33, 1177], [300, 1077], [533, 955], [867, 980], [1200, 1002], [1333, 835], [1600, 760], [1817, 708], [2033, 530]];
+const kurvaJalan = new THREE.CatmullRomCurve3(TITIK_JALAN.map(([x, y]) => KE3(x, y)));
+const contohJalan = kurvaJalan.getPoints(72).map(p => ({ x: p.x + 1000, y: p.z + 666.5 }));
+function pitaJalan(kurva, lebar, bahan, y) {
+    const N = 72, pos = [], idx = [];
+    const pts = kurva.getPoints(N);
+    for (let i = 0; i <= N; i++) {
+        const p = pts[i];
+        const t = kurva.getTangent(i / N);
+        const nx = -t.z, nz = t.x;
+        pos.push(p.x + nx * lebar / 2, y, p.z + nz * lebar / 2, p.x - nx * lebar / 2, y, p.z - nz * lebar / 2);
+        if (i < N) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, bahan);
+    m.receiveShadow = true;
+    return m;
+}
+dunia.add(pitaJalan(kurvaJalan, 116, matStandar(0xd9c48d), 0.22));
+dunia.add(pitaJalan(kurvaJalan, 100, matStandar(0xf4e7c3), 0.3));
+{   // Garis tengah putus-putus.
+    const geoGaris = new THREE.BoxGeometry(26, 1.2, 5);
+    const garis = new THREE.InstancedMesh(geoGaris, matStandar(0xffffff), 30);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 30; i++) {
+        const u = (i + 0.5) / 30;
+        const p = kurvaJalan.getPoint(u), t = kurvaJalan.getTangent(u);
+        dummy.position.set(p.x, 0.5, p.z);
+        dummy.rotation.set(0, Math.atan2(t.x, t.z) + Math.PI / 2, 0);
+        dummy.updateMatrix();
+        garis.setMatrixAt(i, dummy.matrix);
+    }
+    dunia.add(garis);
+}
+function jalanSetapak(x1, y1, x2, y2, lebar = 24) {
+    const a = KE3(x1, y1), b = KE3(x2, y2);
+    const panjang = a.distanceTo(b);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(panjang, lebar), matStandar(0xe9d8a6));
+    m.rotation.x = -Math.PI / 2;
+    m.rotation.z = -Math.atan2(b.z - a.z, b.x - a.x);
+    m.position.set((a.x + b.x) / 2, 0.26, (a.z + b.z) / 2);
+    m.receiveShadow = true;
+    dunia.add(m);
+}
+jalanSetapak(1000, 925, 1000, 330);    // plaza ke Gang Dagang
+jalanSetapak(1508, 850, 1747, 310);    // jalan utama ke Gang Kuliner
+jalanSetapak(425, 925, 330, 760);      // jalan utama ke Gang Jasa
+jalanSetapak(1083, 995, 947, 1200);    // jalan utama ke kavling 7
+jalanSetapak(1642, 783, 1470, 680);    // jalan utama ke Gang Kerajinan
+
+// ---------------------------------------------------------------------------
+// Kolam di tenggara desa
+// ---------------------------------------------------------------------------
+let bahanAir = null;
+{
+    const c = KE3(KOLAM.x, KOLAM.y);
+    const pantai = new THREE.Mesh(new THREE.CircleGeometry(KOLAM.r + 32, 36), matStandar(0xd9c48d));
+    pantai.rotation.x = -Math.PI / 2; pantai.position.set(c.x, 0.24, c.z); pantai.receiveShadow = true;
+    dunia.add(pantai);
+    bahanAir = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9, roughness: 0.35, metalness: 0 });
+    const air = new THREE.Mesh(new THREE.CircleGeometry(KOLAM.r, 36), bahanAir);
+    air.rotation.x = -Math.PI / 2; air.position.set(c.x, 0.45, c.z);
+    dunia.add(air);
+    // Daun teratai dan bunganya.
+    const teratai = new THREE.InstancedMesh(new THREE.CircleGeometry(11, 10), matStandar(0x16a34a), 6);
+    const dummy = new THREE.Object3D();
+    [[-70, -30], [40, 45], [95, -55], [-15, 70], [60, -95], [-105, 25]].forEach(([dx, dz], i) => {
+        dummy.position.set(c.x + dx, 0.55, c.z + dz);
+        dummy.rotation.set(-Math.PI / 2, 0, i * 1.1);
+        dummy.scale.setScalar(0.8 + (i % 3) * 0.3);
+        dummy.updateMatrix();
+        teratai.setMatrixAt(i, dummy.matrix);
+    });
+    dunia.add(teratai);
+    const bunga = new THREE.Mesh(new THREE.SphereGeometry(5, 8, 6), matStandar(0xf472b6));
+    bunga.position.set(c.x - 68, 2, c.z - 28);
+    dunia.add(bunga);
+}
+
+// ---------------------------------------------------------------------------
+// Balai Desa dan tiang bendera
+// ---------------------------------------------------------------------------
+let bendera = null, geoBenderaAsli = null;
+{
+    const balai = buatBalai();
+    const pos = KE3(FOKUS.x, FOKUS.y);
+    balai.position.copy(pos);
+    dunia.add(balai);
+    balai.traverse(o => { o.userData.popover = { kicker: 'DETAIL BANGUNAN', judul: 'Balai Desa (Kantor Desa Kejar Target)', lencana: null, kutipan: '“Semoga desanya makin maju.”', isi: 'Diminta oleh Bang Uju. Berdiri 7 November 2026. Tap pintunya saat mode Keliling Desa buat masuk (fitur interior menyusul di versi produksi).' }; });
+    bisaDiklik.push(balai);
+
+    // Label melayang di atas atap.
+    const label = labelNama('Balai Desa', 1.35);
+    label.position.set(pos.x, 352, pos.z);
+    dunia.add(label);
+
+    // Tiang bendera di sisi timur alun-alun, dekat titik berdiri Bang Uju.
+    const tiangPos = KE3(1205, 700);
+    const tiang = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 250, 8), matStandar(0x92600f));
+    tiang.position.set(tiangPos.x, 125, tiangPos.z);
+    tiang.castShadow = true;
+    dunia.add(tiang);
+    const c = document.createElement('canvas'); c.width = 128; c.height = 80;
+    const g = c.getContext('2d');
+    g.fillStyle = '#2563eb'; g.fillRect(0, 0, 128, 80);
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(44, 40, 17, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#facc15'; g.font = '30px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('★', 44, 42);
+    const texBendera = new THREE.CanvasTexture(c); texBendera.colorSpace = THREE.SRGBColorSpace;
+    const geoB = new THREE.PlaneGeometry(82, 46, 10, 2);
+    geoB.translate(41, 0, 0);
+    bendera = new THREE.Mesh(geoB, new THREE.MeshStandardMaterial({ map: texBendera, side: THREE.DoubleSide, roughness: 0.9 }));
+    bendera.position.set(tiangPos.x + 3, 222, tiangPos.z);
+    dunia.add(bendera);
+    geoBenderaAsli = geoB.attributes.position.array.slice();
+}
+
+// Label nama melayang (sprite tekstur kanvas).
+function labelNama(teks, skala = 1) {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 72;
+    const g = c.getContext('2d');
+    g.font = '800 38px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 9; g.strokeStyle = 'rgba(17,24,39,0.65)';
+    g.strokeText(teks, 128, 38);
+    g.fillStyle = '#ffffff';
+    g.fillText(teks, 128, 38);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    s.scale.set(104 * skala, 29 * skala, 1);
+    return s;
+}
+
+// ---------------------------------------------------------------------------
+// Penanda Tanah Kosong di 11 kavling lain
+// ---------------------------------------------------------------------------
+function penandaKosong(x, y) {
+    const grup = new THREE.Group();
+    const pos = KE3(x, y);
+    grup.position.copy(pos);
+    const lapang = new THREE.Mesh(new THREE.CircleGeometry(96, 26), matStandar(0xe9d8a6));
+    lapang.rotation.x = -Math.PI / 2; lapang.position.y = 0.28; lapang.receiveShadow = true;
+    grup.add(lapang);
+    const bahanKayu = matStandar(0x92600f);
+    grup.add(kotak(6, 58, 6, bahanKayu, -40, 29, 0));
+    grup.add(kotak(6, 58, 6, bahanKayu, 40, 29, 0));
+    const papan = new THREE.Mesh(
+        new THREE.BoxGeometry(124, 42, 6),
+        [bahanKayu, bahanKayu, bahanKayu, bahanKayu,
+         new THREE.MeshStandardMaterial({ map: teksturPapan('Tanah Kosong', { ukuran: 52 }), roughness: 0.85 }),
+         new THREE.MeshStandardMaterial({ map: teksturPapan('Tanah Kosong', { ukuran: 52 }), roughness: 0.85 })]
+    );
+    papan.position.y = 64; papan.castShadow = true;
+    grup.add(papan);
+    grup.userData.popover = { kicker: 'KAVLING KOSONG', judul: 'Tanah Kosong', lencana: null, kutipan: null, isi: 'Kavling ini menunggu komentar pemenang. Usulkan usahamu di Instagram @desatarget, komentar paling banyak disukai dibangun di sini.' };
+    bisaDiklik.push(grup);
+    return grup;
+}
+POSISI_KAVLING.slice(1).forEach(([x, y]) => dunia.add(penandaKosong(x, y)));
+
+// ---------------------------------------------------------------------------
+// Pepohonan dan alam: instancing supaya draw call tetap sedikit.
+// Sebaran ditolak bila menabrak zona, kavling, jalan, alun-alun, atau kolam.
+// ---------------------------------------------------------------------------
+function titikTabrakan(x, y) {
+    if (x < 45 || x > 1955 || y < 45 || y > 1288) return true;
+    for (const z of Object.values(ZONA_GANG)) {
+        const [tx, ty, tw, th] = z.tambak.map(v => v * SKALA);
+        if (x > tx - 14 && x < tx + tw + 14 && y > ty - 14 && y < ty + th + 14) return true;
+    }
+    for (const r of RINTANGAN) if (x > r.x1 - 24 && x < r.x2 + 24 && y > r.y1 - 24 && y < r.y2 + 40) return true;
+    if (Math.hypot(x - FOKUS.x, y - 714) < 225) return true;
+    if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 70) return true;
+    for (const p of contohJalan) if (Math.hypot(x - p.x, y - p.y) < 92) return true;
+    return false;
+}
+function kumpulkanTitik(jumlah, terima) {
+    const hasil = [];
+    let gagal = 0;
+    while (hasil.length < jumlah && gagal < jumlah * 60) {
+        const x = 40 + acak() * 1920, y = 40 + acak() * 1253;
+        if (titikTabrakan(x, y) || !terima(x, y, hasil)) { gagal++; continue; }
+        hasil.push({ x, y, s: 0.8 + acak() * 0.55, r: acak() * Math.PI * 2 });
+    }
+    return hasil;
+}
+function jauhDariSemua(hasil, jarak) {
+    return (x, y) => hasil.every(p => Math.hypot(x - p.x, y - p.y) > jarak);
+}
+{
+    const dummy = new THREE.Object3D();
+    const buatInstansi = (geo, bahan, daftar, fn) => {
+        const im = new THREE.InstancedMesh(geo, bahan, daftar.length);
+        daftar.forEach((p, i) => { fn(p, dummy); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); });
+        im.castShadow = true; im.receiveShadow = true;
+        dunia.add(im);
+        return im;
+    };
+    // Pohon bulat: batang + tajuk utama + 2 tajuk samping.
+    const titikBulat = kumpulkanTitik(48, () => true);
+    const terimaPisah = jauhDariSemua(titikBulat, 120);
+    buatInstansi(new THREE.CylinderGeometry(7, 10, 36, 7), matStandar(0x92600f), titikBulat,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 18 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    buatInstansi(new THREE.SphereGeometry(31, 9, 7), matStandar(0x22c55e), titikBulat,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 70 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    const titikSamping = [];
+    titikBulat.forEach(p => { titikSamping.push({ ...p, dx: -20, dy: 54 }); titikSamping.push({ ...p, dx: 20, dy: 54 }); });
+    buatInstansi(new THREE.SphereGeometry(21, 8, 6), matStandar(0x4ade80), titikSamping,
+        (p, d) => { const c = KE3(p.x + p.dx, p.y); d.position.set(c.x, p.dy * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    // Pinus: batang + 3 kerucut bertumpuk.
+    const titikPinus = kumpulkanTitik(24, terimaPisah);
+    buatInstansi(new THREE.CylinderGeometry(6, 9, 28, 7), matStandar(0x78350f), titikPinus,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 14 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    const titikKerucut = [];
+    titikPinus.forEach(p => { titikKerucut.push({ ...p, dy: 58, r: 31 }); titikKerucut.push({ ...p, dy: 88, r: 23 }); titikKerucut.push({ ...p, dy: 112, r: 15 }); });
+    buatInstansi(new THREE.ConeGeometry(1, 52, 8), matStandar(0x15803d), titikKerucut,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, p.dy * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.set(p.r * p.s, p.s, p.r * p.s); });
+    // Pohon buah: tajuk bulat plus titik buah oranye.
+    const titikBuah = kumpulkanTitik(14, jauhDariSemua(titikPinus, 120));
+    buatInstansi(new THREE.CylinderGeometry(7, 10, 34, 7), matStandar(0x92600f), titikBuah,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 17 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    buatInstansi(new THREE.SphereGeometry(29, 9, 7), matStandar(0x16a34a), titikBuah,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 64 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.setScalar(p.s); });
+    const titikBuahKecil = [];
+    titikBuah.forEach(p => { for (let i = 0; i < 5; i++) { const a = acak() * Math.PI * 2; titikBuahKecil.push({ x: p.x + Math.cos(a) * 24, y: p.y + Math.sin(a) * 10, dy: 52 + acak() * 22, s: p.s }); } });
+    buatInstansi(new THREE.SphereGeometry(4.4, 6, 5), matStandar(0xf97316), titikBuahKecil,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, p.dy * p.s, c.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
+    // Semak, batu, dan rumpun rumput.
+    const titikSemak = kumpulkanTitik(52, () => true);
+    buatInstansi(new THREE.SphereGeometry(15, 8, 6), matStandar(0x4ade80), titikSemak,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 8 * p.s, c.z); d.rotation.set(0, p.r, 0); d.scale.set(p.s, p.s * 0.62, p.s); });
+    const titikBatu = kumpulkanTitik(22, () => true);
+    buatInstansi(new THREE.DodecahedronGeometry(12, 0), matStandar(0xa8a29e), titikBatu,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 6 * p.s, c.z); d.rotation.set(p.r, p.r * 2, 0); d.scale.setScalar(p.s); });
+    const titikRumput = [];
+    for (let i = 0; i < 380; i++) {
+        const x = 30 + acak() * 1940, y = 30 + acak() * 1273;
+        if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 40) continue;
+        titikRumput.push({ x, y, s: 0.7 + acak() * 0.8, r: acak() * Math.PI });
+    }
+    const rumput = new THREE.InstancedMesh(new THREE.ConeGeometry(6, 17, 5), matStandar(0x4ade80), titikRumput.length);
+    titikRumput.forEach((p, i) => { const c = KE3(p.x, p.y); dummy.position.set(c.x, 8, c.z); dummy.rotation.set(0, p.r, 0); dummy.scale.setScalar(p.s); dummy.updateMatrix(); rumput.setMatrixAt(i, dummy.matrix); });
+    dunia.add(rumput);
+    // Deretan pohon di tepi desa (penanda batas tanah, seperti versi 4.3).
+    const titikTepi = [];
+    for (let x = 90; x < 1980; x += 128) { titikTepi.push({ x: x + acak() * 30, y: 26 + acak() * 16 }); titikTepi.push({ x: x + acak() * 30, y: 1300 - acak() * 16 }); }
+    for (let y = 150; y < 1250; y += 128) { titikTepi.push({ x: 26 + acak() * 16, y }); titikTepi.push({ x: 1974 - acak() * 16, y }); }
+    const tepiSah = titikTepi.filter(p => !titikTabrakan(p.x, p.y));
+    buatInstansi(new THREE.CylinderGeometry(7, 10, 36, 7), matStandar(0x92600f), tepiSah,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 18, c.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1.05); });
+    buatInstansi(new THREE.SphereGeometry(31, 9, 7), matStandar(0x22c55e), tepiSah,
+        (p, d) => { const c = KE3(p.x, p.y); d.position.set(c.x, 72, c.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1.05); });
+    // Lampu jalan di sepanjang jalan utama (posisi dari peta 2D).
+    const titikLampu = [[120, 648], [330, 556], [560, 622], [770, 512], [1005, 420]].map(([x, y]) => KE3(x * SKALA, y * SKALA));
+    buatInstansi(new THREE.CylinderGeometry(3.5, 4.5, 66, 7), matStandar(0x475569), titikLampu,
+        (p, d) => { d.position.set(p.x, 33, p.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
+    buatInstansi(new THREE.SphereGeometry(8.5, 8, 6), matStandar(0xfef08a, { emissive: 0xfacc15, emissiveIntensity: 0.7 }), titikLampu,
+        (p, d) => { d.position.set(p.x, 70, p.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
+    // Pagar kayu di tepi beberapa zona (garis dari peta 2D, koordinat lokal).
+    const bahanPagar = matStandar(0xb45309);
+    const garisPagar = [
+        [[24, 196], [236, 196]], [[24, 462], [236, 462]], [[950, 186], [1102, 186]],
+        [[768, 438], [926, 438]], [[122, 610], [242, 610]],
+    ];
+    for (const [[ax, ay], [bx, by]] of garisPagar) {
+        const a = KE3(ax * SKALA, ay * SKALA), b = KE3(bx * SKALA, by * SKALA);
+        const panjang = a.distanceTo(b);
+        for (const tinggiRel of [13, 25]) {
+            const rel = new THREE.Mesh(new THREE.BoxGeometry(panjang, 4.5, 4.5), bahanPagar);
+            rel.position.set((a.x + b.x) / 2, tinggiRel, (a.z + b.z) / 2);
+            rel.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+            rel.castShadow = true;
+            dunia.add(rel);
+        }
+        const jumlahTiang = Math.max(2, Math.round(panjang / 62));
+        for (let i = 0; i <= jumlahTiang; i++) {
+            const t = i / jumlahTiang;
+            const tiangPagar = new THREE.Mesh(new THREE.BoxGeometry(6, 30, 6), bahanPagar);
+            tiangPagar.position.set(a.x + (b.x - a.x) * t, 15, a.z + (b.z - a.z) * t);
+            tiangPagar.castShadow = true;
+            dunia.add(tiangPagar);
+        }
+    }
+    // Awan low-poly melayang.
+    const bahanAwan = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true, transparent: true, opacity: 0.92 });
+    window.__awan = [];
+    for (let i = 0; i < 4; i++) {
+        const awan = new THREE.Group();
+        const pangkal = new THREE.Mesh(new THREE.SphereGeometry(46, 8, 6), bahanAwan);
+        pangkal.scale.set(1.5, 0.5, 1);
+        awan.add(pangkal);
+        const samping = new THREE.Mesh(new THREE.SphereGeometry(32, 8, 6), bahanAwan);
+        samping.position.set(52, 4, 6); samping.scale.set(1.3, 0.5, 1);
+        awan.add(samping);
+        awan.position.set(-1100 + i * 620, 300 + (i % 3) * 55, -500 + (i % 4) * 300);
+        dunia.add(awan);
+        window.__awan.push(awan);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Manusia: warga berwarna gang, Bang Uju (sprite), dan pengunjung "Kamu"
+// ---------------------------------------------------------------------------
+function buatFigur(warnaBadan, { topi = null } = {}) {
+    const grup = new THREE.Group();
+    const dalam = new THREE.Group();
+    grup.add(dalam);
+    const bahan = matStandar(warnaBadan);
+    const badan = new THREE.Mesh(new THREE.CylinderGeometry(10.5, 13.5, 37, 10), bahan);
+    badan.position.y = 32; badan.castShadow = true;
+    dalam.add(badan);
+    const kepala = new THREE.Mesh(new THREE.SphereGeometry(11.5, 10, 8), matStandar(0xfcd9b8));
+    kepala.position.y = 60; kepala.castShadow = true;
+    dalam.add(kepala);
+    if (topi) {
+        const t = new THREE.Mesh(new THREE.CylinderGeometry(12, 12.5, 6, 10), matStandar(topi));
+        t.position.y = 68;
+        dalam.add(t);
+        const brim = new THREE.Mesh(new THREE.BoxGeometry(15, 3, 10), matStandar(topi));
+        brim.position.set(0, 66, 11);
+        dalam.add(brim);
+    }
+    grup.userData.dalam = dalam;
+    return grup;
+}
+const agenWarga = [];
+{
+    const perGang = {};
+    WARGA_SEED.forEach((w, i) => {
+        const z = ZONA_GANG[w.gang];
+        const rect = rectWara(z);
+        perGang[w.gang] = perGang[w.gang] || 0;
+        const idx = perGang[w.gang]++;
+        // Titik berdiri awal mengikuti grid zona versi 2D (awal + dx/dy),
+        // jatuh kembali ke titik acak di rect wara bila di luar.
+        const t2 = z.tambak;
+        const gridX = (t2[0] + 27 + (idx % 5) * 36) * SKALA;
+        const gridY = (t2[1] + 82 + Math.floor(idx / 5) * 34) * SKALA;
+        const diDalam = gridX >= rect.x && gridX <= rect.x + rect.w && gridY >= rect.y && gridY <= rect.y + rect.h;
+        const rumah = diDalam ? { x: gridX, y: gridY } : { x: rect.x + rect.w * (0.25 + 0.5 * acak()), y: rect.y + rect.h * (0.25 + 0.5 * acak()) };
+        const figur = buatFigur(z.warna);
+        figur.position.copy(KE3(rumah.x, rumah.y));
+        const label = labelNama(w.nama, 0.82);
+        label.position.y = 92;
+        figur.add(label);
+        figur.userData.popover = { kicker: 'WARGA DESA', judul: w.nama, lencana: { teks: w.gang, warna: z.css }, kutipan: null, isi: 'Nomor warga ' + w.nomor + '. Warga ' + w.gang + ' yang sedang keliling lingkungan gang-nya.' };
+        dunia.add(figur);
+        bisaDiklik.push(figur);
+        agenWarga.push({
+            figur, dalam: figur.userData.dalam, rect,
+            x: rumah.x, y: rumah.y, rumah: { ...rumah },
+            target: null, kecepatan: 26 + acak() * 18,
+            tunggu: 1 + i * 1.7 + acak() * 4, fase: acak() * Math.PI * 2,
+            jedaPopover: false,
+        });
+    });
+}
+// Bang Uju: sprite billboard dari gambar resmi maskot, patroli alun-alun.
+const agenUju = { x: TITIK_PATROLI[0][0], y: TITIK_PATROLI[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
+let spriteUju = null;
+{
+    const tex = new THREE.TextureLoader().load('assets/bang-uju-peta.png', (t) => {
+        const aspek = t.image.width / t.image.height;
+        spriteUju.scale.set(168 * aspek, 168, 1);
+    });
+    spriteUju = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+    spriteUju.scale.set(130, 168, 1);
+    const pos = KE3(agenUju.x, agenUju.y);
+    spriteUju.position.set(pos.x, 84, pos.z);
+    spriteUju.userData.popover = { kicker: 'KEPALA DESA', judul: 'Bang Uju', lencana: null, kutipan: '“Ikutin Bang Uju, biar sama-sama sampai tujuan!”', isi: 'Kepala Desa Target yang sedang ronda keliling alun-alun Balai Desa.' };
+    dunia.add(spriteUju);
+    bisaDiklik.push(spriteUju);
+    const label = labelNama('Bang Uju', 0.95);
+    label.position.set(pos.x, 196, pos.z);
+    label.name = 'labelUju';
+    dunia.add(label);
+}
+// Pengunjung "Kamu" untuk mode Keliling Desa.
+const kamu = { x: FOKUS.x, y: FOKUS.y + 88, arah: Math.PI, figur: null };
+{
+    kamu.figur = buatFigur(0x0d9488, { topi: 0xdc2626 });
+    kamu.figur.position.copy(KE3(kamu.x, kamu.y));
+    const label = labelNama('Kamu', 0.82);
+    label.position.y = 92;
+    kamu.figur.add(label);
+    kamu.figur.visible = false;
+    dunia.add(kamu.figur);
+}
+
+// ---------------------------------------------------------------------------
+// Mesin wara-wiri (aturan sama seperti versi 4.3)
+// ---------------------------------------------------------------------------
+function dalamRintangan(x, y) {
+    return RINTANGAN.some(r => x > r.x1 && x < r.x2 && y > r.y1 && y < r.y2);
+}
+function pilihTarget(agen) {
+    for (let coba = 0; coba < 8; coba++) {
+        const tx = agen.rect.x + Math.random() * agen.rect.w;
+        const ty = agen.rect.y + Math.random() * agen.rect.h;
+        const jarak = Math.hypot(tx - agen.x, ty - agen.y);
+        if (jarak < 34 || jarak > 200) continue;
+        let aman = true;
+        for (let s = 1; s <= 5; s++) {
+            const px = agen.x + (tx - agen.x) * s / 5, py = agen.y + (ty - agen.y) * s / 5;
+            if (dalamRintangan(px, py)) { aman = false; break; }
+        }
+        if (aman) return { x: tx, y: ty };
+    }
+    return null;
+}
+function gerakkanAgen(agen, dt, patroli = false) {
+    if (agen.jedaPopover) return;
+    if (agen.tunggu > 0) { agen.tunggu -= dt; return; }
+    if (!agen.target) {
+        if (patroli) {
+            agen.indeks = (agen.indeks + 1) % TITIK_PATROLI.length;
+            agen.target = { x: TITIK_PATROLI[agen.indeks][0], y: TITIK_PATROLI[agen.indeks][1] };
+        } else {
+            agen.target = pilihTarget(agen);
+            if (!agen.target) { agen.tunggu = 1.2; return; }
+        }
+    }
+    const dx = agen.target.x - agen.x, dy = agen.target.y - agen.y;
+    const jarak = Math.hypot(dx, dy);
+    const langkah = agen.kecepatan * dt;
+    if (jarak <= Math.max(langkah, 2)) {
+        agen.x = agen.target.x; agen.y = agen.target.y;
+        agen.target = null;
+        agen.tunggu = patroli ? 3.5 + Math.random() * 3 : 2.5 + Math.random() * 6.5;
+    } else {
+        agen.x += dx / jarak * langkah;
+        agen.y += dy / jarak * langkah;
+        agen.arahTarget = Math.atan2(dx, dy);
+    }
+}
+function terapkanAgen(agen, waktu) {
+    const pos = KE3(agen.x, agen.y);
+    agen.figur.position.set(pos.x, 0, pos.z);
+    if (agen.arahTarget !== undefined) {
+        let beda = agen.arahTarget - (agen.figur.rotation.y || 0);
+        while (beda > Math.PI) beda -= Math.PI * 2;
+        while (beda < -Math.PI) beda += Math.PI * 2;
+        agen.figur.rotation.y += beda * 0.12;
+    }
+    const jalan = !!agen.target && agen.tunggu <= 0;
+    agen.dalam.position.y = jalan ? Math.abs(Math.sin(waktu * 9 + agen.fase)) * 2.4 : Math.sin(waktu * 2 + agen.fase) * 1.5;
+    agen.dalam.rotation.x = jalan ? 0.07 : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Mode Keliling Desa: jalan sebagai "Kamu"
+// ---------------------------------------------------------------------------
+let modeJalan = false;
+const tombolJalan = document.getElementById('tombolJalan');
+const dpad = document.getElementById('dpad');
+const chipMasuk = document.getElementById('chipMasuk');
+const chipJalan = document.getElementById('chipJalan');
+const tombolDitekan = {};
+const kunciDitekan = {};
+const RINTANGAN_JALAN = [
+    { x1: 852, y1: 566, x2: 1182, y2: 818 },   // tapak Balai Desa
+    ...POSISI_KAVLING.slice(1).map(([x, y]) => ({ x1: x - 64, y1: y - 16, x2: x + 64, y2: y + 16 })), // penanda tanah kosong
+];
+function tabrakanJalan(x, y) {
+    if (x < 46 || x > 1954 || y < 46 || y > 1287) return true;
+    if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 14) return true;
+    return RINTANGAN_JALAN.some(r => x > r.x1 - 14 && x < r.x2 + 14 && y > r.y1 - 14 && y < r.y2 + 14);
+}
+function aturModeJalan(nyala) {
+    modeJalan = nyala;
+    tombolJalan.textContent = nyala ? 'Berhenti' : 'Keliling Desa';
+    tombolJalan.classList.toggle('aktif', nyala);
+    dpad.classList.toggle('tampil', nyala);
+    chipJalan.classList.toggle('tampil', nyala);
+    if (!nyala) chipMasuk.classList.remove('tampil');
+    kamu.figur.visible = nyala;
+    controls.enabled = !nyala;
+    if (nyala) {
+        const pos = KE3(kamu.x, kamu.y);
+        kamu.figur.position.set(pos.x, 0, pos.z);
+        kamu.figur.rotation.y = Math.PI;
+    } else {
+        camera.position.copy(KAMERA_AWAL);
+        controls.target.copy(TARGET_AWAL);
+        controls.update();
+    }
+    tutupPopover();
+}
+tombolJalan.addEventListener('click', () => aturModeJalan(!modeJalan));
+window.addEventListener('keydown', (e) => {
+    if (!modeJalan) return;
+    kunciDitekan[e.key.toLowerCase()] = true;
+    if (e.key === 'Escape') aturModeJalan(false);
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
+});
+window.addEventListener('keyup', (e) => { kunciDitekan[e.key.toLowerCase()] = false; });
+dpad.querySelectorAll('button').forEach(btn => {
+    const arah = btn.dataset.arah;
+    const on = (e) => { e.preventDefault(); tombolDitekan[arah] = true; btn.classList.add('tertekan'); };
+    const off = () => { tombolDitekan[arah] = false; btn.classList.remove('tertekan'); };
+    btn.addEventListener('pointerdown', on);
+    btn.addEventListener('pointerup', off);
+    btn.addEventListener('pointerleave', off);
+    btn.addEventListener('pointercancel', off);
+});
+function perbaruiKamu(dt) {
+    const maju = (kunciDitekan['w'] || kunciDitekan['arrowup'] || tombolDitekan['maju'] ? 1 : 0) - (kunciDitekan['s'] || kunciDitekan['arrowdown'] || tombolDitekan['mundur'] ? 1 : 0);
+    const samping = (kunciDitekan['d'] || kunciDitekan['arrowright'] || tombolDitekan['kanan'] ? 1 : 0) - (kunciDitekan['a'] || kunciDitekan['arrowleft'] || tombolDitekan['kiri'] ? 1 : 0);
+    if (maju || samping) {
+        // Arah gerak relatif terhadap arah pandang kamera, seperti gim 3D umumnya.
+        const depan = new THREE.Vector3();
+        camera.getWorldDirection(depan); depan.y = 0; depan.normalize();
+        const kanan = new THREE.Vector3().crossVectors(depan, new THREE.Vector3(0, 1, 0)).negate();
+        const gerak = depan.multiplyScalar(maju).add(kanan.multiplyScalar(samping)).normalize();
+        const kecepatan = 135 * dt;
+        const nx = kamu.x + gerak.x * kecepatan;
+        const nz = kamu.y + gerak.z * kecepatan;
+        if (!tabrakanJalan(nx, kamu.y)) kamu.x = nx;
+        if (!tabrakanJalan(kamu.x, nz)) kamu.y = nz;
+        kamu.arah = Math.atan2(gerak.x, gerak.z);
+    }
+    kamu.figur.rotation.y = kamu.arah;
+    const pos = KE3(kamu.x, kamu.y);
+    kamu.figur.position.set(pos.x, 0, pos.z);
+    // Kamera mengikuti dari belakang bahu Kamu.
+    const belakang = new THREE.Vector3(Math.sin(kamu.arah), 0, Math.cos(kamu.arah));
+    const tujuanKamera = new THREE.Vector3(pos.x, 0, pos.z).addScaledVector(belakang, -178);
+    tujuanKamera.y = 104;
+    camera.position.lerp(tujuanKamera, 0.055);
+    camera.lookAt(pos.x, 46, pos.z);
+    // Kedekatan ke pintu Balai Desa memunculkan chip masuk (stub).
+    const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
+    chipMasuk.classList.toggle('tampil', dekatPintu);
+}
+chipMasuk.addEventListener('click', () => {
+    // Stub prototipe: interior Balai Desa dibangun pada integrasi produksi.
+    chipMasuk.textContent = 'Interior Balai Desa menyusul di versi produksi';
+    setTimeout(() => { chipMasuk.textContent = 'Masuk Balai Desa'; }, 2200);
+});
+
+// ---------------------------------------------------------------------------
+// Popover hasil tap, panel Papan Gang, dan tombol UI
+// ---------------------------------------------------------------------------
+const popoverEl = document.getElementById('popover');
+let agenJeda = null;
+function agenDariObjek(obj) {
+    if (obj === spriteUju) return agenUju;
+    return agenWarga.find(a => a.figur === obj) || null;
+}
+function bukaPopover(data, objek, clientX, clientY) {
+    document.getElementById('popKicker').textContent = data.kicker;
+    document.getElementById('popJudul').textContent = data.judul;
+    const lencana = document.getElementById('popLencana');
+    if (data.lencana) {
+        lencana.hidden = false;
+        lencana.textContent = data.lencana.teks;
+        lencana.style.background = data.lencana.warna;
+    } else lencana.hidden = true;
+    const kutipan = document.getElementById('popKutipan');
+    if (data.kutipan) { kutipan.hidden = false; kutipan.textContent = data.kutipan; } else kutipan.hidden = true;
+    document.getElementById('popIsi').textContent = data.isi;
+    popoverEl.style.left = Math.min(clientX + 14, window.innerWidth - 316) + 'px';
+    popoverEl.style.top = Math.min(clientY + 14, window.innerHeight - 190) + 'px';
+    popoverEl.classList.add('tampil');
+    if (agenJeda) agenJeda.jedaPopover = false;
+    agenJeda = agenDariObjek(objek);
+    if (agenJeda) agenJeda.jedaPopover = true;
+}
+function tutupPopover() {
+    popoverEl.classList.remove('tampil');
+    if (agenJeda) { agenJeda.jedaPopover = false; agenJeda = null; }
+}
+document.getElementById('popoverTutup').addEventListener('click', tutupPopover);
+const raycaster = new THREE.Raycaster();
+let titikTekan = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { titikTekan = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+    if (!titikTekan) return;
+    const geser = Math.hypot(e.clientX - titikTekan.x, e.clientY - titikTekan.y);
+    titikTekan = null;
+    if (geser > 6 || modeJalan) return;
+    const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const potong = raycaster.intersectObjects(bisaDiklik, true);
+    if (!potong.length) { tutupPopover(); return; }
+    let obj = potong[0].object;
+    while (obj && !obj.userData.popover) obj = obj.parent;
+    if (obj) bukaPopover(obj.userData.popover, obj === spriteUju ? spriteUju : obj, e.clientX, e.clientY);
+});
+
+const panelGang = document.getElementById('panelGang');
+document.getElementById('tombolPapan').addEventListener('click', () => {
+    panelGang.classList.add('buka');
+    panelGang.setAttribute('aria-hidden', 'false');
+});
+document.getElementById('panelGangTutup').addEventListener('click', () => {
+    panelGang.classList.remove('buka');
+    panelGang.setAttribute('aria-hidden', 'true');
+});
+{   // Isi papan peringkat dari data warga contoh.
+    const hitung = {};
+    for (const namaGang of Object.keys(ZONA_GANG)) hitung[namaGang] = 0;
+    WARGA_SEED.forEach(w => { hitung[w.gang]++; });
+    const urutan = Object.entries(hitung).sort((a, b) => b[1] - a[1]);
+    const maks = Math.max(1, ...urutan.map(([, j]) => j));
+    document.getElementById('isiPapanGang').innerHTML = urutan.map(([gang, jumlah], i) => `
+        <div class="papan-baris">
+            <span class="papan-peringkat">${i + 1}</span>
+            <span class="papan-nama">${gang}</span>
+            <span class="papan-jumlah">${jumlah} warga</span>
+            <span class="papan-palangan"><span class="papan-isi" style="width: ${Math.round(jumlah / maks * 100)}%; background: ${ZONA_GANG[gang].css}"></span></span>
+        </div>`).join('');
+}
+document.getElementById('introTutup').addEventListener('click', () => {
+    document.getElementById('kartuIntro').style.display = 'none';
+});
+function zoomFaktor(f) {
+    if (modeJalan) return;
+    const arah = camera.position.clone().sub(controls.target).multiplyScalar(f);
+    const panjang = THREE.MathUtils.clamp(arah.length(), controls.minDistance, controls.maxDistance);
+    arah.setLength(panjang);
+    camera.position.copy(controls.target).add(arah);
+}
+document.getElementById('tombolZoomIn').addEventListener('click', () => zoomFaktor(0.78));
+document.getElementById('tombolZoomOut').addEventListener('click', () => zoomFaktor(1.28));
+document.getElementById('tombolReset').addEventListener('click', () => {
+    if (modeJalan) aturModeJalan(false);
+    camera.position.copy(KAMERA_AWAL);
+    controls.target.copy(TARGET_AWAL);
+    controls.update();
+    tutupPopover();
+});
+document.getElementById('tombolLayarPenuh').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => {});
+});
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Kait untuk pengujian otomatis dan tangkapan layar.
+window.__desa = { renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju };
+
+// ---------------------------------------------------------------------------
+// Putaran utama
+// ---------------------------------------------------------------------------
+const jam = new THREE.Clock();
+const labelUju = dunia.getObjectByName('labelUju');
+const statsEl = document.getElementById('stats');
+const tampilStats = new URLSearchParams(location.search).has('stats');
+if (tampilStats) statsEl.style.display = 'block';
+let bingkai = 0, akumulasiFps = 0, waktuStats = performance.now();
+let muatSembunyi = false;
+
+function putaran() {
+    requestAnimationFrame(putaran);
+    const dt = Math.min(jam.getDelta(), 0.05);
+    const t = jam.elapsedTime;
+
+    if (modeJalan) {
+        perbaruiKamu(dt);
+    } else {
+        controls.update();
+        controls.target.x = THREE.MathUtils.clamp(controls.target.x, -1000, 1000);
+        controls.target.z = THREE.MathUtils.clamp(controls.target.z, -666, 666);
+        controls.target.y = 0;
+    }
+
+    // Kehidupan ambien: warga dan patroli Uju berhenti selama mode jalan,
+    // tab tersembunyi, atau pengunjung memilih gerak dikurangi.
+    const ambienJalan = !kurangGerak && !modeJalan && !document.hidden;
+    if (ambienJalan) {
+        let bergerak = agenWarga.filter(a => a.target && a.tunggu <= 0 && !a.jedaPopover).length;
+        for (const agen of agenWarga) {
+            if (!agen.target && agen.tunggu <= 0 && bergerak >= 12) agen.tunggu = 0.6;
+            gerakkanAgen(agen, dt);
+            terapkanAgen(agen, t);
+            if (agen.target) bergerak++;
+        }
+        gerakkanAgen(agenUju, dt, true);
+        const posU = KE3(agenUju.x, agenUju.y);
+        spriteUju.position.set(posU.x, 84 + Math.sin(t * 2.2) * 2.5, posU.z);
+        if (labelUju) labelUju.position.set(posU.x, 196 + Math.sin(t * 2.2) * 2.5, posU.z);
+        // Gelombang bendera dan kerlip air kolam.
+        if (bendera && geoBenderaAsli) {
+            const posAttr = bendera.geometry.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const bx = geoBenderaAsli[i * 3];
+                posAttr.setZ(i, Math.sin(bx * 0.14 + t * 6) * 4.5 * (bx / 82 + 0.15));
+            }
+            posAttr.needsUpdate = true;
+            bendera.geometry.computeVertexNormals();
+        }
+        if (bahanAir) bahanAir.opacity = 0.87 + Math.sin(t * 1.4) * 0.05;
+        for (const awan of window.__awan) {
+            awan.position.x += dt * 7;
+            if (awan.position.x > 1350) awan.position.x = -1350;
+        }
+    }
+
+    renderer.render(scene, camera);
+
+    if (!muatSembunyi) {
+        muatSembunyi = true;
+        document.getElementById('layarMuat').classList.add('hilang');
+    }
+    if (tampilStats) {
+        bingkai++; akumulasiFps += dt;
+        const kini = performance.now();
+        if (kini - waktuStats > 600) {
+            const info = renderer.info.render;
+            statsEl.textContent = `draw calls : ${info.calls}\ntriangles  : ${info.triangles.toLocaleString('id-ID')}\nfps        : ${Math.round(bingkai / akumulasiFps)}`;
+            bingkai = 0; akumulasiFps = 0; waktuStats = kini;
+        }
+    }
+}
+putaran();
+</script>
+</body>
+</html>
