@@ -369,7 +369,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } from '<?= $folder3dUrl ?>bangunan3d.js?v=<?= $versiBangunan3d ?>';
 
 // ===========================================================================
-// DATA DESA: cerminan includes/peta-posisi.php peta 2D.
+// DATA DESA
+//
+// Sumber kebenaran posisi adalah includes/peta-posisi.php, berkas yang sama
+// yang dipakai peta 2D (ADR-0004). Server mengirim titik jangkar lewat
+// data-desa.php; halaman ini TIDAK menyimpan salinan koordinat.
+//
 // Dunia 2000 x 1333 satuan. Koordinat 2D (x, y) dipetakan ke 3D sebagai
 // (x - 1000, 0, y - 666.5): utara peta 2D menjadi -Z, selatan menjadi +Z,
 // jadi fasad bangunan yang menghadap selatan (+Z) terlihat dari kamera awal.
@@ -377,49 +382,127 @@ import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } fro
 const SKALA = 1.6667;
 const KE3 = (x, y) => new THREE.Vector3(x - 1000, 0, y - 666.5);
 
-const POSISI_KAVLING = [
-    [1017, 692], [283, 500], [650, 325], [1425, 342], [1767, 492], [233, 867],
-    [583, 758], [758, 1200], [1250, 1117], [1592, 1017], [425, 1250], [1833, 967],
-];
-const FOKUS = { x: 1017, y: 692 };           // Balai Desa
-const KOLAM = { x: 1775, y: 1197, r: 187 };  // dari elips 2D (1065, 718) x SKALA
+// Semua data yang menunggu endpoint: titik kavling, zona gang, fokus, kolam.
+// Nilai di bawah hanya dipakai bila endpoint tidak bisa dibaca sama sekali
+// (halaman dibuka mandiri tanpa PHP, atau jaringan gagal). Begitu data asli
+// tiba, semuanya diganti sebelum desa pertama kali dibangun; lihat muatDesa().
+let POSISI_KAVLING = [];
+let ZONA_GANG = {};
+let FOKUS = null;
+let KOLAM = null;
+let rintanganKavling = [];
+let titikPatroli = [];
 
-const ZONA_GANG = {
-    'Gang Dagang':     { tambak: [495, 20, 210, 168],  papan: [600, 32],   warna: 0x2563eb, css: '#2563eb' },
-    'Gang Kuliner':    { tambak: [952, 16, 205, 162],  papan: [1054, 28],  warna: 0xea580c, css: '#ea580c' },
-    'Gang Jasa':       { tambak: [26, 302, 205, 148],  papan: [128, 314],  warna: 0x0891b2, css: '#0891b2' },
-    'Gang Freelancer': { tambak: [30, 24, 240, 150],   papan: [150, 36],   warna: 0x7c3aed, css: '#7c3aed' },
-    'Gang Kerajinan':  { tambak: [772, 290, 185, 140], papan: [864, 302],  warna: 0xdb2777, css: '#db2777' },
+// Cadangan darurat. SALINAN dari peta-posisi.php versi saat ini; sengaja
+// tidak dipakai selama endpoint bisa dihubungi.
+const CADANGAN = {
+    kavling: [
+        [1017, 692], [283, 500], [650, 325], [1425, 342], [1767, 492], [233, 867],
+        [583, 758], [758, 1200], [1250, 1117], [1592, 1017], [425, 1250], [1833, 967],
+    ],
+    zona: {
+        'Gang Dagang':     { tambak: [495, 20, 210, 168],  papan: [600, 32],   warna: 0x2563eb, css: '#2563eb' },
+        'Gang Kuliner':    { tambak: [952, 16, 205, 162],  papan: [1054, 28],  warna: 0xea580c, css: '#ea580c' },
+        'Gang Jasa':       { tambak: [26, 302, 205, 148],  papan: [128, 314],  warna: 0x0891b2, css: '#0891b2' },
+        'Gang Freelancer': { tambak: [30, 24, 240, 150],   papan: [150, 36],   warna: 0x7c3aed, css: '#7c3aed' },
+        'Gang Kerajinan':  { tambak: [772, 290, 185, 140], papan: [864, 302],  warna: 0xdb2777, css: '#db2777' },
+    },
+    fokus: { x: 1017, y: 692 },
+    kolam: { x: 1775, y: 1197, r: 187 },
 };
-// Rect wara-wiri dihitung persis seperti $zonaUntukJs di peta.php versi 4.3:
-// margin sisi 14 satuan lokal, atas 18, bawah 12 (dikalikan SKALA_DUNIA).
+
+// Warna dan identitas visual tiap gang tidak datang dari server: itu urusan
+// tampilan 3D. Peta 2D punya warnanya sendiri di bangunan-svg.php.
+const WARNA_GANG = {
+    'Gang Dagang':     { warna: 0x2563eb, css: '#2563eb' },
+    'Gang Kuliner':    { warna: 0xea580c, css: '#ea580c' },
+    'Gang Jasa':       { warna: 0x0891b2, css: '#0891b2' },
+    'Gang Freelancer': { warna: 0x7c3aed, css: '#7c3aed' },
+    'Gang Kerajinan':  { warna: 0xdb2777, css: '#db2777' },
+};
+
+function pakaiCadangan() {
+    POSISI_KAVLING = CADANGAN.kavling;
+    ZONA_GANG = CADANGAN.zona;
+    FOKUS = CADANGAN.fokus;
+    KOLAM = CADANGAN.kolam;
+}
+
+// Rect wara-wiri: dipakai bila server belum mengirim 'wara' untuk sebuah zona.
+// Rumusnya sama dengan perhitungan di data-desa.php dan di peta 2D.
 function rectWara(z) {
+    if (z.wara) return z.wara;
     const t = z.tambak, mx = 14 * SKALA, mt = 18 * SKALA, mb = 12 * SKALA;
     return { x: t[0] * SKALA + mx, y: t[1] * SKALA + mt, w: t[2] * SKALA - 2 * mx, h: t[3] * SKALA - mt - mb };
 }
-// Tapak kavling yang dihindari warga saat memilih jalur lurus (RINTANGAN_WARA).
-const RINTANGAN = POSISI_KAVLING.map(([x, y]) => ({ x1: x - 105, y1: y - 130, x2: x + 105, y2: y + 6 }));
-// Patroli Bang Uju mengelilingi alun-alun, sama seperti TITIK_PATROLI versi 4.3.
-const TITIK_PATROLI = [[1228, 715], [860, 720], [950, 795], [1180, 712]];
 
-// Data contoh (cadangan): dipakai hanya bila data-desa.php tidak bisa
-// dibaca, misalnya halaman dibuka mandiri di luar situs. Saat data
-// langsung berhasil dimuat, semua ini diganti isi basis data produksi.
-const WARGA_SEED = [
-    { nama: 'Sari', gang: 'Gang Dagang' }, { nama: 'Budi', gang: 'Gang Dagang' }, { nama: 'Rina', gang: 'Gang Dagang' },
-    { nama: 'Dedi', gang: 'Gang Kuliner' }, { nama: 'Maya', gang: 'Gang Kuliner' },
-    { nama: 'Agus', gang: 'Gang Jasa' }, { nama: 'Fitri', gang: 'Gang Jasa' },
-    { nama: 'Rian', gang: 'Gang Freelancer' }, { nama: 'Dewi', gang: 'Gang Freelancer' },
-    { nama: 'Joko', gang: 'Gang Kerajinan' },
-];
-WARGA_SEED.forEach((w, i) => { w.nomor = 'DT-' + String(i + 1).padStart(4, '0'); });
+// Turunan dari POSISI_KAVLING, dihitung ulang setiap kali titik kavling
+// berganti (mis. setelah data server tiba).
+function hitungTurunan() {
+    // Tapak kavling yang dihindari warga saat memilih jalur lurus.
+    rintanganKavling = POSISI_KAVLING.map(([x, y]) => ({ x1: x - 105, y1: y - 130, x2: x + 105, y2: y + 6 }));
+    // Patroli Bang Uju mengelilingi alun-alun, sama seperti TITIK_PATROLI 2D.
+    titikPatroli = [[FOKUS.x + 211, FOKUS.y + 23], [860, 720], [950, 795], [1180, 712]];
+}
 
-// Bangunan contoh: isinya meniru baris seed Balai Desa di basis data.
-const BANGUNAN_SEED = [
-    { kavling: 0, nama: 'Balai Desa (Kantor Desa Kejar Target)', gang: 'Pusat Desa', komentar: 'Bangunan pertama Desa Target. Di sini warga mengurus surat, invoice, dan dokumen usaha lewat Kejar Target.', dari: 'Bang Uju', tanggal: '7 November 2026' },
-];
-// Papan gang contoh, bentuknya sama seperti keluaran papan_gang() di PHP.
-const PAPAN_SEED = (() => {
+// Zona gang gabungan: koordinat dari server, warna dari WARNA_GANG.
+function zonaGangLengkap() {
+    const hasil = {};
+    for (const [nama, z] of Object.entries(ZONA_GANG)) {
+        const w = WARNA_GANG[nama] || { warna: 0x64748b, css: '#64748b' };
+        hasil[nama] = { ...z, warna: w.warna, css: w.css };
+    }
+    return hasil;
+}
+
+function rectWaraUntuk(namaGang) {
+    const z = ZONA_GANG[namaGang];
+    return z ? rectWara(z) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Ambil data desa SEBELUM dunia dibangun (ADR-0004). Titik kavling, zona
+// gang, fokus kamera, dan kolam semuanya berasal dari includes/peta-posisi.php
+// lewat data-desa.php, berkas yang sama yang dipakai peta 2D. Klien tidak
+// menyimpan salinan koordinat, jadi tidak ada yang bisa basi.
+//
+// Bila endpoint tidak bisa dihubungi (halaman dibuka langsung dari disk,
+// jaringan putus), CADANGAN dipakai supaya peta tetap tampil.
+// ---------------------------------------------------------------------------
+async function ambilDataDesa() {
+    try {
+        const respons = await fetch('<?= $folder3d ?>data-desa.php', { headers: { 'Accept': 'application/json' } });
+        if (!respons.ok) return null;
+        const data = await respons.json();
+        if (!data || data.galat) return null;
+        if (!Array.isArray(data.kavling) || data.kavling.length === 0) return null;
+        return data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function terapkanDataDesa(data) {
+    if (data) {
+        POSISI_KAVLING = data.kavling.map(([x, y]) => [Number(x), Number(y)]);
+        ZONA_GANG = data.zonaGang || {};
+        FOKUS = { x: Number(data.fokus.x), y: Number(data.fokus.y) };
+        KOLAM = { x: Number(data.kolam.x), y: Number(data.kolam.y), r: Number(data.kolam.r) };
+    } else {
+        pakaiCadangan();
+    }
+    hitungTurunan();
+}
+
+const DATA_DESA = await ambilDataDesa();
+terapkanDataDesa(DATA_DESA);
+
+// Isi desa dari server, atau cadangan bila endpoint gagal.
+const WARGA_SEED = DATA_DESA && Array.isArray(DATA_DESA.warga) ? DATA_DESA.warga : [];
+const BANGUNAN_SEED = DATA_DESA && Array.isArray(DATA_DESA.bangunan) ? DATA_DESA.bangunan : [];
+// Papan gang: pakai keluaran papan_gang() dari server bila ada; kalau tidak,
+// hitung dari daftar warga yang tersedia.
+const PAPAN_SEED = DATA_DESA && Array.isArray(DATA_DESA.papanGang) ? DATA_DESA.papanGang : (() => {
     const hitung = {};
     for (const namaGang of Object.keys(ZONA_GANG)) hitung[namaGang] = 0;
     WARGA_SEED.forEach(w => { if (w.gang in hitung) hitung[w.gang]++; });
@@ -549,7 +632,7 @@ function bentukBulat(w, h, r) {
     s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
     return s;
 }
-for (const [namaGang, z] of Object.entries(ZONA_GANG)) {
+for (const [namaGang, z] of Object.entries(zonaGangLengkap())) {
     const [tx, ty, tw, th] = z.tambak.map(v => v * SKALA);
     const tambak = new THREE.Mesh(
         new THREE.ShapeGeometry(bentukBulat(tw, th, 60)),
@@ -732,13 +815,14 @@ let bendera = null, geoBenderaAsli = null;
 const grupBangunan = new THREE.Group();
 dunia.add(grupBangunan);
 let klikBangunan = [];
+// Warna gang berasal dari WARNA_GANG (klarifikasi tampilan), bukan dari server.
 function warnaGang(gang, cadangan = 0xf59e0b) {
-    const z = ZONA_GANG[gang];
-    return z ? z.warna : cadangan;
+    const w = WARNA_GANG[gang];
+    return w ? w.warna : cadangan;
 }
 function cssGang(gang) {
-    const z = ZONA_GANG[gang];
-    return z ? z.css : '#64748b';
+    const w = WARNA_GANG[gang];
+    return w ? w.css : '#64748b';
 }
 function bangunBangunan(daftar) {
     for (const o of klikBangunan) {
@@ -834,7 +918,7 @@ function titikTabrakan(x, y) {
         const [tx, ty, tw, th] = z.tambak.map(v => v * SKALA);
         if (x > tx - 14 && x < tx + tw + 14 && y > ty - 14 && y < ty + th + 14) return true;
     }
-    for (const r of RINTANGAN) if (x > r.x1 - 24 && x < r.x2 + 24 && y > r.y1 - 24 && y < r.y2 + 40) return true;
+    for (const r of rintanganKavling) if (x > r.x1 - 24 && x < r.x2 + 24 && y > r.y1 - 24 && y < r.y2 + 40) return true;
     if (Math.hypot(x - FOKUS.x, y - 714) < 225) return true;
     if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 70) return true;
     for (const p of contohJalan) if (Math.hypot(x - p.x, y - p.y) < 92) return true;
@@ -1033,7 +1117,7 @@ function bangunWarga(daftar) {
 }
 bangunWarga(WARGA_SEED);
 // Bang Uju: sprite billboard dari gambar resmi maskot, patroli alun-alun.
-const agenUju = { x: TITIK_PATROLI[0][0], y: TITIK_PATROLI[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
+const agenUju = { x: titikPatroli[0][0], y: titikPatroli[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
 let spriteUju = null;
 {
     const tex = new THREE.TextureLoader().load('assets/bang-uju-peta.png', (t) => {
@@ -1068,7 +1152,7 @@ const kamu = { x: FOKUS.x, y: FOKUS.y + 88, arah: Math.PI, figur: null };
 // Mesin wara-wiri (aturan sama seperti versi 4.3)
 // ---------------------------------------------------------------------------
 function dalamRintangan(x, y) {
-    return RINTANGAN.some(r => x > r.x1 && x < r.x2 && y > r.y1 && y < r.y2);
+    return rintanganKavling.some(r => x > r.x1 && x < r.x2 && y > r.y1 && y < r.y2);
 }
 function pilihTarget(agen) {
     for (let coba = 0; coba < 8; coba++) {
@@ -1090,8 +1174,8 @@ function gerakkanAgen(agen, dt, patroli = false) {
     if (agen.tunggu > 0) { agen.tunggu -= dt; return; }
     if (!agen.target) {
         if (patroli) {
-            agen.indeks = (agen.indeks + 1) % TITIK_PATROLI.length;
-            agen.target = { x: TITIK_PATROLI[agen.indeks][0], y: TITIK_PATROLI[agen.indeks][1] };
+            agen.indeks = (agen.indeks + 1) % titikPatroli.length;
+            agen.target = { x: titikPatroli[agen.indeks][0], y: titikPatroli[agen.indeks][1] };
         } else {
             agen.target = pilihTarget(agen);
             if (!agen.target) { agen.tunggu = 1.2; return; }
@@ -1318,32 +1402,25 @@ window.addEventListener('resize', () => {
 });
 
 // Kait untuk pengujian otomatis dan tangkapan layar.
-window.__desa = { renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju, sumberData: 'contoh', bangunBangunan, bangunWarga, gambarPapanGang };
+window.__desa = {
+    renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju,
+    sumberData: DATA_DESA ? 'langsung' : 'cadangan',
+    posisiKavling: POSISI_KAVLING,
+    zonaGang: ZONA_GANG,
+    fokus: FOKUS,
+    bangunBangunan, bangunWarga, gambarPapanGang,
+};
 
-// ---------------------------------------------------------------------------
-// Data langsung: ambil data-desa.php (basis data produksi). Bila berhasil
-// dan bentuknya sah, desa dibangun ulang dari data asli dan catatan
-// "data contoh" di kartu intro diganti keterangan data langsung. Bila
-// gagal dengan cara apa pun (halaman dibuka mandiri, endpoint tidak ada,
-// basis data galat), desa contoh yang sudah berdiri dibiarkan apa adanya.
-// ---------------------------------------------------------------------------
-async function muatDataLangsung() {
-    let data = null;
-    try {
-        const respons = await fetch('<?= $folder3d ?>data-desa.php', { headers: { 'Accept': 'application/json' } });
-        if (respons.ok) data = await respons.json();
-    } catch (e) { /* abaikan: cadangan data contoh tetap dipakai */ }
-    if (!data || data.galat || !Array.isArray(data.warga) || !Array.isArray(data.bangunan) || !Array.isArray(data.papanGang)) return;
-    tutupPopover();
-    bangunBangunan(data.bangunan);
-    bangunWarga(data.warga);
-    gambarPapanGang(data.papanGang);
-    window.__desa.sumberData = 'langsung';
+// Catatan data di kartu intro.
+{
     const catatan = document.getElementById('catatanData');
-    catatan.textContent = 'Data langsung dari balai desa: ' + data.warga.length + ' warga terdaftar, ' + data.bangunan.length + ' bangunan berdiri.';
-    catatan.classList.add('langsung');
+    if (DATA_DESA) {
+        catatan.textContent = 'Data langsung dari balai desa: ' + WARGA_SEED.length + ' warga terdaftar, ' + BANGUNAN_SEED.length + ' bangunan berdiri.';
+        catatan.classList.add('langsung');
+    } else {
+        catatan.textContent = 'Data desa belum bisa dimuat. Peta ini memakai posisi cadangan, jadi mungkin tidak sama dengan Peta Desa 2D.';
+    }
 }
-muatDataLangsung();
 
 // ===========================================================================
 // LINGKUNGAN: kawanan burung, bintang, dan siklus siang-malam langsung.

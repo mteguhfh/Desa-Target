@@ -1,7 +1,8 @@
 # ADR-0004: Satu sumber data untuk tampilan 3D dan 2D
 
-- Status: Diusulkan
+- Status: Diterima
 - Tanggal: 2026-11-08
+- Diterapkan: 2026-11-08 (`data-desa.php` mengirim posisi, 3D tidak menyimpan salinan)
 - Terkait: ADR-0001 (peta 3D sebagai layar utama)
 
 ## Konteks

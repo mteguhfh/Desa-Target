@@ -82,7 +82,11 @@ desa-target/
 
 Halaman dengan banyak markup dipisah dua berkas: satu berisi logika PHP murni, satu berisi markupnya. Pola ini dipakai supaya berkas logika tetap bisa dibaca utuh oleh alat analisis kode, dan supaya perubahan data tidak tercampur dengan perubahan tampilan.
 
+Satu sumber data untuk dua tampilan peta (lihat ADR-0004): titik kavling, zona gang, titik fokus kamera, dan kolam semuanya didefinisikan di `includes/peta-posisi.php`. Peta 2D memakainya langsung; peta 3D menerimanya lewat `peta3d/data-desa.php`. Peta 3D tidak menyimpan salinan koordinat, jadi memindahkan kavling di `peta-posisi.php` langsung menggeser bangunan di kedua tampilan.
+
 Penanda versi aset dihitung otomatis dari waktu ubah berkasnya (`filemtime`): `assets/style.css` untuk semua halaman, dan `peta3d/bangunan3d.js` untuk peta 3D. Tidak perlu lagi mengganti `?v=` dengan tangan setiap kali berkas itu berubah.
+
+Uji perilaku peta di peramban ada di `tools/uji/` (Playwright). Lihat `tools/uji/README.md`.
 
 ## Cara loop hariannya bekerja
 
