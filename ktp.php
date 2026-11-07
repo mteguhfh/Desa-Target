@@ -2,6 +2,7 @@
 // Halaman KTP Warga: formulir pendaftaran dan tampilan kartu warga.
 // Alur kirim memakai pola POST lalu redirect (PRG) plus token sekali pakai,
 // supaya kirim ulang karena refresh tidak menggandakan data warga.
+// Logikanya di sini; markup-nya di ktp-markup.php.
 
 session_start();
 require_once __DIR__ . '/db.php';
@@ -83,89 +84,7 @@ $totalWarga = hitung_warga($pdo);
 $judulHalaman = 'KTP Warga';
 $halamanAktif = 'ktp';
 require __DIR__ . '/includes/header.php';
-?>
 
-<section class="seksi sempit">
-    <h1>KTP Warga Desa Target</h1>
-    <p class="seksi-deskripsi">
-        KTP ini tanda kamu resmi jadi warga Desa Target. Gratis, tanpa ribet.
-        Isi nama dan pilih gang sesuai profesimu, kartumu langsung jadi.
-        Sudah ada <?= number_format($totalWarga, 0, ',', '.') ?> warga yang tercatat.
-    </p>
+require __DIR__ . '/ktp-markup.php';
 
-    <?php if ($pesan !== null): ?>
-        <p class="pesan pesan-info"><?= e($pesan) ?></p>
-    <?php endif; ?>
-
-    <?php if ($galat !== []): ?>
-        <div class="pesan pesan-gagal">
-            <p>Masih ada yang kurang pas:</p>
-            <ul>
-                <?php foreach ($galat as $g): ?>
-                    <li><?= e($g) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-
-    <?php if ($kartuWarga !== null): ?>
-        <article class="ktp-kartu">
-            <div class="ktp-kepala">
-                <span>KARTU TANDA WARGA</span>
-                <strong>DESA TARGET</strong>
-            </div>
-            <div class="ktp-badan">
-                <img src="assets/bang-uju.png" alt="Foto warga kehormatan: Bang Uju" class="ktp-foto">
-                <dl class="ktp-data">
-                    <div>
-                        <dt>Nama Warga</dt>
-                        <dd class="ktp-nama"><?= e($kartuWarga['nama']) ?></dd>
-                    </div>
-                    <div>
-                        <dt>Nomor Warga</dt>
-                        <dd><?= e(nomor_warga((int) $kartuWarga['id'])) ?></dd>
-                    </div>
-                    <div>
-                        <dt>Gang</dt>
-                        <dd><?= e($kartuWarga['gang']) ?></dd>
-                    </div>
-                    <div>
-                        <dt>Tanggal Bergabung</dt>
-                        <dd><?= e(format_tanggal($kartuWarga['created_at'])) ?></dd>
-                    </div>
-                </dl>
-            </div>
-            <div class="ktp-kaki">
-                <span>Kepala Desa: <strong>Bang Uju</strong></span>
-                <span>Desa Target, desanya UMKM hebat</span>
-            </div>
-        </article>
-        <p class="ktp-setelah">
-            Simpan alamat halaman ini untuk melihat kartumu lagi kapan pun.
-            Lanjut ke <a href="peta.php">Peta Desa</a> buat lihat bangunan yang sudah berdiri.
-        </p>
-    <?php endif; ?>
-
-    <form class="formulir" method="post" action="ktp.php">
-        <input type="hidden" name="token" value="<?= e($_SESSION['token_ktp']) ?>">
-        <label for="nama">Nama lengkap</label>
-        <input type="text" id="nama" name="nama" required minlength="3" maxlength="50"
-               autocomplete="name" placeholder="Contoh: Sari Wulandari"
-               value="<?= e($isian['nama']) ?>">
-        <label for="gang">Gang profesimu</label>
-        <select id="gang" name="gang" required>
-            <option value="">Pilih gang dulu</option>
-            <?php foreach (GANG_WARGA as $gang): ?>
-                <option value="<?= e($gang) ?>"<?= $isian['gang'] === $gang ? ' selected' : '' ?>><?= e($gang) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <p class="formulir-catatan">
-            Gang Dagang buat yang jualan barang, Gang Kuliner buat makanan dan minuman,
-            Gang Jasa buat layanan, Gang Freelancer buat pekerja lepas, dan Gang Kerajinan
-            buat pembuat produk tangan.
-        </p>
-        <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>
-    </form>
-</section>
-
-<?php require __DIR__ . '/includes/footer.php'; ?>
+require __DIR__ . '/includes/footer.php';

@@ -40,19 +40,36 @@ Database dibuat otomatis di `data/desa-target.sqlite` saat pertama kali halaman 
 
 ```
 desa-target/
-├── index.php                  Beranda: hero, penghitung warga, pembangunan terbaru, papan gang
-├── ktp.php                    Formulir KTP Warga dan tampilan kartu warga
-├── peta.php                   Peta desa interaktif v4 (dunia SVG geser dan zoom, popover detail, zona gang dan avatar warga, mode Keliling Desa, interior Balai Desa) dan papan gang
+├── index.php                  Beranda: logika dan variabel halaman
+├── index-markup.php           Markup beranda
+├── ktp.php                    Formulir KTP Warga: logika, validasi, dan token
+├── ktp-markup.php             Markup formulir dan kartu warga
+├── peta.php                   Peta Desa 3D (default): menjalankan peta3d/index.php
+├── peta2d.php                 Peta Desa 2D: tampilan alternatif lewat sakelar 3D/2D
 ├── config.php                 Konfigurasi: base URL publik, nama aplikasi, daftar gang
 ├── db.php                     Koneksi SQLite, pembuatan tabel, seed Balai Desa, fungsi kueri
 ├── .htaccess                  Tolak akses web ke config.php dan db.php, header keamanan
 ├── includes/
-│   ├── header.php             Kepala halaman dan navigasi bersama
+│   ├── header.php             Kepala halaman: variabel, escaping, versi stylesheet
+│   ├── header-markup.php      Markup kepala halaman dan navigasi
 │   ├── footer.php             Kaki halaman bersama
+│   ├── footer-markup.php      Markup kaki halaman
 │   ├── papan-gang.php         Partial peringkat gang, dipakai beranda dan peta
+│   ├── peta-data.php          Data peta: kueri bangunan dan warga, zona gang, titik fokus
+│   ├── peta-markup.php        Markup peta: SVG dunia, popover, panel Papan Gang
+│   ├── peta-skrip.php         Skrip interaktif peta: geser, zoom, Keliling Desa, patroli
+│   ├── sakelar-peta.php       Tombol sakelar 3D/2D, dipakai kedua halaman peta
+│   ├── sakelar-peta-skrip.php Pengingat pilihan mode peta di localStorage
 │   ├── peta-posisi.php        Koordinat 12 kavling dan zona lima gang pada dunia peta interaktif (2000 x 1333), plus faktor skalanya
 │   ├── bangunan-svg.php       Gambar SVG bangunan per jenis usaha, label nama bangunan, penanda tanah kosong, zona gang, dan avatar warga
 │   └── interior-balai.php     Adegan SVG dalam Balai Desa (Kantor Desa) yang tampil saat warga masuk gedung
+├── peta3d/
+│   ├── index.php              Peta desa 3D (Three.js): dunia, kamera orbit, siang-malam.
+│   │                          Dijalankan dari /peta3d/ maupun lewat /peta.php
+│   ├── templates.php          Galeri template bangunan 3D
+│   ├── bangunan3d.js          Konstruksi model bangunan 3D
+│   ├── data-desa.php          Endpoint JSON: warga, bangunan, papan gang dari database
+│   └── vendor/                Three.js dan OrbitControls, di-host sendiri
 ├── assets/
 │   ├── style.css              Satu stylesheet untuk semua halaman
 │   ├── bang-uju.png           Avatar Bang Uju (foto KTP dan hero)
@@ -62,6 +79,10 @@ desa-target/
 │   └── tambah-bangunan.php    Alat admin baris perintah untuk membangun bangunan baru
 └── data/                      Tempat database SQLite (isi tidak masuk git, diblokir dari web)
 ```
+
+Halaman dengan banyak markup dipisah dua berkas: satu berisi logika PHP murni, satu berisi markupnya. Pola ini dipakai supaya berkas logika tetap bisa dibaca utuh oleh alat analisis kode, dan supaya perubahan data tidak tercampur dengan perubahan tampilan.
+
+Penanda versi aset dihitung otomatis dari waktu ubah berkasnya (`filemtime`): `assets/style.css` untuk semua halaman, dan `peta3d/bangunan3d.js` untuk peta 3D. Tidak perlu lagi mengganti `?v=` dengan tangan setiap kali berkas itu berubah.
 
 ## Cara loop hariannya bekerja
 
