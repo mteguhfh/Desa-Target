@@ -426,6 +426,34 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     0% { transform: scale(0.35); opacity: 0.85; }
     100% { transform: scale(1.3); opacity: 0; }
 }
+/* Peta versi 4.2 (ala Bebaz): papan nama zona memakai bayangan lembut
+   dari filter bersama di SVG, asap dapur Gang Kuliner mengepul pelan,
+   burung melintasi langit desa sesekali, dan bendera desa di panggung
+   Bang Uju berkibar mengikuti bendera Balai Desa. */
+.zona-papan { filter: url(#bayLembut); }
+.asap-gumpal {
+    filter: url(#gangKabut);
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: asap-naik 5.5s ease-in-out infinite;
+}
+@keyframes asap-naik {
+    0%, 100% { transform: translateY(0); opacity: 0.95; }
+    50% { transform: translateY(-5px); opacity: 0.7; }
+}
+.burung { opacity: 0; animation: burung-terbang 26s linear infinite; }
+.burung-2 { animation-duration: 34s; animation-delay: 9s; }
+@keyframes burung-terbang {
+    0% { transform: translate(-60px, 92px); opacity: 0; }
+    4% { opacity: 0.8; }
+    30% { transform: translate(1330px, 42px); opacity: 0.8; }
+    34%, 100% { transform: translate(1420px, 38px); opacity: 0; }
+}
+.bendera-uju {
+    transform-box: fill-box;
+    transform-origin: 0% 50%;
+    animation: kibar 2.2s ease-in-out infinite;
+}
 .peta-popover {
     position: absolute;
     z-index: 9;
@@ -477,7 +505,8 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     margin-bottom: 0;
 }
 @media (prefers-reduced-motion: reduce) {
-    .awan, .bendera-balai, .riak, .bang-uju-dalam, .cincin-baru { animation: none !important; }
+    .awan, .bendera-balai, .riak, .bang-uju-dalam, .cincin-baru,
+    .asap-gumpal, .burung, .bendera-uju { animation: none !important; }
     .bangunan-dalam { transition: none; }
 }
 

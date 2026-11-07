@@ -135,26 +135,67 @@ function gambar_bangunan(string $varian, string $atap, string $nama, bool $terba
     $svg = '';
 
     if ($varian === 'balai') {
-        // Balai Desa: bangunan utama desa. Lebih besar dari bangunan biasa,
-        // atap amber, bendera berkibar di puncaknya, papan nama jelas.
-        $svg .= '<ellipse cx="0" cy="4" rx="84" ry="13" fill="#14532d" opacity="0.18"/>'
-            . '<rect x="-62" y="-74" width="124" height="74" fill="#fff8ea"/>'
-            . '<rect x="-62" y="-5" width="124" height="5" fill="#f0dfba"/>'
-            . '<polygon points="-75,-74 0,-113 75,-74" fill="#f59e0b"/>'
-            . '<rect x="-75" y="-78" width="150" height="7" rx="3.5" fill="#000000" opacity="0.12"/>'
-            . '<line x1="0" y1="-113" x2="0" y2="-141" stroke="#78716c" stroke-width="3" stroke-linecap="round"/>'
-            . '<polygon class="bendera-balai" points="0,-141 27,-134 0,-127" fill="#2563eb"/>'
-            . '<rect x="-41" y="-73" width="82" height="17" fill="#ffffff" stroke="#eadfc6" stroke-width="1"/>'
-            . '<text x="0" y="-60.5" text-anchor="middle" font-size="11.5" font-weight="700" letter-spacing="1" fill="#92400e">BALAI DESA</text>'
-            . '<rect x="-56" y="-48" width="14" height="18" fill="#bae6fd" stroke="#7dd3fc" stroke-width="1.5"/>'
-            . '<rect x="-36" y="-48" width="14" height="18" fill="#bae6fd" stroke="#7dd3fc" stroke-width="1.5"/>'
-            . '<rect x="22" y="-48" width="14" height="18" fill="#bae6fd" stroke="#7dd3fc" stroke-width="1.5"/>'
-            . '<rect x="42" y="-48" width="14" height="18" fill="#bae6fd" stroke="#7dd3fc" stroke-width="1.5"/>'
-            . '<rect x="-16" y="-36" width="15" height="36" rx="2" fill="#b45309"/>'
-            . '<rect x="1" y="-36" width="15" height="36" rx="2" fill="#b45309"/>'
-            . '<rect x="-25" y="-4" width="50" height="4" rx="2" fill="#ddd2b4"/>'
-            . '<circle cx="-72" cy="-5" r="8" fill="#22c55e"/><circle cx="-66" cy="-9" r="6" fill="#4ade80"/>'
-            . '<circle cx="72" cy="-5" r="8" fill="#22c55e"/><circle cx="66" cy="-9" r="6" fill="#4ade80"/>';
+        // Balai Desa: tengara utama desa, digambar ulang versi 4.2 jauh
+        // lebih besar dan ramai dari bangunan biasa supaya langsung jadi
+        // jangkar visual alun-alun: atap amber bertumpuk dengan bubungan,
+        // papan nama BALAI DESA besar di fasad, tiang bendera lebih tinggi,
+        // balkon kayu, sepasang pilar, tangga batu, lampion menggantung,
+        // pot bunga, dan semak berbunga di kedua sisi. Titik berdirinya
+        // sama (tengah bawah di titik kavling), tidak berubah.
+        $svg .= '<ellipse cx="0" cy="5" rx="128" ry="19" fill="#14532d" opacity="0.20"/>'
+            . '<rect x="-84" y="-104" width="168" height="9" rx="3" fill="#d6c9a8"/>'
+            . '<rect x="-92" y="-100" width="184" height="100" fill="#fff6df"/>'
+            . '<rect x="-92" y="-100" width="184" height="100" fill="none" stroke="#e7d6ac" stroke-width="2"/>'
+            . '<rect x="-92" y="-8" width="184" height="8" fill="#e9d9b0"/>'
+            // Atap utama dan atap bawah, keduanya amber jenuh tengara.
+            . '<polygon points="-106,-100 0,-156 106,-100" fill="#f59e0b"/>'
+            . '<rect x="-106" y="-105" width="212" height="8" rx="4" fill="#000000" opacity="0.13"/>'
+            . '<polygon points="-122,-72 -68,-104 68,-104 122,-72" fill="#d97706"/>'
+            . '<rect x="-122" y="-77" width="244" height="7" rx="3.5" fill="#000000" opacity="0.10"/>'
+            // Bubungan dan finial di puncak.
+            . '<rect x="-4" y="-164" width="8" height="10" rx="3" fill="#b45309"/>'
+            . '<circle cx="0" cy="-167" r="5.5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5"/>'
+            // Tiang bendera dan bendera desa.
+            . '<line x1="0" y1="-156" x2="0" y2="-197" stroke="#78716c" stroke-width="4" stroke-linecap="round"/>'
+            . '<polygon class="bendera-balai" points="0,-197 36,-187 0,-177" fill="#2563eb"/>'
+            // Papan nama besar di fasad.
+            . '<rect x="-72" y="-100" width="144" height="30" rx="5" fill="#fffdf5" stroke="#d97706" stroke-width="2.5"/>'
+            . '<text x="0" y="-78.5" text-anchor="middle" font-size="21" font-weight="800" letter-spacing="1.5" fill="#92400e">BALAI DESA</text>'
+            // Jendela berpanel di lantai atas dan bawah.
+            . '<g fill="#bae6fd" stroke="#38bdf8" stroke-width="2">'
+            . '<rect x="-80" y="-58" width="21" height="26" rx="2"/><rect x="-49" y="-58" width="21" height="26" rx="2"/>'
+            . '<rect x="28" y="-58" width="21" height="26" rx="2"/><rect x="59" y="-58" width="21" height="26" rx="2"/>'
+            . '<rect x="-80" y="-22" width="21" height="20" rx="2"/><rect x="59" y="-22" width="21" height="20" rx="2"/>'
+            . '</g>'
+            . '<g stroke="#e0f2fe" stroke-width="1.4">'
+            . '<line x1="-69.5" y1="-58" x2="-69.5" y2="-32"/><line x1="-38.5" y1="-58" x2="-38.5" y2="-32"/>'
+            . '<line x1="38.5" y1="-58" x2="38.5" y2="-32"/><line x1="69.5" y1="-58" x2="69.5" y2="-32"/>'
+            . '</g>'
+            // Balkon kayu di tengah fasad.
+            . '<rect x="-30" y="-64" width="60" height="5" rx="2" fill="#b45309"/>'
+            . '<g stroke="#b45309" stroke-width="2.4"><line x1="-26" y1="-64" x2="-26" y2="-76"/><line x1="-16" y1="-64" x2="-16" y2="-76"/><line x1="-6" y1="-64" x2="-6" y2="-76"/><line x1="6" y1="-64" x2="6" y2="-76"/><line x1="16" y1="-64" x2="16" y2="-76"/><line x1="26" y1="-64" x2="26" y2="-76"/></g>'
+            . '<rect x="-31" y="-78" width="62" height="4" rx="2" fill="#d97706"/>'
+            // Pilar dan pintu ganda.
+            . '<rect x="-46" y="-28" width="8" height="28" rx="2" fill="#e7d6ac"/>'
+            . '<rect x="38" y="-28" width="8" height="28" rx="2" fill="#e7d6ac"/>'
+            . '<rect x="-21" y="-48" width="20" height="48" rx="3" fill="#b45309"/>'
+            . '<rect x="1" y="-48" width="20" height="48" rx="3" fill="#b45309"/>'
+            . '<rect x="-19" y="-44" width="16" height="16" rx="2" fill="#92400e"/>'
+            . '<rect x="3" y="-44" width="16" height="16" rx="2" fill="#92400e"/>'
+            . '<circle cx="-5" cy="-18" r="2.4" fill="#fde68a"/><circle cx="5" cy="-18" r="2.4" fill="#fde68a"/>'
+            // Lampion menggantung di ujung atap bawah.
+            . '<circle cx="-102" cy="-58" r="6.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>'
+            . '<circle cx="102" cy="-58" r="6.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>'
+            // Tangga batu lebar di depan pintu.
+            . '<rect x="-40" y="-4" width="80" height="5" rx="2" fill="#cfc2a0"/>'
+            . '<rect x="-48" y="1" width="96" height="5" rx="2" fill="#ddd2b4"/>'
+            // Pot bunga dan semak berbunga mengapit tangga.
+            . '<rect x="-66" y="-10" width="16" height="12" rx="2" fill="#b45309"/>'
+            . '<circle cx="-58" cy="-14" r="9" fill="#22c55e"/><circle cx="-64" cy="-11" r="2.2" fill="#f472b6"/><circle cx="-52" cy="-16" r="2.2" fill="#facc15"/>'
+            . '<rect x="50" y="-10" width="16" height="12" rx="2" fill="#b45309"/>'
+            . '<circle cx="58" cy="-14" r="9" fill="#22c55e"/><circle cx="52" cy="-16" r="2.2" fill="#facc15"/><circle cx="64" cy="-11" r="2.2" fill="#f472b6"/>'
+            . '<circle cx="-100" cy="-6" r="11" fill="#22c55e"/><circle cx="-93" cy="-11" r="8" fill="#4ade80"/>'
+            . '<circle cx="100" cy="-6" r="11" fill="#22c55e"/><circle cx="93" cy="-11" r="8" fill="#4ade80"/>';
         if ($terbaru) {
             $svg .= lencana_baru_svg(70, -108);
         }
@@ -237,7 +278,7 @@ function label_bangunan_svg(string $varian, string $nama): string
     }
     $lebar = (int) round(strlen($teks) * 7.0) + 20;
     $y = match ($varian) {
-        'balai' => -172,
+        'balai' => -208,
         'kopi' => -97,
         default => -109,
     };
@@ -252,8 +293,8 @@ function label_bangunan_svg(string $varian, string $nama): string
 // diatur di style.css lewat kelas cincin-baru.
 function cincin_baru_svg(string $varian): string
 {
-    $rx = $varian === 'balai' ? 100 : 68;
-    $ry = $varian === 'balai' ? 16 : 12;
+    $rx = $varian === 'balai' ? 142 : 68;
+    $ry = $varian === 'balai' ? 22 : 12;
     return '<ellipse class="cincin-baru" cx="0" cy="2" rx="' . $rx . '" ry="' . $ry . '" fill="none" stroke="#f59e0b" stroke-width="3"/>';
 }
 
@@ -325,7 +366,7 @@ function svg_zona_gang(string $gang, array $zona, int $totalWarga, int $berdiri)
         . '<rect x="' . $zx . '" y="' . $zy . '" width="' . $zw . '" height="' . $zh . '" rx="26" fill="' . $warna . '" fill-opacity="0.10" stroke="' . $warna . '" stroke-opacity="0.38" stroke-width="2"/>'
         . '<rect x="' . ($px - 44) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
         . '<rect x="' . ($px + 40) . '" y="' . ($atasPapan + $tinggiPapan) . '" width="4" height="12" fill="#92600f"/>'
-        . '<rect x="' . ($px - 66) . '" y="' . $atasPapan . '" width="132" height="' . $tinggiPapan . '" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>';
+        . '<rect class="zona-papan" x="' . ($px - 66) . '" y="' . $atasPapan . '" width="132" height="' . $tinggiPapan . '" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>';
 
     if ($lebih > 0) {
         $svg .= '<text x="' . $px . '" y="' . ($py - 1) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">' . svg_teks($gang) . '</text>'
