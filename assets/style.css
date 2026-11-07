@@ -336,6 +336,27 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 }
 .peta-kontrol button:hover { background: var(--putih); }
 .peta-kontrol button:active { transform: scale(0.93); }
+.peta-gulir-bawah {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    z-index: 5;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--garis);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--biru-gelap);
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16);
+    padding: 0;
+}
+.peta-gulir-bawah:hover { background: var(--putih); }
+.peta-gulir-bawah:active { transform: translateX(-50%) scale(0.93); }
+.peta-viewport:fullscreen .peta-gulir-bawah { display: none; }
 .bangunan-svg { cursor: pointer; }
 .bangunan-svg:focus { outline: none; }
 .bangunan-dalam {

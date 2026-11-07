@@ -15,6 +15,10 @@ $judulHalaman = $judulHalaman ?? APP_NAME;
 $deskripsiHalaman = $deskripsiHalaman ?? 'Desa Target, desa fiktif para UMKM hebat. Follow berarti jadi warga, komen paling banyak disukai dibangun besok oleh Bang Uju.';
 $halamanAktif = $halamanAktif ?? '';
 $tanpaHeaderSitus = $tanpaHeaderSitus ?? false;
+// Penanda versi stylesheet dari waktu ubah berkasnya. Setiap deploy yang
+// mengubah style.css otomatis mengganti URL-nya, jadi peramban warga tidak
+// lagi menyajikan CSS lama dari cache.
+$versiStyle = @filemtime(__DIR__ . '/../assets/style.css') ?: 1;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -30,7 +34,7 @@ $tanpaHeaderSitus = $tanpaHeaderSitus ?? false;
 <meta property="og:url" content="<?= e(APP_BASE_URL) ?>/">
 <meta property="og:image" content="<?= e(APP_BASE_URL) ?>/assets/bang-uju.png">
 <link rel="icon" type="image/png" href="assets/bang-uju.png">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=<?= (int) $versiStyle ?>">
 </head>
 <body>
 <?php if (!$tanpaHeaderSitus): ?>

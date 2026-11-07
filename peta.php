@@ -242,7 +242,7 @@ require __DIR__ . '/includes/header.php';
             </p>
         </div>
 
-        <p class="peta-chip">Geser buat keliling. Tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</p>
+        <p class="peta-chip" id="petaChip">Geser buat keliling. Tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</p>
 
         <div class="peta-kontrol">
             <button type="button" id="tombolJalan" class="tombol-jalan" aria-pressed="false">Keliling Desa</button>
@@ -301,6 +301,11 @@ require __DIR__ . '/includes/header.php';
             <?php require __DIR__ . '/includes/papan-gang.php'; ?>
             <p class="panel-gang-gabung"><a href="ktp.php">Gabung gang-mu</a></p>
         </aside>
+
+        <!-- Tombol panah ke bawah: jalan keluar buat pengunjung menggulir
+             halaman melewati peta yang memenuhi layar menuju konten di
+             bawahnya. Disembunyikan stylesheet saat peta layar penuh. -->
+        <button type="button" class="peta-gulir-bawah" id="tombolGulirBawah" aria-label="Lihat ke bawah">&#9660;</button>
     </div>
     <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Pencet tombol Keliling Desa buat jalan-jalan keliling desa dan masuk Balai Desa. Atap bangunan dan baju warga berwarna mengikuti gang-nya.</p>
 
@@ -469,7 +474,7 @@ require __DIR__ . '/includes/header.php';
         if (interiorTerbuka) {
             return;
         }
-        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover, .peta-dpad, .chip-prompt, .peta-merek-baris, .peta-intro, .panel-gang')) {
+        if (e.target.closest && e.target.closest('.peta-kontrol, .peta-popover, .peta-dpad, .chip-prompt, .peta-merek-baris, .peta-intro, .panel-gang, .peta-gulir-bawah')) {
             return;
         }
         try {
@@ -557,10 +562,36 @@ require __DIR__ . '/includes/header.php';
     viewport.addEventListener('pointerup', akhiriPenunjuk);
     viewport.addEventListener('pointercancel', akhiriPenunjuk);
 
-    // Roda mouse buat zoom mengikuti posisi kursor.
+    // Roda mouse: zoom hanya di layar penuh atau saat Ctrl atau Cmd
+    // ditahan, mengikuti posisi kursor (pinch trackpad juga sampai ke sini
+    // sebagai ctrl+wheel). Roda biasa di luar layar penuh tidak dicegat
+    // sama sekali, halaman menggulir seperti biasa dan chip petunjuk
+    // memberi tahu gestur zoom-nya sebentar. Dulu roda selalu dicegat,
+    // jadi sejak peta memenuhi layar pengunjung merasa terjebak: niat
+    // menggulir halaman malah memperbesar peta.
     // Di atas panel gang, roda mouse menggulir panelnya, bukan zoom peta.
+    var chipPeta = document.getElementById('petaChip');
+    var teksChipPeta = chipPeta ? chipPeta.textContent : '';
+    var timerChipPeta = null;
+    function tampilPetunjukCtrl() {
+        if (!chipPeta) {
+            return;
+        }
+        chipPeta.textContent = 'Tahan Ctrl sambil scroll buat zoom peta';
+        if (timerChipPeta) {
+            clearTimeout(timerChipPeta);
+        }
+        timerChipPeta = setTimeout(function () {
+            chipPeta.textContent = teksChipPeta;
+            timerChipPeta = null;
+        }, 2000);
+    }
     viewport.addEventListener('wheel', function (e) {
         if (e.target.closest && e.target.closest('.panel-gang')) {
+            return;
+        }
+        if (document.fullscreenElement !== viewport && !e.ctrlKey && !e.metaKey) {
+            tampilPetunjukCtrl();
             return;
         }
         e.preventDefault();
@@ -568,6 +599,14 @@ require __DIR__ . '/includes/header.php';
         var r = viewport.getBoundingClientRect();
         zoomKe(k * Math.exp(-e.deltaY * 0.0016), e.clientX - r.left, e.clientY - r.top);
     }, { passive: false });
+
+    // Tombol panah ke bawah menggulir halaman melewati bingkai peta
+    // menuju konten di bawahnya, supaya tidak ada yang terjebak di peta.
+    document.getElementById('tombolGulirBawah').addEventListener('click', function () {
+        var kurangGerak = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        var batasBawah = viewport.getBoundingClientRect().bottom + window.scrollY;
+        window.scrollTo({ top: batasBawah, behavior: kurangGerak ? 'auto' : 'smooth' });
+    });
 
     // Tombol zoom di layar.
     document.getElementById('zoomMasuk').addEventListener('click', function () {
