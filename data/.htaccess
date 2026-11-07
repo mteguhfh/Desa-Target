@@ -1,0 +1,3 @@
+# Folder ini hanya untuk database SQLite. Jangan pernah dilayani web.
+Order allow,deny
+Deny from all

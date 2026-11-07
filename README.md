@@ -6,7 +6,7 @@ Desa Target adalah desa fiktif untuk para UMKM. Followers Instagram menjadi **wa
 
 Situs ini adalah versi 1 (MVP): halaman beranda, pendaftaran KTP Warga, Peta Desa, dan papan peringkat gang.
 
-**Target production:** `https://desa.kejartarget.id`, subdomain dari situs produk Kejar Target. Deployment sendiri adalah langkah berikutnya; untuk sekarang kode dijalankan dan diuji secara lokal, alamat publik diatur di `config.php` (`APP_BASE_URL`, bisa dioverride dengan environment variable `DESA_TARGET_BASE_URL`).
+**Production:** `https://desa.kejartarget.id`, subdomain dari situs produk Kejar Target. Alamat publik diatur di `config.php` (`APP_BASE_URL`, bisa dioverride dengan environment variable `DESA_TARGET_BASE_URL`).
 
 ## Stack
 
@@ -45,6 +45,7 @@ desa-target/
 ├── peta.php                   Peta desa (kavling bangunan dan tanah kosong) dan papan gang
 ├── config.php                 Konfigurasi: base URL publik, nama aplikasi, daftar gang
 ├── db.php                     Koneksi SQLite, pembuatan tabel, seed Balai Desa, fungsi kueri
+├── .htaccess                  Tolak akses web ke config.php dan db.php, header keamanan
 ├── includes/
 │   ├── header.php             Kepala halaman dan navigasi bersama
 │   ├── footer.php             Kaki halaman bersama
@@ -55,7 +56,7 @@ desa-target/
 │   └── bang-uju-wave.png      Bang Uju melambai (hero beranda)
 ├── tools/
 │   └── tambah-bangunan.php    Alat admin baris perintah untuk membangun bangunan baru
-└── data/                      Tempat database SQLite (isi tidak masuk git)
+└── data/                      Tempat database SQLite (isi tidak masuk git, diblokir dari web)
 ```
 
 ## Cara loop hariannya bekerja
@@ -81,10 +82,34 @@ Alat ini hanya berjalan dari terminal (CLI). Kalau dibuka dari web, akses ditola
 3. Setelah terkirim, warga diarahkan ke kartu KTP-nya sendiri (pola POST lalu redirect, ditambah token sekali pakai) supaya refresh halaman tidak menggandakan pendaftaran. Kartu menampilkan nama, nomor warga, gang, dan tanggal bergabung, dengan Kepala Desa Bang Uju.
 4. Kartu bisa dibuka lagi kapan pun lewat alamat `ktp.php?kartu=<id>`.
 
+## Deployment
+
+Situs production berjalan di VPS Plesk (`<panel-hosting>`, `<ip-server>`) sebagai subdomain `desa.kejartarget.id` di dalam subscription `kejartarget.id`.
+
+- Docroot: `<docroot>` (user sistem `kejartarget`)
+- PHP: 8.3 FPM (`<php-fpm>`), ekstensi `pdo_sqlite` tersedia
+- SSL: sertifikat Let's Encrypt `kejartarget.id` yang sudah mencakup `*.kejartarget.id`
+- DNS: tercakup wildcard proxied `*.kejartarget.id` di Cloudflare, tidak perlu record baru
+- Redirect HTTP ke HTTPS dan HSTS diatur di `.htaccess`
+
+Catatan keamanan: `.htaccess` di root menolak akses web langsung ke `config.php` dan `db.php`, dan `data/.htaccess` menolak seluruh folder `data/` supaya file SQLite tidak bisa diunduh.
+
+Deploy ulang (tar + scp, tanpa `.git` dan tanpa database lokal):
+
+```bash
+tar czf /tmp/desa-deploy.tar.gz --exclude=.git --exclude='data/*.sqlite' .
+scp /tmp/desa-deploy.tar.gz <ssh-anda>:/tmp/
+ssh <ssh-anda> 'cd <docroot> && tar xzf /tmp/desa-deploy.tar.gz && chown -R <user-sistem>:psacln .'
+```
+
+Database production bisa dibuat ulang/di-seed dengan menjalankan alat baris perintah sebagai user `kejartarget`:
+
+```bash
+ssh <ssh-anda> 'cd <docroot> && sudo -u <user-sistem> <php-cli> tools/tambah-bangunan.php "Nama" "Gang" "Peminta" "Komentar"'
+```
+
 ## Langkah berikutnya
 
-- Deployment ke `desa.kejartarget.id` (hosting dan cara deploy belum diputuskan)
-- Foto KTP hasil unggahan warga sendiri, bila nanti diperlukan
 - Halaman daftar warga dan pencarian warga berdasarkan nama atau nomor
 - Peta desa yang lebih hidup: ikon bangunan per jenis usaha, bukan hanya kavling
 - Panel admin web untuk tambah bangunan, menggantikan alat CLI bila volume sudah besar
