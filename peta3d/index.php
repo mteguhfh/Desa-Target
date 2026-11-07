@@ -1120,7 +1120,7 @@ bangunWarga(WARGA_SEED);
 const agenUju = { x: titikPatroli[0][0], y: titikPatroli[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
 let spriteUju = null;
 {
-    const tex = new THREE.TextureLoader().load('assets/bang-uju-peta.png', (t) => {
+    const tex = new THREE.TextureLoader().load('<?= $awalan ?>assets/bang-uju-peta.png', (t) => {
         const aspek = t.image.width / t.image.height;
         spriteUju.scale.set(168 * aspek, 168, 1);
     });
