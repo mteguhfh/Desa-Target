@@ -989,7 +989,7 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 }
 @media (max-width: 700px) {
     /* Di ponsel sudut kiri bawah dipakai D-pad, jadi sakelar naik. */
-    .sakelar-peta { bottom: auto; top: 62px; left: 12px; }
+    .sakelar-peta { bottom: auto; top: 112px; left: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .sakelar-opsi { transition: none; }

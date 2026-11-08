@@ -8,8 +8,8 @@
     let token = '', mulai = 0, jalan = false;
     const hematGerak = matchMedia('(prefers-reduced-motion: reduce)').matches;
     function pesan(teks) { kabar.hidden = false; kabar.textContent = teks; }
-    async function kirim(aksi) {
-        const body = new URLSearchParams({aksi, token, nomor: localStorage.getItem('dt_nomor') || '', kunci: localStorage.getItem('dt_kunci') || ''});
+    async function kirim(aksi, waktuKetuk = '') {
+        const body = new URLSearchParams({aksi, token, waktu_ketuk: waktuKetuk, nomor: localStorage.getItem('dt_nomor') || '', kunci: localStorage.getItem('dt_kunci') || ''});
         const r = await fetch(game.dataset.endpoint, {method: 'POST', body});
         const data = await r.json();
         if (!r.ok || data.galat) throw new Error(data.galat || 'Panen gagal disimpan.');
@@ -33,7 +33,7 @@
                 tombol.textContent = 'Panen di tengah'; pesan('Tekan Enter atau ketuk saat padi di tengah.'); gerak();
             } else {
                 jalan = false;
-                const data = await kirim('selesai');
+                const data = await kirim('selesai', Math.round(performance.now() - mulai));
                 pesan(data.sudah ? 'Hadiah panen hari ini sudah diambil.' : data.ok ? 'Skor ' + data.skor + ', hadiah ' + data.hadiah + ' poin.' : 'Panen belum tersimpan. Coba lagi.');
                 if (typeof data.saldo === 'number' && window.__dompetPoin) window.__dompetPoin.tampilSaldo(data.saldo);
                 tombol.textContent = 'Panen sekarang';

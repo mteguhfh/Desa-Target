@@ -519,7 +519,7 @@ try {
     }
     /* Di layar sempit sudut kiri bawah dipakai D-pad, jadi sakelar naik. */
     @media (max-width: 700px) {
-        .sakelar-peta { bottom: auto; top: 62px; left: 12px; }
+        .sakelar-peta { bottom: auto; top: 112px; left: 12px; }
         /* Tab bar bawah memakan ~66px; D-pad naik supaya tetap di atasnya. */
         .dpad { bottom: 78px; }
     }

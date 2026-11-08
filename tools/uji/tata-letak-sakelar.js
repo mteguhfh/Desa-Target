@@ -1,6 +1,6 @@
 const { chromium } = require('playwright-core');
 const CHROME = '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
-const BASE = 'http://localhost:8100';
+const BASE = process.env.BASE_UJI || 'http://localhost:8100';
 
 async function cekTumpang(page, namaHalaman, selektorLain) {
   const s = await page.locator('.sakelar-peta').boundingBox();

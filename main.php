@@ -24,20 +24,26 @@ try {
         echo json_encode(['ok' => true, 'token' => $token]);
         exit;
     }
+    if (($_POST['aksi'] ?? '') !== 'selesai') {
+        http_response_code(400);
+        echo json_encode(['galat' => 'Aksi panen tidak dikenal.']);
+        exit;
+    }
     $sesi = $_SESSION['panen'] ?? null;
     if (!$sesi || $sesi['nomor'] !== $nomor || !hash_equals($sesi['token'], (string) ($_POST['token'] ?? ''))) {
         http_response_code(400);
         echo json_encode(['galat' => 'Mulai permainan lagi.']);
         exit;
     }
-    unset($_SESSION['panen']);
     $durasi = microtime(true) - $sesi['mulai'];
-    if ($durasi < 0.4 || $durasi > 60) {
+    $waktuKetuk = filter_var($_POST['waktu_ketuk'] ?? null, FILTER_VALIDATE_INT);
+    if ($waktuKetuk === false || $waktuKetuk < 400 || $waktuKetuk > 59000 || $waktuKetuk / 1000 > $durasi || $durasi > 75) {
         http_response_code(400);
         echo json_encode(['galat' => 'Waktu panen habis. Mulai lagi.']);
         exit;
     }
-    $posisi = 8 + (sin($durasi / .9 * M_PI * 2) + 1) * 42;
+    unset($_SESSION['panen']);
+    $posisi = 8 + (sin($waktuKetuk / 900 * M_PI * 2) + 1) * 42;
     $skor = max(0, (int) round(100 - abs($posisi - 50) * 3));
     echo json_encode(simpan_panen($pdo, $nomor, $skor));
 } catch (Throwable $e) {
