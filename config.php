@@ -95,3 +95,10 @@ const CHAT_KANAL_UMUM = 'alun-alun';
 
 // Jeda paling cepat antar pesan satu warga, dalam detik.
 const CHAT_JEDA_DETIK = 5;
+
+// Ruko komersil warga (SPESIFIKASI-FITUR-BELUM-DIBANGUN.md, Fitur 3).
+// Klaim tahap pertama gratis; biaya poin disediakan supaya nanti bisa
+// dipasangi harga tanpa mengubah skema maupun alur klaim.
+const RUKO_BIAYA_POIN = 0;
+// Panjang cerita usaha yang boleh disimpan, dalam karakter.
+const RUKO_CERITA_MAKS = 280;

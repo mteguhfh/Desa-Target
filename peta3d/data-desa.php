@@ -7,8 +7,8 @@
 //
 // Yang dikirim:
 //   warga:      [{ nomor, nama, gang }]           urut pendaftaran (id ASC)
-//   bangunan:   [{ kavling, nama, gang, komentar, dari, tanggal,
-//                  x, y, sudut }]
+//   bangunan:   [{ kavling, nama, gang, komentar, dari, tanggal, jenis,
+//                  tautan, x, y }]
 //               kavling = indeks urutan id ASC. Posisi (x, y) sudah dihitung
 //               server dari POSISI_KAVLING[kavling]; sudut = arah hadap
 //               bangunan dalam radian mengikuti sisi kavlingnya.
@@ -60,7 +60,7 @@ try {
     }
 
     $bangunan = [];
-    foreach (semua_bangunan($pdo) as $indeks => $baris) {
+    foreach (semua_bangunan_aktif($pdo) as $indeks => $baris) {
         $titik = POSISI_KAVLING[$indeks] ?? null;
         $bangunan[] = [
             'kavling' => $indeks,
@@ -68,6 +68,10 @@ try {
             'gang' => $baris['gang'],
             'komentar' => $baris['komentar'],
             'dari' => $baris['diminta_oleh'],
+            // Ruko warga (Fitur 3): jenis membedakan dari bangunan komentar,
+            // tautan hanya berisi URL https yang sudah diperiksa server.
+            'jenis' => (string) ($baris['jenis'] ?? 'komentar'),
+            'tautan' => $baris['tautan'] ?? null,
             'tanggal' => $baris['tanggal'] ? format_tanggal($baris['tanggal']) : null,
             // Kavling di luar tabel posisi tidak dikirim posisinya: klien
             // menaruhnya di tanah kosong terakhir, bukan menebak sendiri.

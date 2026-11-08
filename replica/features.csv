@@ -9,7 +9,7 @@ Tap bangunan membuka detail bangunan,3d map,must,yes,selesai,popover + bisaDikli
 Masuk ke dalam bangunan (interior),3d map,should,yes,selesai,peta3d/interior-balai.php + chipMasuk,Interior Balai Desa tampil di atas kanvas 3D tanpa pindah halaman
 Kontrol zoom tombol plus dan minus,shell,should,yes,selesai,tombolZoomIn/Out baris 1385,
 Bilah atas: nama desa statistik dan suasana,shell,must,yes,selesai,chipWaktu + chipSuasana di peta3d/index.php,Suasana ramai/sepi dihitung dari warga yang berdiri dan jumlah bangunan
-Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; Desa/Aku tautan, Misi/Papan Gang membuka panel
+Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; Desa/Aku tautan, Misi/Papan Gang membuka panel; pil Ruko ditambah Fitur 3
 Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,selesai,includes/panel-bersayap.php,Membuka di atas tab bar; dunia peta tetap terlihat; diuji 4 ukuran layar
 Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,selesai,tab Aku -> ktp.php,Tertaut dari panel Aku; halaman KTP kembali ke peta setelah kartu jadi
 Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,selesai,ktp.php,
@@ -22,6 +22,7 @@ Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru vi
 Misi harian untuk menggerakkan komentar,gamification,could,yes,selesai,daftar_misi()/tandai_misi() + misi.php + panel Misi,Per warga sejak Fitur 1: status dan poin tidak tercampur antar warga
 Dompet poin warga (klaim harian + poin misi),gamification,must,no,selesai,poin.php + klaim.php + tambah_poin()/klaim_harian() di db.php,Identitas nomor KTP + kunci rahasia dari kartu; fondasi ruko dan lapak
 Chat antar gang publik dengan frase preset (tanpa DM),community,must,no,selesai,chat.php + kirim_chat()/pesan_chat() di db.php + includes/chat-skrip.php,Hanya frase preset dari CHAT_FRASE; nama+gang dari kartu; menulis wajib nomor+kunci; jeda 5 detik per warga; kanal gang lain hanya dibaca
+Ruko komersil untuk usaha warga (satu warga satu ruko),commerce,must,no,selesai,ruko.php + klaim_ruko()/lepas_ruko() di db.php,Migrasi bangunan.jenis/nomor/tautan/aktif dan tabel ruko_klaim; tautan https saja; tampil di peta 2D dan 3D serta daftar bangunan
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding
 Koperasi afiliasi TikTok Shop,commerce,skip,yes,tidak dikerjakan,-,Perjanjian komersial mereka bukan fitur produk
 Video YouTube dan absen murid,media,skip,yes,tidak dikerjakan,-,Kanal mereka sendiri

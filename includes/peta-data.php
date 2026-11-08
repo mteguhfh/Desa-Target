@@ -9,7 +9,7 @@ require_once __DIR__ . '/bangunan-svg.php';
 require_once __DIR__ . '/interior-balai.php';
 
 $pdo = db();
-$bangunan = semua_bangunan($pdo);
+$bangunan = semua_bangunan_aktif($pdo);
 $papanGang = papan_gang($pdo);
 $totalKavling = count(POSISI_KAVLING); // Peta interaktif: 12 kavling di dunia 2000 x 1333.
 $terbaruId = $bangunan !== [] ? (int) $bangunan[count($bangunan) - 1]['id'] : null;

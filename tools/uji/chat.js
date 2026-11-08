@@ -203,7 +203,9 @@ async function buatWarga(browser, nama, gang) {
     const tamu = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     const tombolChat = halaman === 'peta.php' ? '#tombolChat' : '#tombolChat2d';
-    catat(halaman + ': tab bar tetap empat tombol', await tamu.locator('#tabBar .tab-item').count() === 4);
+    // Fitur 3 menambah pil Ruko, sehingga tab utama tetap empat.
+    catat(halaman + ': tab bar tetap empat tab utama',
+      await tamu.locator('#tabBar .tab-item:not(.tab-pil)').count() === 4);
     catat(halaman + ': tombol Chat ada di bilah atas', await tamu.locator(tombolChat).isVisible());
     await tamu.locator(tombolChat).click();
     await tamu.waitForTimeout(500);

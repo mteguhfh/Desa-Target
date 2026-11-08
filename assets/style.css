@@ -1093,8 +1093,9 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     transform: translateX(-50%);
     z-index: 60;
     display: grid;
-    grid-template-columns: repeat(4, minmax(64px, 1fr));
-    width: min(460px, 100vw);
+    /* Empat tab utama, ditambah pil kecil Ruko di ujung kanan (Fitur 3). */
+    grid-template-columns: repeat(4, minmax(56px, 1fr)) auto;
+    width: min(520px, 100vw);
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(255, 255, 255, 0.97);
     border-radius: 18px 18px 0 0;
@@ -1121,6 +1122,21 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     transition: background 160ms ease, color 160ms ease;
 }
 .tab-item:hover { background: var(--biru-pucat); color: var(--biru-gelap); }
+/* Pil kecil untuk pintu masuk sekunder (Ruko). Ukurannya lebih ringkas
+   supaya empat tab utama tetap paling menonjol, tapi tingginya tetap
+   minimal 44px agar nyaman diketuk. */
+.tab-item.tab-pil {
+    align-self: center;
+    min-height: 44px;
+    margin-left: 2px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--biru-pucat);
+    color: var(--biru-gelap);
+}
+.tab-item.tab-pil .tab-ikon { font-size: 17px; }
+.tab-item.tab-pil .tab-teks { font-size: 11px; }
+.tab-item.tab-pil:hover { background: var(--biru-muda); }
 .tab-item.aktif { color: var(--biru); }
 .tab-item.aktif .tab-ikon { transform: translateY(-1px) scale(1.08); }
 .tab-item:focus-visible { outline: 3px solid var(--biru-gelap); outline-offset: -2px; }
@@ -1496,3 +1512,67 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 }
 .ktp-warna-teks { font-size: 13px; color: var(--teks-lembut); }
 
+
+/* --- Halaman Ruko Warga (Fitur 3) --------------------------------------- */
+.ruko-halaman {
+    display: grid;
+    gap: 18px;
+    padding: 24px 18px 40px;
+    max-width: 860px;
+    margin: 0 auto;
+}
+.ruko-subjudul { font-size: 19px; margin: 4px 0 10px; }
+.formulir textarea,
+.formulir input[type="url"] {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--garis);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--putih);
+    resize: vertical;
+}
+.formulir textarea:focus,
+.formulir input[type="url"]:focus {
+    outline: 2px solid var(--biru);
+    outline-offset: 1px;
+}
+.formulir-pesan {
+    background: var(--hijau-pucat);
+    color: #166534;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin: 0 0 12px;
+}
+.formulir-galat {
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin: 0 0 12px;
+}
+.ruko-kartu {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 14px;
+}
+.ruko-kartu dt { font-size: 12px; font-weight: 800; color: var(--teks-lembut); text-transform: uppercase; letter-spacing: 0.3px; }
+.ruko-kartu dd { margin: 2px 0 0; font-size: 15px; color: var(--teks); word-break: break-word; }
+.ruko-lepas { margin-top: 8px; }
+.tombol-halus {
+    background: var(--putih);
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+.tombol-halus:hover { background: #fef2f2; color: #991b1b; }
+.daftar-ruko { list-style: none; margin: 0; padding: 0; }
+.daftar-ruko-baris {
+    display: grid;
+    gap: 3px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.daftar-ruko-nama { font-weight: 700; font-size: 15px; color: var(--teks); }
+.daftar-ruko-meta { font-size: 12.5px; color: var(--teks-lembut); }
+.daftar-ruko-cerita { font-size: 13.5px; color: var(--teks); line-height: 1.5; }
+.daftar-ruko-tautan { font-size: 13px; font-weight: 700; color: var(--biru); }

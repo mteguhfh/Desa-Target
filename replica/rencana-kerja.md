@@ -7,17 +7,17 @@ pekerjaan yang benar-benar belum ada.
 Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
-**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1 dan Fitur 2
-dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga, lalu chat antar
-gang). Sekarang 22 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan.
-Yang tersisa di tabel Tahap 3: suara latar desa dan pembagian warga per huruf
-awal.
+**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1, Fitur 2,
+dan Fitur 3 dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga,
+chat antar gang, lalu ruko warga). Sekarang 23 selesai, 0 sebagian, 2 belum,
+5 sengaja tidak dikerjakan. Yang tersisa di tabel Tahap 3: suara latar desa
+dan pembagian warga per huruf awal.
 
 Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
 masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah
-selesai: Fitur 1 (dompet poin warga dan misi per warga) dan Fitur 2 (chat
-antar gang, publik, frase preset). Berikutnya menurut urutan spesifikasi:
-Fitur 3 dan 4 (boleh tukar), lalu Fitur 5.
+selesai: Fitur 1 (dompet poin warga dan misi per warga), Fitur 2 (chat antar
+gang, publik, frase preset), dan Fitur 3 (ruko warga). Berikutnya menurut
+urutan spesifikasi: Fitur 4 (pasar malam dan CFD), lalu Fitur 5.
 
 ## Prinsip urutan
 
@@ -181,6 +181,53 @@ tidak bisa dipalsukan, kunci wajib, kanal gang lain 403, batas laju 429,
 kanal tidak sah, injeksi kanal/nomor/kunci/frase, `sejak` tanpa pesan ganda,
 panel chat tanpa kolom teks di 3D dan 2D, polling berhenti saat panel
 ditutup dan hidup lagi saat dibuka).
+
+---
+
+## Fitur 3 — Ruko komersil untuk usaha warga
+
+Sumber acuan: `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` bagian 5.
+
+| # | pekerjaan | status | bukti |
+| --- | --- | --- | --- |
+| F3.1 | Migrasi `bangunan.jenis`, `nomor`, `tautan`, `aktif` + tabel `ruko_klaim` | **selesai** | `db.php`; baris lama otomatis `jenis = 'komentar'`, `aktif = 1` |
+| F3.2 | Fungsi `klaim_ruko()`, `lepas_ruko()`, `ruko_milik()`, `tautan_usaha_sah()`, `semua_bangunan_aktif()` | **selesai** | `db.php`; satu warga satu ruko, klaim dan daftar ruko satu transaksi |
+| F3.3 | Halaman `ruko.php` (formulir klaim dan lepas, pola PRG seperti `ktp.php`) | **selesai** | `ruko.php` + `ruko-markup.php` |
+| F3.4 | Ruko tampil di peta 2D dan 3D lewat jalur ADR-0004 (`data-desa.php`) | **selesai** | `includes/bangunan-svg.php`, `peta3d/index.php` (tombol Kunjungi usaha) |
+| F3.5 | Jalan masuk: pil Ruko di tab bar, tombol di kontrol 3D, tautan di panel Bangunan dan menu situs | **selesai** | `includes/tab-bar.php`, `peta3d/index.php`, `includes/panel-bersayap.php` |
+
+**Keputusan yang diambil di luar teks spesifikasi:**
+
+- **Kolom `bangunan.aktif`.** Spesifikasi hanya menyebut "menandai nonaktif"
+  tanpa menyebut kolomnya. Ditambah `aktif INTEGER NOT NULL DEFAULT 1` supaya
+  ruko yang dilepas hilang dari peta tetapi baris dan ceritanya tetap utuh.
+- **Kavling dari urutan bangunan aktif.** Ruko masuk ke kavling kosong
+  berikutnya dengan cara yang sama seperti `tools/tambah-bangunan.php` dan
+  peta 2D: bangunan aktif diurutkan menurut id. Tidak ada logika kavling
+  kedua; setelah ruko dilepas, kavlingnya dipakai bangunan sesudahnya.
+- **Gang ruko mengikuti kartu.** Gang diambil dari baris `warga`, bukan dari
+  formulir, dan permintaan dengan gang lain ditolak (`galat = 'gang'`).
+- **Tautan hanya https.** Host wajib ada, tanpa nama pengguna atau sandi di
+  dalam alamat. `javascript:`, `data:`, `http:`, dan tautan tanpa skema
+  ditolak. Di peramban tautan diperiksa ulang sebelum dipasang ke `href` dan
+  dibuka dengan `rel="noopener noreferrer"`.
+- **Cerita usaha sebagai teks biasa.** Maksimal `RUKO_CERITA_MAKS` (280)
+  karakter dan selalu dicetak lewat `textContent` atau `esc_html`, jadi HTML
+  dari pemilik tidak pernah dieksekusi.
+- **Identitas dari localStorage.** Kartu yang dibuka di tab lain tidak
+  memberi tahu halaman Ruko, jadi peramban mengirim nomor + kunci miliknya
+  sekali (lewat POST tersembunyi, dengan penanda `sessionStorage` supaya
+  tidak berputar), lalu halaman memuat ulang. Server tetap yang memutuskan
+  cocok atau tidak.
+- **`RUKO_BIAYA_POIN = 0`.** Klaim gratis sekarang, tetapi alur potong poin
+  sudah ada di `klaim_ruko()` sehingga harga bisa dipasang tanpa mengubah
+  skema.
+
+**Uji:** `tools/uji/ruko.js`, 41 pemeriksaan (tanpa kartu ditolak, klaim ganda
+ditolak, tautan tidak sah dan gang palsu ditolak, cerita berisi HTML tampil
+sebagai teks, ruko muncul di `data-desa.php`, peta 2D, daftar bangunan 3D,
+dan jalan masuk dari tab bar dan kontrol 3D, lepas ruko menyembunyikan
+tanpa menghapus baris).
 
 ---
 

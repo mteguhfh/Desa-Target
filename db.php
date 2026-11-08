@@ -160,6 +160,31 @@ function db(): PDO
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_chat_kanal_id ON chat_pesan (kanal, id)');
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_chat_nomor ON chat_pesan (nomor, id)');
 
+    // Ruko komersil warga (Fitur 3). Satu tabel bangunan dipakai bersama:
+    // jenis membedakan bangunan komentar (dibuat admin), ruko (dibuat warga
+    // sendiri), dan fasilitas desa. Ruko yang dilepas pemiliknya ditandai
+    // nonaktif supaya riwayat dan komentarnya tidak hilang.
+    $kolomBangunan = kolom_tabel($pdo, 'bangunan');
+    foreach ([
+        'jenis' => "TEXT NOT NULL DEFAULT 'komentar'",
+        'nomor' => 'TEXT',
+        'tautan' => 'TEXT',
+        'aktif' => 'INTEGER NOT NULL DEFAULT 1',
+    ] as $kolomBaru => $definisi) {
+        if (!isset($kolomBangunan[$kolomBaru])) {
+            $pdo->exec('ALTER TABLE bangunan ADD COLUMN ' . $kolomBaru . ' ' . $definisi);
+        }
+    }
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_bangunan_nomor ON bangunan (nomor)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_bangunan_aktif ON bangunan (aktif, id)');
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS ruko_klaim (
+            nomor TEXT PRIMARY KEY,
+            bangunan_id INTEGER NOT NULL,
+            dibuat_pada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
     $daftarMisi = [
         ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
         ['dukung-teman', 'Dukung komentar warga lain', 'Sukai komentar warga lain yang idenya bagus. Like terbanyak besok pagi dibangun jadi bangunan.', 2],
@@ -733,4 +758,161 @@ function kirim_chat(PDO $pdo, $kanal, $frase, $nomor, $kunci): array
         }
     }
     return ['ok' => true, 'pesan' => $baru];
+}
+
+// ---------------------------------------------------------------------------
+// Ruko komersil warga (Fitur 3).
+//
+// Ruko adalah BANGUNAN yang dibuat warga sendiri, beda dari bangunan komentar
+// yang dibuat admin dari pemenang komentar. Keduanya di tabel yang sama
+// supaya daftar bangunan, sorot, popover, dan pencarian tidak butuh jalur
+// kedua; kolom jenis ('komentar' | 'ruko' | 'fasilitas') yang membedakan.
+//
+// Satu warga satu ruko (ruko_klaim). Melepas ruko menandai bangunan nonaktif:
+// baris dan ceritanya tetap tersimpan, hanya tidak tampil lagi di peta.
+// Kavling dihitung dari urutan bangunan aktif, jadi tidak ada logika kavling
+// kedua di sini.
+// ---------------------------------------------------------------------------
+
+// Bangunan yang tampil di peta: semua kecuali ruko yang sudah dilepas.
+function semua_bangunan_aktif(PDO $pdo): array
+{
+    return $pdo->query(
+        "SELECT * FROM bangunan WHERE aktif = 1 ORDER BY id ASC"
+    )->fetchAll();
+}
+
+function hitung_bangunan_aktif(PDO $pdo): int
+{
+    return (int) $pdo->query('SELECT COUNT(*) FROM bangunan WHERE aktif = 1')->fetchColumn();
+}
+
+// URL tempat berjualan. Hanya https, host wajib ada, tanpa nama pengguna
+// atau sandi di dalam alamat. Selain itu null, supaya tautan apa pun seperti
+// javascript: atau data: tidak pernah tersimpan.
+function tautan_usaha_sah($tautan): ?string
+{
+    if (!is_string($tautan)) {
+        return null;
+    }
+    $tautan = trim($tautan);
+    if ($tautan === '' || strlen($tautan) > 300) {
+        return null;
+    }
+    if (preg_match('/[\x00-\x20\x7F]/', $tautan) === 1) {
+        return null;
+    }
+    $bagian = parse_url($tautan);
+    if ($bagian === false || !isset($bagian['scheme'], $bagian['host'])) {
+        return null;
+    }
+    if (strtolower((string) $bagian['scheme']) !== 'https') {
+        return null;
+    }
+    if ($bagian['host'] === '' || isset($bagian['user']) || isset($bagian['pass'])) {
+        return null;
+    }
+    return $tautan;
+}
+
+// Ruko aktif milik satu warga, atau null.
+function ruko_milik(PDO $pdo, string $nomor): ?array
+{
+    $stmt = $pdo->prepare(
+        "SELECT b.* FROM ruko_klaim k
+         JOIN bangunan b ON b.id = k.bangunan_id
+         WHERE k.nomor = ? AND b.aktif = 1"
+    );
+    $stmt->execute([$nomor]);
+    $baris = $stmt->fetch();
+    return $baris === false ? null : $baris;
+}
+
+// Klaim satu ruko untuk warga pemilik nomor + kunci.
+// Mengembalikan:
+//   ['ok' => true, 'ruko' => baris bangunan, 'saldo' => n]
+//   ['galat' => 'warga' | 'nama' | 'cerita' | 'gang' | 'tautan' | 'punya' | 'penuh' | 'poin']
+function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, $tautan, string $gang, ?int $totalKavling = null): array
+{
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) {
+        return ['galat' => 'warga'];
+    }
+    $nomorWarga = nomor_warga((int) $warga['id']);
+
+    $namaUsaha = trim($namaUsaha);
+    $panjangNama = function_exists('mb_strlen') ? mb_strlen($namaUsaha) : strlen($namaUsaha);
+    if ($panjangNama < 3 || $panjangNama > 60 || preg_match('/[\x00-\x1F\x7F]/u', $namaUsaha) === 1) {
+        return ['galat' => 'nama'];
+    }
+    $cerita = trim($cerita);
+    $panjangCerita = function_exists('mb_strlen') ? mb_strlen($cerita) : strlen($cerita);
+    if ($panjangCerita > 280) {
+        return ['galat' => 'cerita'];
+    }
+    // Gang ruko selalu gang pemilik menurut kartunya, bukan pilihan bebas.
+    if ($gang !== (string) $warga['gang']) {
+        return ['galat' => 'gang'];
+    }
+    $tautanSah = tautan_usaha_sah($tautan);
+    if ($tautanSah === null) {
+        return ['galat' => 'tautan'];
+    }
+    if (ruko_milik($pdo, $nomorWarga) !== null) {
+        return ['galat' => 'punya'];
+    }
+    if ($totalKavling !== null && hitung_bangunan_aktif($pdo) >= $totalKavling) {
+        return ['galat' => 'penuh'];
+    }
+    if (RUKO_BIAYA_POIN > 0 && saldo_poin($pdo, $nomorWarga) < RUKO_BIAYA_POIN) {
+        return ['galat' => 'poin'];
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare(
+            "INSERT INTO bangunan (nama, gang, diminta_oleh, komentar, tanggal, jenis, nomor, tautan, aktif)
+             VALUES (?, ?, ?, ?, ?, 'ruko', ?, ?, 1)"
+        )->execute([
+            $namaUsaha,
+            $gang,
+            (string) $warga['nama'],
+            $cerita === '' ? null : $cerita,
+            date('Y-m-d'),
+            $nomorWarga,
+            $tautanSah,
+        ]);
+        $idRuko = (int) $pdo->lastInsertId();
+        $pdo->prepare('INSERT INTO ruko_klaim (nomor, bangunan_id) VALUES (?, ?)')
+            ->execute([$nomorWarga, $idRuko]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        return ['galat' => 'punya'];
+    }
+
+    if (RUKO_BIAYA_POIN > 0) {
+        tambah_poin($pdo, $nomorWarga, -RUKO_BIAYA_POIN, 'admin', 'ruko-' . $idRuko);
+    }
+
+    $stmt = $pdo->prepare('SELECT * FROM bangunan WHERE id = ?');
+    $stmt->execute([$idRuko]);
+    return ['ok' => true, 'ruko' => $stmt->fetch(), 'saldo' => saldo_poin($pdo, $nomorWarga)];
+}
+
+// Lepas ruko milik warga: bangunan ditandai nonaktif, ceritanya tetap ada.
+// Mengembalikan ['ok' => true] atau ['galat' => 'warga' | 'tidak-ada'].
+function lepas_ruko(PDO $pdo, $nomor, $kunci): array
+{
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) {
+        return ['galat' => 'warga'];
+    }
+    $nomorWarga = nomor_warga((int) $warga['id']);
+    $ruko = ruko_milik($pdo, $nomorWarga);
+    if ($ruko === null) {
+        return ['galat' => 'tidak-ada'];
+    }
+    $pdo->prepare("UPDATE bangunan SET aktif = 0 WHERE id = ?")->execute([(int) $ruko['id']]);
+    return ['ok' => true];
 }

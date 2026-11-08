@@ -38,6 +38,9 @@ $daftarTab = [
     ['id' => 'warga', 'ikon' => '&#128269;', 'teks' => 'Warga', 'panel' => 'warga'],
     ['id' => 'gang', 'ikon' => '&#128200;', 'teks' => 'Gang', 'panel' => 'papan-gang'],
     ['id' => 'aku', 'ikon' => '&#129470;', 'teks' => 'Aku', 'href' => $tabAwalan . 'ktp.php'],
+    // Ruko warga (Fitur 3) butuh jalan masuk dari dalam peta; bentuknya pil
+    // kecil supaya empat tab utama tetap yang paling menonjol.
+    ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'href' => $tabAwalan . 'ruko.php'],
 ];
 ?>
 <nav class="tab-bar" id="tabBar" aria-label="Navigasi utama desa">
@@ -53,7 +56,7 @@ $daftarTab = [
                 <span class="tab-teks"><?= e($tab['teks']) ?></span>
             </button>
         <?php else: ?>
-            <a class="tab-item<?= $aktif ? ' aktif' : '' ?>" href="<?= e($tab['href']) ?>"<?= $aktif ? ' aria-current="page"' : '' ?>>
+            <a class="tab-item<?= ($tab['id'] ?? '') === 'ruko' ? ' tab-pil' : '' ?><?= $aktif ? ' aktif' : '' ?>" href="<?= e($tab['href']) ?>"<?= $aktif ? ' aria-current="page"' : '' ?>>
                 <span class="tab-ikon" aria-hidden="true"><?= $tab['ikon'] ?></span>
                 <span class="tab-teks"><?= e($tab['teks']) ?></span>
             </a>

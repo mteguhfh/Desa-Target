@@ -45,8 +45,14 @@ function warna_atap_gang(?string $gang): string
 
 // Jenis gambar bangunan dari kata kunci nama. Urutan penting:
 // "Warung Kopi" harus terbaca kopi, "Toko Kue" harus terbaca toko roti.
-function varian_bangunan(string $nama): string
+function varian_bangunan(string $nama, ?string $jenis = null): string
 {
+    // Ruko warga selalu digambar ruko (bentuknya disebut di template agar
+    // tidak kebetulan terbaca warung hanya karena nama usahanya), sedangkan
+    // fasilitas desa mengikuti kata kunci seperti biasa.
+    if ($jenis === 'ruko') {
+        return 'ruko';
+    }
     $n = strtolower($nama);
     if (str_contains($n, 'balai desa')) {
         return 'balai';
@@ -130,7 +136,7 @@ function rangka_ruko(string $atap): string
 
 // Gambar bangunan sesuai variannya. Koordinat lokal: titik (0, 0) adalah
 // titik tengah bawah bangunan, sumbu y negatif ke atas.
-function gambar_bangunan(string $varian, string $atap, string $nama, bool $terbaru): string
+function gambar_bangunan(string $varian, string $atap, string $nama, bool $terbaru, ?string $tautan = null): string
 {
     $svg = '';
 
@@ -263,6 +269,14 @@ function gambar_bangunan(string $varian, string $atap, string $nama, bool $terba
     if ($terbaru) {
         $svg .= lencana_baru_svg(48, -84);
     }
+    if (($tautan ?? '') !== '') {
+        // Ruko warga yang punya tautan jualan diberi tanda kecil di
+        // dindingnya, supaya terlihat beda dari bangunan komentar.
+        $svg .= '<g transform="translate(0 -62)">'
+            . '<circle cx="0" cy="0" r="7" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>'
+            . '<path d="M-3 -1.5l3-3 3 3M0 -4.5v7" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>'
+            . '</g>';
+    }
     return $svg;
 }
 
@@ -304,7 +318,7 @@ function cincin_baru_svg(string $varian): string
 // berguna sebagai acuan posisi popover detail.
 function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false, ?int $kavling = null): string
 {
-    $varian = varian_bangunan((string) $bangunan['nama']);
+    $varian = varian_bangunan((string) $bangunan['nama'], $bangunan['jenis'] ?? null);
     $atap = $varian === 'balai' ? '#f59e0b' : warna_atap_gang($bangunan['gang'] ?? null);
     $x = (int) $posisi[0];
     $y = (int) $posisi[1];
@@ -316,6 +330,9 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false, ?in
         . ' data-peminta="' . svg_teks($bangunan['diminta_oleh'] ?? '') . '"'
         . ' data-komentar="' . svg_teks($bangunan['komentar'] ?? '') . '"'
         . ' data-tanggal="' . svg_teks(format_tanggal((string) $bangunan['tanggal'])) . '"'
+        . ' data-jenis="' . svg_teks((string) ($bangunan['jenis'] ?? 'komentar')) . '"'
+        . ' data-tautan="' . svg_teks((string) ($bangunan['tautan'] ?? '')) . '"'
+        . ' data-tautan-teks="Kunjungi usaha"'
         . ' data-terbaru="' . ($terbaru ? '1' : '0') . '"'
         . ' data-balai="' . ($varian === 'balai' ? '1' : '0') . '"'
         . ' data-x="' . $x . '" data-y="' . $y . '"'
@@ -324,7 +341,7 @@ function svg_bangunan(array $bangunan, array $posisi, bool $terbaru = false, ?in
         . '<title>' . svg_teks($bangunan['nama']) . '</title>'
         . '<g class="bangunan-skala" transform="scale(' . SKALA_DUNIA . ')">'
         . ($terbaru ? cincin_baru_svg($varian) : '')
-        . '<g class="bangunan-dalam">' . gambar_bangunan($varian, $atap, (string) $bangunan['nama'], $terbaru) . '</g>'
+        . '<g class="bangunan-dalam">' . gambar_bangunan($varian, $atap, (string) $bangunan['nama'], $terbaru, (string) ($bangunan['tautan'] ?? '')) . '</g>'
         . label_bangunan_svg($varian, (string) $bangunan['nama'])
         . '</g>'
         . '</g>';

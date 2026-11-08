@@ -38,6 +38,7 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | `tahap2-cari-sorot-interior.js` | pencarian warga (termasuk uji injeksi SQL dan wildcard), sorot bangunan dari daftar di 3D dan 2D, interior Balai Desa tanpa pindah halaman |
 | `dompet-poin.js` | Fitur 1: kartu menerbitkan nomor + kunci, klaim harian sekali sehari (409 pada klaim kedua), poin misi sekali per warga per hari, isolasi saldo dua warga, kunci wajib, injeksi nomor/kunci/kode, panel Misi dan chip saldo di 3D dan 2D |
 | `chat.js` | Fitur 2: chat publik dengan frase preset (tanpa DM dan tanpa kolom teks), nama/gang dari kartu tidak bisa dipalsukan, kunci wajib, kanal gang lain hanya dibaca, batas laju 429, injeksi kanal/nomor/kunci/frase, panel chat di 3D dan 2D, polling berhenti saat panel ditutup |
+| `ruko.js` | Fitur 3: warga tanpa KTP tidak bisa klaim, satu warga satu ruko, tautan hanya https (javascript/data/http ditolak), cerita dibatasi dan dicetak sebagai teks, gang mengikuti kartu, ruko tampil di peta 2D dan 3D serta daftar bangunan, lepas ruko tidak menghapus baris |
 | `mode-jalan.js` | Keliling Desa: pemain lahir di luar tapak gedung, WASD dan D-pad benar-benar menggeser pemain, D memutar 90°, kamera langsung di belakang bahu, masuk/keluar Balai Desa tanpa pindah halaman, jalan di ponsel 390px |
 
 Semua berkas keluar dengan kode 1 bila ada yang gagal.

@@ -37,7 +37,7 @@ try {
     require_once __DIR__ . '/../db.php';
     $pdoPanel = db();
     $PAPAN_GANG_SERVER = papan_gang($pdoPanel);
-    $BANGUNAN_SERVER = semua_bangunan($pdoPanel);
+    $BANGUNAN_SERVER = semua_bangunan_aktif($pdoPanel);
     $TOTAL_WARGA_SERVER = hitung_warga($pdoPanel);
     $MISI_SERVER = daftar_misi($pdoPanel);
     // Kavling mengikuti urutan id, sama seperti yang dipakai dunia 3D.
@@ -171,6 +171,12 @@ try {
         font-size: 20px; display: flex; align-items: center; justify-content: center;
     }
     .kontrol button:hover { filter: brightness(0.96); }
+    /* Pintu masuk Ruko (Fitur 3) berbentuk tautan bundar, sama ukurannya. */
+    .kontrol a.bulat {
+        background: #ffffff; color: #1f2937; text-decoration: none;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+    }
+    .kontrol a.bulat:hover { filter: brightness(0.96); }
 
     /* --- Panel Papan Gang --- */
     .panel-gang {
@@ -216,6 +222,13 @@ try {
     .popover h3 { margin: 0 26px 6px 0; font-size: 17px; }
     .popover p { margin: 0 0 5px; font-size: 13.5px; color: #4b5563; line-height: 1.5; }
     .popover .kutipan { font-style: italic; color: #374151; }
+    .popover .pop-kunjungi {
+        display: inline-block; margin-top: 10px; padding: 8px 14px;
+        border-radius: 999px; background: #2563eb; color: #fff;
+        font-weight: 700; font-size: 13.5px; text-decoration: none;
+    }
+    .popover .pop-kunjungi:hover { background: #1d4ed8; }
+    .popover .pop-kunjungi[hidden] { display: none; }
     .popover .lencana {
         display: inline-block; font-size: 11.5px; font-weight: 700; color: #fff;
         border-radius: 999px; padding: 2px 9px; margin-bottom: 6px;
@@ -488,6 +501,9 @@ require __DIR__ . '/../includes/tab-bar.php';
     <button type="button" class="bulat" id="tombolZoomOut" aria-label="Zoom keluar">&minus;</button>
     <button type="button" class="bulat" id="tombolReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
     <button type="button" class="bulat" id="tombolLayarPenuh" aria-label="Layar penuh">&#9974;</button>
+    <?php // Ruko warga (Fitur 3). Pintu utama ada di tab bar dan panel Bangunan;
+          // tombol ini untuk layar ponsel saat tab bar sedang tertutup panel. ?>
+    <a class="bulat tombol-ruko-kontrol" href="<?= $awalan ?>ruko.php" aria-label="Buka ruko usaha" title="Buka ruko usaha">&#127978;</a>
 </div>
 
 <div class="popover" id="popover">
@@ -497,6 +513,7 @@ require __DIR__ . '/../includes/tab-bar.php';
     <span class="lencana" id="popLencana" hidden></span>
     <p class="kutipan" id="popKutipan" hidden></p>
     <p id="popIsi"></p>
+    <a class="pop-kunjungi" id="popKunjungi" href="#" target="_blank" rel="noopener noreferrer" hidden>Kunjungi usaha</a>
 </div>
 
 <div class="dpad" id="dpad" aria-label="Tombol arah jalan">
@@ -1003,6 +1020,20 @@ let bendera = null, geoBenderaAsli = null;
 // ---------------------------------------------------------------------------
 const grupBangunan = new THREE.Group();
 dunia.add(grupBangunan);
+
+// Tautan jualan ruko (Fitur 3). Popover 3D hanya satu, jadi tombolnya
+// disiapkan di markup dan diisi tiap kali ruko dibuka. Tautannya sudah
+// diperiksa server (https saja); di sini tetap diperiksa ulang sebelum
+// dipasang ke href.
+const tombolKunjungi = document.getElementById('popKunjungi');
+function tautanAman(tautan) {
+    if (typeof tautan !== 'string' || tautan === '') return null;
+    try {
+        return new URL(tautan).protocol === 'https:' ? tautan : null;
+    } catch (e) {
+        return null;
+    }
+}
 let klikBangunan = [];
 // Warna gang berasal dari WARNA_GANG (klarifikasi tampilan), bukan dari server.
 function warnaGang(gang, cadangan = 0xf59e0b) {
@@ -1029,12 +1060,17 @@ function bangunBangunan(daftar) {
         const model = buatBangunan(b.nama, warnaGang(b.gang));
         const pos = KE3(POSISI_KAVLING[k][0], POSISI_KAVLING[k][1]);
         model.position.copy(pos);
+        const ruko = b.jenis === 'ruko';
         const popover = {
-            kicker: 'DETAIL BANGUNAN',
+            kicker: ruko ? 'RUKO WARGA' : 'DETAIL BANGUNAN',
             judul: b.nama,
             lencana: b.gang ? { teks: b.gang, warna: cssGang(b.gang) } : null,
-            kutipan: b.komentar ? '“' + b.komentar + '”' : null,
-            isi: (b.dari ? 'Diminta oleh ' + b.dari + '.' : '') + (b.tanggal ? ' Berdiri ' + b.tanggal + '.' : ''),
+            kutipan: ruko ? (b.komentar ? b.komentar : null)
+                : (b.komentar ? '“' + b.komentar + '”' : null),
+            isi: ruko
+                ? 'Milik ' + (b.dari || 'warga desa') + '.' + (b.tanggal ? ' Buka sejak ' + b.tanggal + '.' : '')
+                : (b.dari ? 'Diminta oleh ' + b.dari + '.' : '') + (b.tanggal ? ' Berdiri ' + b.tanggal + '.' : ''),
+            tautan: ruko ? b.tautan : null,
         };
         model.userData.kavling = k;
         model.traverse(o => { o.userData.popover = popover; });
@@ -1839,6 +1875,17 @@ function bukaPopover(data, objek, clientX, clientY) {
     const kutipan = document.getElementById('popKutipan');
     if (data.kutipan) { kutipan.hidden = false; kutipan.textContent = data.kutipan; } else kutipan.hidden = true;
     document.getElementById('popIsi').textContent = data.isi;
+    if (tombolKunjungi) {
+        const tautan = tautanAman(data.tautan);
+        if (tautan) {
+            tombolKunjungi.href = tautan;
+            tombolKunjungi.textContent = 'Kunjungi usaha';
+            tombolKunjungi.hidden = false;
+        } else {
+            tombolKunjungi.removeAttribute('href');
+            tombolKunjungi.hidden = true;
+        }
+    }
     popoverEl.style.left = Math.min(clientX + 14, window.innerWidth - 316) + 'px';
     popoverEl.style.top = Math.min(clientY + 14, window.innerHeight - 190) + 'px';
     popoverEl.classList.add('tampil');

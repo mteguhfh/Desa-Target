@@ -6,7 +6,7 @@
 //
 // Variabel yang dipakai:
 //   $tabAwalan          awalan URL, sama seperti tab-bar.php
-//   $panelBangunan      daftar bangunan (dari semua_bangunan()), boleh kosong
+//   $panelBangunan      daftar bangunan (dari semua_bangunan_aktif()), boleh kosong
 //   $panelPapanGang     peringkat gang (dari papan_gang())
 //   $panelTotalWarga    jumlah warga terdaftar
 //   $panelKavling       peta id bangunan -> indeks kavling, supaya ketukan
@@ -131,6 +131,8 @@ foreach ($panelPapanGang as $barisPapan) {
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+            <?php // Ruko warga (Fitur 3): jalan masuk ke halaman klaim ruko. ?>
+            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>ruko.php">Buka ruko usahamu di desa</a></p>
         </div>
 
         <div class="panel-isi" data-isi="aku" hidden>

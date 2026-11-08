@@ -5,7 +5,7 @@ require_once __DIR__ . '/db.php';
 
 $pdo = db();
 $totalWarga = hitung_warga($pdo);
-$totalBangunan = hitung_bangunan($pdo);
+$totalBangunan = hitung_bangunan_aktif($pdo);
 $terbaru = bangunan_terbaru($pdo);
 $papanGang = papan_gang($pdo);
 

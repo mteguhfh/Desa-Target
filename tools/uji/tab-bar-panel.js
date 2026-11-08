@@ -51,8 +51,12 @@ function tumpang(a, b) {
       const galat = [];
       page.on('pageerror', (e) => galat.push(String(e).slice(0, 120)));
 
-      const jumlahTab = await page.locator('#tabBar .tab-item').count();
+      // Fitur 3 menambah satu pil kecil Ruko di ujung tab bar; empat tab
+      // utama di depannya tetap yang diuji di sini (bukan tab kelima).
+      const jumlahTab = await page.locator('#tabBar .tab-item:not(.tab-pil)').count();
       catat(label + ': 4 tab tampil', jumlahTab === 4, String(jumlahTab));
+      catat(label + ': pil Ruko tersedia',
+        await page.locator('#tabBar .tab-pil[href$="ruko.php"]').count() === 1);
 
       // Panel tertutup saat halaman baru dibuka.
       catat(label + ': panel tertutup di awal', await page.locator('#panelBersayap').isHidden());
@@ -118,7 +122,7 @@ function tumpang(a, b) {
     // tersisa di tab bar adalah Aku.
     catat('tab Bangunan tersedia di peta (' + ukuran.width + 'px)',
       (await page.locator('#tabBar .tab-item[data-panel="bangunan"]').count()) === 1);
-    const hrefAku = await page.locator('#tabBar a.tab-item').last().getAttribute('href');
+    const hrefAku = await page.locator('#tabBar a.tab-item:not(.tab-pil)').last().getAttribute('href');
     catat('tautan tab Aku benar (' + ukuran.width + 'px)', hrefAku === 'ktp.php', String(hrefAku));
     await page.close();
   }
