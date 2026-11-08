@@ -1510,4 +1510,6 @@ $awalanMisi = '';
 require __DIR__ . '/misi-skrip.php';
 $awalanChat = '';
 require __DIR__ . '/chat-skrip.php';
+$awalanPasar = '';
+require __DIR__ . '/pasar-skrip.php';
 ?>

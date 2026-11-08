@@ -30,6 +30,7 @@
         'papan-gang': 'Papan Gang',
         'bangunan': 'Bangunan Desa',
         'chat': 'Chat Desa',
+        'pasar': 'Pasar Desa',
         'aku': 'Aku'
     };
 
@@ -123,6 +124,8 @@
     }
     pasangPintasan('tombolChat', 'chat');
     pasangPintasan('tombolChat2d', 'chat');
+    // Chip suasana di peta 3D juga membuka panel Pasar (Fitur 4).
+    pasangPintasan('chipSuasana', 'pasar');
 
     // Pintasan untuk peta 3D: tombol "Papan Gang" lama kini membuka panel
     // yang sama, bukan panel terpisah. Dijalankan setelah halaman siap.

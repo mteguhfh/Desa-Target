@@ -135,6 +135,40 @@ foreach ($panelPapanGang as $barisPapan) {
             <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>ruko.php">Buka ruko usahamu di desa</a></p>
         </div>
 
+        <?php // Pasar Malam dan CFD (Fitur 4). Lapak gratis, hanya saat acara
+              // berlangsung. Dibuka dari chip suasana di bilah atas. ?>
+        <div class="panel-isi" data-isi="pasar" hidden>
+            <p class="panel-deskripsi">Pasar Malam tiap Sabtu sore dan CFD tiap Minggu pagi. Lapak gratis, dan yang dikunjungi pembeli adalah tempat jualanmu sendiri.</p>
+
+            <p class="pasar-status" id="pasarStatus" role="status">Memuat jadwal…</p>
+
+            <div class="pasar-pilih" id="pasarPilih" role="group" aria-label="Pilih acara"></div>
+
+            <ul class="pasar-lapak" id="pasarLapak"></ul>
+
+            <div class="pasar-klaim" id="pasarKlaim" hidden>
+                <button type="button" class="tombol-panel-utama" id="tombolKlaimLapak">Ambil lapak gratis</button>
+            </div>
+
+            <form class="pasar-form" id="pasarForm" hidden>
+                <p class="pasar-form-judul">Kamu belum punya ruko, isi nama usaha dan tautan dulu</p>
+                <label class="sr-saja" for="pasarNamaUsaha">Nama usaha</label>
+                <input id="pasarNamaUsaha" name="nama_usaha" type="text" maxlength="60" placeholder="Nama usaha" autocomplete="off">
+                <label class="sr-saja" for="pasarTautan">Tautan jualan</label>
+                <input id="pasarTautan" name="tautan" type="url" maxlength="300" placeholder="https://wa.me/62812..." autocomplete="off">
+                <button type="button" class="tombol-panel-utama" id="tombolKirimLapak">Ambil lapak gratis</button>
+            </form>
+
+            <p class="pasar-kabar" id="pasarKabar" role="status" hidden></p>
+
+            <div class="pasar-tamu" id="pasarTamu" hidden>
+                <p class="panel-deskripsi">Bikin KTP Warga supaya bisa membuka lapak. Melihat jadwal dan lapak tetap gratis.</p>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+            </div>
+
+            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>pasar.php">Lihat halaman Pasar Desa</a> atau <a href="<?= e($tabAwalan) ?>ruko.php">buka ruko usahamu</a>.</p>
+        </div>
+
         <div class="panel-isi" data-isi="aku" hidden>
             <p class="panel-deskripsi">Kartu warga adalah identitasmu di desa. Dibuat sekali, gratis, nomornya milikmu sendiri.</p>
             <p class="panel-statistik"><strong><?= (int) $panelTotalWarga ?></strong> warga sudah tercatat di balai desa.</p>

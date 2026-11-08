@@ -8,16 +8,16 @@ Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
 **Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1, Fitur 2,
-dan Fitur 3 dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga,
-chat antar gang, lalu ruko warga). Sekarang 23 selesai, 0 sebagian, 2 belum,
-5 sengaja tidak dikerjakan. Yang tersisa di tabel Tahap 3: suara latar desa
+Fitur 3, dan Fitur 4 dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin
+warga, chat antar gang, ruko warga, lalu Pasar Malam dan CFD). Sekarang
+24 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan. Yang tersisa di tabel Tahap 3: suara latar desa
 dan pembagian warga per huruf awal.
 
 Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
 masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah
 selesai: Fitur 1 (dompet poin warga dan misi per warga), Fitur 2 (chat antar
-gang, publik, frase preset), dan Fitur 3 (ruko warga). Berikutnya menurut
-urutan spesifikasi: Fitur 4 (pasar malam dan CFD), lalu Fitur 5.
+gang, publik, frase preset), Fitur 3 (ruko warga), dan Fitur 4 (Pasar Malam
+dan CFD dengan lapak gratis). Berikutnya menurut urutan spesifikasi: Fitur 5.
 
 ## Prinsip urutan
 
@@ -228,6 +228,55 @@ ditolak, tautan tidak sah dan gang palsu ditolak, cerita berisi HTML tampil
 sebagai teks, ruko muncul di `data-desa.php`, peta 2D, daftar bangunan 3D,
 dan jalan masuk dari tab bar dan kontrol 3D, lepas ruko menyembunyikan
 tanpa menghapus baris).
+
+---
+
+## Fitur 4 — Pasar Malam dan CFD (lapak gratis)
+
+Sumber acuan: `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` bagian 6.
+
+| # | pekerjaan | status | bukti |
+| --- | --- | --- | --- |
+| F4.1 | Konstanta `ACARA_LAPAK` (hari, jam, batas lapak) | **selesai** | `config.php`; Pasar Malam Sabtu 18.00-22.00, CFD Minggu 06.00-10.00, masing-masing 12 lapak |
+| F4.2 | Tabel `lapak` + migrasi idempoten | **selesai** | `db.php`; kunci unik `(acara, tanggal, nomor)` |
+| F4.3 | Fungsi `acara_sah()`, `acara_aktif()`, `acara_berikutnya()`, `daftar_lapak()`, `klaim_lapak()`, `keadaan_pasar()` | **selesai** | `db.php`; semua fungsi menerima waktu sekarang supaya jadwal bisa diuji |
+| F4.4 | Endpoint `lapak.php` (GET jadwal dan lapak, POST klaim) | **selesai** | `lapak.php`; 400/403/409/422 dibedakan, nomor asing dan kunci salah dijawab sama |
+| F4.5 | Panel Pasar di `data-isi="pasar"` + `includes/pasar-skrip.php` | **selesai** | `includes/panel-bersayap.php`; pemilih acara, hitung mundur, daftar lapak, klaim |
+| F4.6 | Tenda di peta 3D dan chip suasana jadi pintu masuk | **selesai** | `peta3d/index.php` (`bangunLapak()`, `#chipSuasana` `data-panel="pasar"`), `peta3d/bangunan3d.js` (`buatTenda()`) |
+| F4.7 | Data acara lewat satu jalur ADR-0004 | **selesai** | `peta3d/data-desa.php` mengirim `acara`, `namaAcara`, `acaraBerikutnya`, `lapak`, `batasLapak` |
+| F4.8 | Halaman `pasar.php` (jadwal, hitung mundur, daftar lapak) + menu situs | **selesai** | `pasar.php`, `pasar-markup.php`, `includes/header-markup.php` |
+
+**Keputusan yang diambil di luar teks spesifikasi:**
+
+- **Klaim hanya saat acara berlangsung.** Di luar jam acara, `klaim_lapak()`
+  mengembalikan galat `tutup` (HTTP 409). Daftar lapak dan jadwal acara
+  berikutnya tetap bisa dibaca kapan saja, jadi warga bisa menyiapkan usaha
+  lebih dulu.
+- **Jam acara dari jam server.** `acara_aktif()` tidak menerima jam dari
+  klien, jadi tidak ada yang bisa memajukan jam peramban untuk mengambil
+  lapak saat pasar tutup. Hitung mundur di panel memakai jam peramban, tetapi
+  hanya untuk tampilan.
+- **Nama usaha dan tautan dari ruko.** Warga yang sudah punya ruko tidak
+  menulis ulang data usaha: server menyalin nama dan tautannya dari
+  `ruko_milik()`. Warga tanpa ruko memakai formulir ringkas di panel, dengan
+  `tautan_usaha_sah()` yang sama dengan Fitur 3 (hanya https).
+- **Jalan masuk lewat chip suasana.** Spesifikasi tidak menyebut tab baru.
+  Chip suasana di bilah atas yang sudah ada dipakai (`data-panel="pasar"`),
+  dan saat acara berlangsung chip berganti menjadi "Pasar Malam/CFD sedang
+  berlangsung · N lapak". Panel juga bisa dibuka dari peta 2D lewat
+  `__tabBar.buka('pasar')`.
+- **Tenda hanya saat acara.** `data-desa.php` mengirim `lapak` kosong dan
+  `acara = null` di luar jam acara, jadi peta 3D tidak menggambar tenda sama
+  sekali. Posisi tenda dua baris di selatan alun-alun, urut klaim.
+- **Tanpa poin.** Lapak gratis: `klaim_lapak()` tidak memotong poin, dan uji
+  memastikan saldo warga tidak berubah.
+
+**Uji:** `tools/uji/pasar.js`, 32 pemeriksaan (empat kasus jadwal, batas 12
+lapak dan lapak ke-13 ditolak, klaim ganda ditolak, tautan tidak sah dan nama
+terlalu pendek ditolak, nomor asing dan kunci salah dijawab sama, nama usaha
+berisi HTML disimpan sebagai teks, poin tidak berkurang, `data-desa.php`
+mengirim `acara` yang benar, peta 3D dan 2D membuka panel Pasar, chip suasana
+menjadi pintu masuk).
 
 ---
 

@@ -102,3 +102,25 @@ const CHAT_JEDA_DETIK = 5;
 const RUKO_BIAYA_POIN = 0;
 // Panjang cerita usaha yang boleh disimpan, dalam karakter.
 const RUKO_CERITA_MAKS = 280;
+
+// Pasar Malam dan CFD (SPESIFIKASI-FITUR-BELUM-DIBANGUN.md, Fitur 4).
+// Lapak gratis; desa tidak memproses pembayaran apa pun. Hari ditulis
+// dengan angka ISO (1 = Senin ... 7 = Minggu) supaya mudah dibandingkan
+// dengan date('N'). Jam memakai jam lokal pengunjung, sama seperti
+// siklus siang-malam peta. Batas lapak per acara membatasi tenda di peta.
+const ACARA_LAPAK = [
+    'pasar-malam' => [
+        'nama' => 'Pasar Malam',
+        'hari' => 6,          // Sabtu
+        'mulai' => '18:00',
+        'selesai' => '22:00',
+        'batas' => 12,
+    ],
+    'cfd' => [
+        'nama' => 'CFD',
+        'hari' => 7,          // Minggu
+        'mulai' => '06:00',
+        'selesai' => '10:00',
+        'batas' => 12,
+    ],
+];

@@ -294,3 +294,23 @@ export function buatBangunan(nama, warnaAtap) {
         default: return buatRuko(warnaAtap, nama);
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tenda lapak Pasar Malam dan CFD. Geometri murah: dua tiang, kanopi
+// segitiga, dan meja kayu; semua material sama supaya tenda-tenda bisa
+// digambar dari satu kelompok tanpa renderer kedua.
+// ---------------------------------------------------------------------------
+export function buatTenda(warnaKanopi = 0xef4444) {
+    const g = new THREE.Group();
+    const bahanTiang = matBangunan(0x78350f);
+    g.add(kotak(8, 96, 8, 0x78350f, -54, 48, -34));
+    g.add(kotak(8, 96, 8, 0x78350f, 54, 48, -34));
+    g.add(kotak(8, 96, 8, 0x78350f, -54, 48, 34));
+    g.add(kotak(8, 96, 8, 0x78350f, 54, 48, 34));
+    const kanopi = prismaAtap(150, 46, 100, warnaKanopi);
+    kanopi.position.set(0, 96, 0);
+    g.add(kanopi);
+    g.add(kotak(126, 34, 52, 0xe7d8b7, 0, 17, 12));
+    g.add(kotak(118, 6, 46, 0xfef3c7, 0, 36, 12));
+    return g;
+}

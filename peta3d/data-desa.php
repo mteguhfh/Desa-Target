@@ -21,6 +21,13 @@
 //               dan diberi margin, persis seperti di peta 2D.
 //   fokus:      { x, y } titik kamera awal (Balai Desa).
 //   kolam:      { x, y, r } elips kolam dalam koordinat dunia.
+//   acara:      nama acara pasar yang sedang berlangsung ('pasar-malam' |
+//               'cfd') atau null bila tidak ada.
+//   namaAcara:  nama panjang acara aktif, mis. 'Pasar Malam'.
+//   acaraBerikutnya: { acara, nama, tanggal, mulai, selesai } atau null.
+//   lapak:      [{ id, nomor, namaUsaha, tautan, kavling }] lapak acara
+//               aktif saja, urut klaim; kavling = urutan tenda.
+//   batasLapak: jumlah lapak maksimal acara aktif.
 //   versi:      penanda versi dari waktu ubah berkas posisi dan skema,
 //               supaya klien bisa membedakan data basi dari data baru.
 //
@@ -104,8 +111,18 @@ try {
         ];
     }
 
+    // Pasar Malam dan CFD (Fitur 4): hanya lapak acara yang sedang
+    // berlangsung. Di luar jam acara, acara bernilai null dan lapak kosong,
+    // jadi peta tidak menggambar tenda sama sekali.
+    $pasar = keadaan_pasar($pdo);
+
     echo json_encode(
         [
+            'acara' => $pasar['acara'],
+            'namaAcara' => $pasar['namaAcara'],
+            'acaraBerikutnya' => $pasar['berikutnya'],
+            'lapak' => $pasar['lapak'],
+            'batasLapak' => $pasar['batas'],
             'warga' => $warga,
             'bangunan' => $bangunan,
             'papanGang' => papan_gang($pdo),

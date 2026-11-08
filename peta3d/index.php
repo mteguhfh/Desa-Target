@@ -120,6 +120,16 @@ try {
     }
     .chip-suasana.ramai::before { background: #22c55e; }
     .chip-suasana.sepi::before { background: #f59e0b; }
+    /* Saat Pasar Malam atau CFD berlangsung, chip suasana jadi tombol yang
+       membuka panel Pasar (Fitur 4). */
+    button.chip-suasana {
+        border: none; cursor: pointer; font-family: inherit;
+    }
+    button.chip-suasana.pasar::before { background: #dc2626; animation: denyut-pasar 1.6s ease-in-out infinite; }
+    @keyframes denyut-pasar { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) {
+        button.chip-suasana.pasar::before { animation: none; }
+    }
     @media (max-width: 700px) { .chip-suasana { display: none; } }
     /* Saldo poin warga aktif. Hanya tampil bila peramban sudah punya kartu. */
     .chip-poin {
@@ -469,7 +479,10 @@ require __DIR__ . '/../includes/sakelar-peta.php';
             data-panel="misi"
             title="Buka misi dan dompet poinmu">Poin <strong id="chipPoinAngka">0</strong></button>
     <span class="chip-waktu" id="chipWaktu">&#9728;&#65039; Siang</span>
-    <span class="chip-suasana" id="chipSuasana" title="Suasana desa dihitung dari jumlah warga yang berdiri di peta">Memuat…</span>
+    <?php // Chip suasana juga pintu masuk Pasar (Fitur 4): saat Pasar Malam
+          // atau CFD berlangsung, chip ini menjadi tombol ke panel Pasar. ?>
+    <button type="button" class="chip-suasana" id="chipSuasana" data-panel="pasar"
+            title="Suasana desa dihitung dari jumlah warga yang berdiri di peta">Memuat…</button>
 </div>
 
 <?php
@@ -545,11 +558,12 @@ require __DIR__ . '/../includes/tab-bar.php';
 <?php $awalanPoin = $awalan; require __DIR__ . '/../includes/dompet-skrip.php'; ?>
 <?php $awalanMisi = $awalan; require __DIR__ . '/../includes/misi-skrip.php'; ?>
 <?php $awalanChat = $awalan; require __DIR__ . '/../includes/chat-skrip.php'; ?>
+<?php $awalanPasar = $awalan; require __DIR__ . '/../includes/pasar-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buatBalai, buatBangunan, varianBangunan, teksturPapan, matJendela } from '<?= $folder3dUrl ?>bangunan3d.js?v=<?= $versiBangunan3d ?>';
+import { buatBalai, buatBangunan, buatTenda, varianBangunan, teksturPapan, matJendela } from '<?= $folder3dUrl ?>bangunan3d.js?v=<?= $versiBangunan3d ?>';
 
 // ===========================================================================
 // DATA DESA
@@ -683,6 +697,10 @@ terapkanDataDesa(DATA_DESA);
 // Isi desa dari server, atau cadangan bila endpoint gagal.
 const WARGA_SEED = DATA_DESA && Array.isArray(DATA_DESA.warga) ? DATA_DESA.warga : [];
 const BANGUNAN_SEED = DATA_DESA && Array.isArray(DATA_DESA.bangunan) ? DATA_DESA.bangunan : [];
+// Pasar Malam dan CFD (Fitur 4). Data acara hanya ada bila server bilang
+// acara sedang berlangsung; di luar jam acara, tenda tidak digambar.
+const ACARA_SEKARANG = DATA_DESA ? (DATA_DESA.acara || null) : null;
+const LAPAK_SEKARANG = DATA_DESA && Array.isArray(DATA_DESA.lapak) ? DATA_DESA.lapak : [];
 // RNG deterministik supaya sebaran pohon dan warga konsisten tiap muat.
 function mulberry32(a) {
     return function () {
@@ -774,6 +792,7 @@ function kotak(w, h, d, bahan, x = 0, y = 0, z = 0) {
 const dunia = new THREE.Group();
 scene.add(dunia);
 const bisaDiklik = [];   // objek yang merespons tap (beserta data popover)
+let lapakBisaDiklik = []; // tenda lapak pasar yang sedang berdiri
 // Material yang diwarnai ulang siklus siang-malam (diisi blok tanah/dekor).
 let matTanahLuar = null, bahanKepalaLampu = null;
 
@@ -1089,6 +1108,65 @@ function bangunBangunan(daftar) {
     });
 }
 
+// ---------------------------------------------------------------------------
+// Tenda lapak Pasar Malam dan CFD (Fitur 4).
+//
+// Tenda hanya ada saat acara berlangsung. Posisinya dua baris di selatan
+// alun-alun, menghadap Balai Desa. Data lapak datang dari data-desa.php,
+// urut klaim, jadi tenda pertama selalu paling depan kiri.
+// ---------------------------------------------------------------------------
+const TITIK_TENDA = (() => {
+    const fx = FOKUS ? FOKUS.x : 1017;
+    const fy = FOKUS ? FOKUS.y : 692;
+    const titik = [];
+    // Dua baris tenda di selatan alun-alun, menghadap Balai Desa.
+    for (let i = 0; i < 6; i++) titik.push([fx - 250 + i * 100, fy + 150]);
+    for (let i = 0; i < 6; i++) titik.push([fx - 250 + i * 100, fy + 250]);
+    return titik;
+})();
+
+function bangunLapak(daftar) {
+    const lama = dunia.getObjectByName('grupLapak');
+    if (lama) {
+        for (const o of lapakBisaDiklik) {
+            const i = bisaDiklik.indexOf(o);
+            if (i >= 0) bisaDiklik.splice(i, 1);
+        }
+        dunia.remove(lama);
+        while (lama.children.length) lama.remove(lama.children[0]);
+    }
+    lapakBisaDiklik = [];
+    if (!Array.isArray(daftar) || !daftar.length) return;
+    const grup = new THREE.Group();
+    grup.name = 'grupLapak';
+    daftar.forEach((l, i) => {
+        const titik = TITIK_TENDA[i];
+        if (!titik) return;
+        // Merah putih untuk Pasar Malam, hijau untuk CFD, bergantian.
+        const warna = ACARA_SEKARANG === 'cfd' ? (i % 2 ? 0x16a34a : 0xf8fafc) : (i % 2 ? 0xffffff : 0xdc2626);
+        const tenda = buatTenda(warna);
+        const pos = KE3(titik[0], titik[1]);
+        tenda.position.copy(pos);
+        const popover = {
+            kicker: ACARA_SEKARANG === 'cfd' ? 'LAPAK CFD' : 'LAPAK PASAR MALAM',
+            judul: l.namaUsaha || 'Lapak warga',
+            lencana: null,
+            kutipan: null,
+            isi: 'Tenda ' + (i + 1) + ' dari ' + daftar.length + '. Dibuka oleh ' + (l.nomor || 'warga desa') + '.',
+            tautan: l.tautan,
+        };
+        tenda.userData.popover = popover;
+        tenda.traverse(o => { o.userData.popover = popover; });
+        grup.add(tenda);
+        const label = labelNama((l.namaUsaha || 'Lapak').slice(0, 16), 0.8);
+        label.position.set(pos.x, 178, pos.z);
+        grup.add(label);
+        lapakBisaDiklik.push(tenda);
+        bisaDiklik.push(tenda);
+    });
+    dunia.add(grup);
+}
+
 // Label nama melayang (sprite tekstur kanvas).
 function labelNama(teks, skala = 1) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 72;
@@ -1133,6 +1211,7 @@ function penandaKosong(x, y) {
 }
 // Bangun awal memakai data contoh; data langsung menggantikannya begitu tiba.
 bangunBangunan(BANGUNAN_SEED);
+bangunLapak(LAPAK_SEKARANG);
 
 // ---------------------------------------------------------------------------
 // Pepohonan dan alam: instancing supaya draw call tetap sedikit.
@@ -2094,6 +2173,16 @@ function perbaruiSuasana() {
     else if (warga >= 1) { teks = 'Sepi · ' + warga + ' warga baru'; kelas = 'sepi'; }
     else { teks = 'Desa baru · belum ada warga'; kelas = 'sepi'; }
     if (bangunan > 0) teks += ' · ' + bangunan + ' bangunan';
+    // Acara pasar yang sedang berlangsung lebih penting daripada suasana,
+    // jadi chip berganti menjadi nama acara dan berkedip pelan.
+    if (ACARA_SEKARANG) {
+        teks = (ACARA_SEKARANG === 'cfd' ? 'CFD' : 'Pasar Malam') + ' sedang berlangsung · ' +
+            LAPAK_SEKARANG.length + ' lapak';
+        kelas = 'pasar';
+        chip.classList.add('pasar');
+    } else {
+        chip.classList.remove('pasar');
+    }
     chip.textContent = teks;
     chip.classList.remove('ramai', 'sepi');
     chip.classList.add(kelas);
@@ -2110,6 +2199,12 @@ window.__desa = {
     zonaGang: ZONA_GANG,
     fokus: FOKUS,
     bangunBangunan, bangunWarga, gambarPapanGang,
+    bangunLapak, acara: ACARA_SEKARANG,
+    // Jumlah tenda lapak yang sedang berdiri, untuk uji otomatis.
+    jumlahLapak3d: () => {
+        const grup = dunia.getObjectByName('grupLapak');
+        return grup ? grup.children.filter(o => o.isGroup).length : 0;
+    },
 };
 
 // Catatan data di kartu intro.

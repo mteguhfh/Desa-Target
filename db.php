@@ -185,6 +185,24 @@ function db(): PDO
         )"
     );
 
+    // Lapak Pasar Malam dan CFD (Fitur 4). Gratis, satu lapak per warga per
+    // acara per tanggal. Kavling tenda dihitung sistem saat lapak diambil,
+    // jadi tidak ada posisi tenda yang disimpan terpisah dari urutannya.
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS lapak (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            acara TEXT NOT NULL,
+            tanggal TEXT NOT NULL,
+            nomor TEXT NOT NULL,
+            nama_usaha TEXT NOT NULL,
+            tautan TEXT NOT NULL,
+            kavling INTEGER,
+            dibuat_pada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (acara, tanggal, nomor)
+        )"
+    );
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_lapak_acara ON lapak (acara, tanggal, id)');
+
     $daftarMisi = [
         ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
         ['dukung-teman', 'Dukung komentar warga lain', 'Sukai komentar warga lain yang idenya bagus. Like terbanyak besok pagi dibangun jadi bangunan.', 2],
@@ -915,4 +933,187 @@ function lepas_ruko(PDO $pdo, $nomor, $kunci): array
     }
     $pdo->prepare("UPDATE bangunan SET aktif = 0 WHERE id = ?")->execute([(int) $ruko['id']]);
     return ['ok' => true];
+}
+
+// ---------------------------------------------------------------------------
+// Pasar Malam dan CFD (Fitur 4). Lapak gratis, tanpa pembayaran.
+//
+// Jadwal ada di ACARA_LAPAK (config.php). Semua fungsi di sini menerima
+// waktu sekarang, jadi jadwal bisa diuji untuk hari dan jam mana pun tanpa
+// menunggu Sabtu atau Minggu.
+// ---------------------------------------------------------------------------
+
+// Kode acara yang sah, atau null.
+function acara_sah($acara): ?string
+{
+    return is_string($acara) && isset(ACARA_LAPAK[$acara]) ? $acara : null;
+}
+
+// Acara yang sedang berlangsung pada waktu $sekarang, atau null.
+// $sekarang format 'Y-m-d H:i' (atau jam lengkap, bagian detik diabaikan).
+function acara_aktif(?string $sekarang = null): ?string
+{
+    $sekarang = $sekarang ?? date('Y-m-d H:i');
+    $hari = (int) date('N', (int) strtotime($sekarang));
+    $jam = date('H:i', (int) strtotime($sekarang));
+    foreach (ACARA_LAPAK as $kode => $acara) {
+        // Jam selesai tidak termasuk, jadi Pasar Malam berakhir pukul 22.00.
+        if ($hari === (int) $acara['hari'] && $jam >= $acara['mulai'] && $jam < $acara['selesai']) {
+            return (string) $kode;
+        }
+    }
+    return null;
+}
+
+// Awal acara berikutnya: ['acara', 'tanggal', 'mulai'] atau null.
+function acara_berikutnya(?string $sekarang = null): ?array
+{
+    $sekarang = $sekarang ?? date('Y-m-d H:i');
+    $awal = new DateTimeImmutable($sekarang);
+    $terdekat = null;
+    // Cari dalam dua pekan ke depan: cukup untuk setiap acara mingguan.
+    for ($i = 0; $i <= 14; $i++) {
+        $hariIni = $awal->modify('+' . $i . ' day');
+        foreach (ACARA_LAPAK as $kode => $acara) {
+            if ((int) $hariIni->format('N') !== (int) $acara['hari']) {
+                continue;
+            }
+            $mulai = new DateTimeImmutable($hariIni->format('Y-m-d') . ' ' . $acara['mulai']);
+            if ($mulai <= $awal) {
+                continue;
+            }
+            if ($terdekat === null || $mulai < $terdekat['mulai']) {
+                $terdekat = [
+                    'acara' => (string) $kode,
+                    'nama' => $acara['nama'],
+                    'tanggal' => $mulai->format('Y-m-d'),
+                    'mulai' => $acara['mulai'],
+                    'selesai' => $acara['selesai'],
+                    '_waktu' => $mulai,
+                ];
+            }
+        }
+    }
+    if ($terdekat === null) {
+        return null;
+    }
+    unset($terdekat['_waktu']);
+    return $terdekat;
+}
+
+// Daftar lapak satu acara pada satu tanggal, urut waktu klaim.
+// Kavling tenda mengikuti urutan ini (0, 1, 2, ...).
+function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
+{
+    if (acara_sah($acara) === null || preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal) !== 1) {
+        return [];
+    }
+    $stmt = $pdo->prepare(
+        'SELECT id, acara, tanggal, nomor, nama_usaha, tautan, kavling, dibuat_pada
+         FROM lapak WHERE acara = ? AND tanggal = ? ORDER BY id ASC'
+    );
+    $stmt->execute([$acara, $tanggal]);
+    $hasil = [];
+    foreach ($stmt->fetchAll() as $i => $baris) {
+        $hasil[] = [
+            'id' => (int) $baris['id'],
+            'acara' => $baris['acara'],
+            'tanggal' => $baris['tanggal'],
+            'nomor' => $baris['nomor'],
+            'namaUsaha' => $baris['nama_usaha'],
+            'tautan' => $baris['tautan'],
+            'kavling' => $i,
+        ];
+    }
+    return $hasil;
+}
+
+// Ambil satu lapak untuk acara yang sedang berlangsung.
+// Mengembalikan:
+//   ['ok' => true, 'lapak' => [...], 'sudah' => bool]
+//   ['galat' => 'warga' | 'acara' | 'tutup' | 'tautan' | 'nama' | 'penuh' | 'sudah']
+function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null, ?string $namaUsaha = null, ?string $tautan = null): array
+{
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) {
+        return ['galat' => 'warga'];
+    }
+    $kode = acara_sah($acara);
+    if ($kode === null) {
+        return ['galat' => 'acara'];
+    }
+    $sekarang = $sekarang ?? date('Y-m-d H:i');
+    // Lapak hanya bisa diambil saat acaranya berlangsung. Di luar jam acara
+    // daftar lapak acara berikutnya tetap bisa dilihat, tapi belum diklaim.
+    if (acara_aktif($sekarang) !== $kode) {
+        return ['galat' => 'tutup'];
+    }
+    $tanggal = date('Y-m-d', (int) strtotime($sekarang));
+    $nomorWarga = nomor_warga((int) $warga['id']);
+
+    // Ruko warga menjadi sumber nama usaha dan tautan. Tanpa ruko, formulir
+    // ringkas di panel yang dipakai.
+    $ruko = ruko_milik($pdo, $nomorWarga);
+    if ($ruko !== null) {
+        $namaUsaha = (string) $ruko['nama'];
+        $tautan = (string) $ruko['tautan'];
+    }
+    $namaUsaha = trim((string) $namaUsaha);
+    $panjangNama = function_exists('mb_strlen') ? mb_strlen($namaUsaha) : strlen($namaUsaha);
+    if ($panjangNama < 3 || $panjangNama > 60) {
+        return ['galat' => 'nama'];
+    }
+    $tautanSah = tautan_usaha_sah($tautan);
+    if ($tautanSah === null) {
+        return ['galat' => 'tautan'];
+    }
+
+    $sudah = $pdo->prepare('SELECT COUNT(*) FROM lapak WHERE acara = ? AND tanggal = ? AND nomor = ?');
+    $sudah->execute([$kode, $tanggal, $nomorWarga]);
+    if ((int) $sudah->fetchColumn() > 0) {
+        return ['galat' => 'sudah'];
+    }
+
+    $lapak = daftar_lapak($pdo, $kode, $tanggal);
+    $batas = (int) (ACARA_LAPAK[$kode]['batas'] ?? 12);
+    if (count($lapak) >= $batas) {
+        return ['galat' => 'penuh'];
+    }
+
+    $pdo->prepare(
+        'INSERT INTO lapak (acara, tanggal, nomor, nama_usaha, tautan, kavling) VALUES (?, ?, ?, ?, ?, ?)'
+    )->execute([$kode, $tanggal, $nomorWarga, $namaUsaha, $tautanSah, count($lapak)]);
+
+    return ['ok' => true, 'lapak' => daftar_lapak($pdo, $kode, $tanggal)];
+}
+
+// Keadaan pasar untuk satu waktu: acara aktif, acara berikutnya, dan lapak
+// acara aktif saja. Dipakai panel Pasar dan data-desa.php supaya peta dan
+// panel membaca angka yang sama.
+function keadaan_pasar(PDO $pdo, ?string $sekarang = null): array
+{
+    $sekarang = $sekarang ?? date('Y-m-d H:i');
+    $aktif = acara_aktif($sekarang);
+    $jadwal = [];
+    foreach (ACARA_LAPAK as $kode => $acara) {
+        $jadwal[] = [
+            'acara' => (string) $kode,
+            'nama' => $acara['nama'],
+            'hari' => (int) $acara['hari'],
+            'mulai' => $acara['mulai'],
+            'selesai' => $acara['selesai'],
+            'batas' => (int) $acara['batas'],
+        ];
+    }
+    $tanggalAktif = $aktif === null ? null : date('Y-m-d', (int) strtotime($sekarang));
+    return [
+        'sekarang' => date('Y-m-d H:i', (int) strtotime($sekarang)),
+        'acara' => $aktif,
+        'namaAcara' => $aktif === null ? null : ACARA_LAPAK[$aktif]['nama'],
+        'tanggal' => $tanggalAktif,
+        'berikutnya' => acara_berikutnya($sekarang),
+        'jadwal' => $jadwal,
+        'lapak' => $aktif === null ? [] : daftar_lapak($pdo, $aktif, $tanggalAktif),
+        'batas' => $aktif === null ? 0 : (int) ACARA_LAPAK[$aktif]['batas'],
+    ];
 }
