@@ -40,6 +40,9 @@ function db(): PDO
     foreach (kolom_tabel($pdo, 'warga') as $namaKolom => $_) {
         $kolomWarga[$namaKolom] = true;
     }
+    if (!isset($kolomWarga['kode_pulih'])) {
+        $pdo->exec('ALTER TABLE warga ADD COLUMN kode_pulih TEXT');
+    }
     foreach (['warna_baju', 'warna_kulit', 'warna_topi'] as $kolomBaru) {
         if (!isset($kolomWarga[$kolomBaru])) {
             $pdo->exec('ALTER TABLE warga ADD COLUMN ' . $kolomBaru . ' TEXT');
@@ -1011,10 +1014,29 @@ function kunci_warga(PDO $pdo, int $id): string
     return $nilai === false ? '' : (string) $nilai;
 }
 
-// Gambar usaha yang boleh dipakai ruko dan lapak: hanya berkas yang benar-
-// benar ada di assets/img/ dengan nama aman. Nilainya jalur relatif
-// "assets/img/nama.png", bukan URL bebas, supaya tidak ada yang bisa
-// menyisipkan alamat luar atau skrip ke dalam src gambar.
+// Kode acak 128 bit disimpan sebagai hash; UPDATE bersyarat membuatnya
+// sekali pakai sekaligus mencabut kunci perangkat sebelumnya.
+function buat_kode_pulih(PDO $pdo, string $nomor, string $kunci): ?string
+{
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) return null;
+    $kode = bin2hex(random_bytes(16));
+    $stmt = $pdo->prepare('UPDATE warga SET kode_pulih = ? WHERE id = ? AND kunci = ?');
+    $stmt->execute([hash('sha256', $kode), (int) $warga['id'], $kunci]);
+    return $stmt->rowCount() === 1 ? $kode : null;
+}
+
+function pulihkan_kartu(PDO $pdo, string $nomor, string $kode): ?array
+{
+    if (!preg_match('/^DT-\d{4,9}$/D', $nomor) || !preg_match('/^[a-f0-9]{32}$/D', $kode)) return null;
+    $kunci = bin2hex(random_bytes(16));
+    $stmt = $pdo->prepare('UPDATE warga SET kunci = ?, kode_pulih = NULL WHERE id = ? AND kode_pulih = ?');
+    $stmt->execute([$kunci, (int) substr($nomor, 3), hash('sha256', $kode)]);
+    if ($stmt->rowCount() !== 1) return null;
+    return ['nomor' => $nomor, 'kunci' => $kunci];
+}
+
+// Hanya gambar lokal yang disediakan untuk usaha, tanpa URL bebas.
 function daftar_gambar_usaha(): array
 {
     $wadah = __DIR__ . '/assets/img';

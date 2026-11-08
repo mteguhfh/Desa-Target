@@ -1527,6 +1527,7 @@ require __DIR__ . '/pasar-skrip.php';
 <script>window.__tokenKtp = <?= json_encode($tokenKtpPanel) ?>;</script>
 <?php
 $akuAwalan = '';
+require __DIR__ . '/pemulihan-skrip.php';
 require __DIR__ . '/aku-skrip.php';
 $rukoPanelAwalan = '';
 require __DIR__ . '/ruko-skrip.php';

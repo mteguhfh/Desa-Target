@@ -31,11 +31,11 @@ Aturan status:
 
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
-| 0 | Simpan dan amankan yang sudah jalan | 6 | 5, sisa 0.5 (pemulihan kartu) |
-| 1 | Identitas dan alasan balik lagi | 8 | 0 |
+| 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
+| 1 | Identitas dan alasan balik lagi | 8 | 1 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **5** |
+| **Total** | | **27** | **7** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -116,7 +116,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   pop-up sambutan, KTP dari panel Aku, panel Ruko, dan gambar usaha (25
   selesai, 2 belum, 5 sengaja tidak dikerjakan). `README.md` uji memuat
   `ktp-kunci.js` dan hitungan lima tab.
-- [~] **0.5 Tutup kebocoran kunci kartu**
+- [x] **0.5 Tutup kebocoran kunci kartu**
   Berkas: `ktp.php`, `ktp-markup.php`, `warga-markup.php`,
   `includes/cari-warga-skrip.php`, `tools/uji/*`.
   Ukuran selesai: `ktp.php?kartu=N` milik pengunjung tidak lagi mencetak
@@ -127,7 +127,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   `$_SESSION['kartu_baru']` sama dengan nomor kartu yang dibuka. Uji baru
   `tools/uji/ktp-kunci.js` lulus 4/4: kartu publik tanpa `#ktpIdentitas`,
   tanpa `data-kunci`, dan kunci tidak muncul di HTML. Sisa pekerjaan: kode
-  pemulihan untuk pemilik yang localStorage-nya hilang, dikerjakan di 1.7.
+  pemulihan kini tersedia melalui 1.7 dengan kode sekali pakai.
 - [x] **0.6 Commit, push, deploy**
   Ukuran selesai: `git status` bersih, situs live memuat beranda peta 3D.
   Catatan: data contoh ruko dan pasar di DB lokal bisa dihapus dengan
@@ -225,7 +225,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.7 Kode pemulihan kartu
 
-- [ ] Warga bisa memulihkan kartu di peramban atau ponsel lain memakai kode
+- [x] Warga bisa memulihkan kartu di peramban atau ponsel lain memakai kode
   pemulihan, tanpa akun dan tanpa email.
 - Berkas: `db.php` (kolom `kode_pulih` dan hash-nya), `ktp.php`,
   `ktp-markup.php`, `includes/aku-skrip.php`, endpoint baru
@@ -236,6 +236,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 - Ukuran selesai: kode salah dan nomor asing memberi galat yang sama; kode
   benar menulis `dt_nomor` dan `dt_kunci` di peramban baru; kode lama hangus
   setelah dipakai atau setelah dibuat ulang.
+  Implementasi: hash SHA-256 kode acak 128 bit di warga.kode_pulih,
+  endpoint POST bertoken sesi, dan UPDATE bersyarat yang mengonsumsi kode
+  sekaligus mengganti kunci. Uji pemulihan-kartu.js lulus 13 pemeriksaan.
 
 ### 1.8 Nama panggilan dan izin
 
@@ -406,9 +409,7 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 
 1. **0.3 sudah selesai.** Lima uji langsung lulus 44 pemeriksaan untuk
    beranda peta 3D, sambutan, panel Aku, panel Ruko, dan gambar usaha.
-2. **1.7 Kode pemulihan kartu.** Sisa dari 0.5: pemilik yang localStorage-nya
-   hilang belum punya jalan memulihkan kartu. Ini yang menutup celah keamanan
-   sampai selesai.
+2. **1.7 sudah selesai.** Pemulihan kartu tersedia lewat kode sekali pakai.
 3. **1.1 Pemilih tampilan di panel Aku.** Bahan sudah lengkap (`WARNA_*`,
    `warna_sah()`, kolom `warna_*`); `ktp-json.php` masih mengabaikan warna.
 4. **1.2 Pratinjau karakter.** Butuh 1.1. Sekalian memasang avatar di kartu.
@@ -442,9 +443,7 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 ### Detail yang masih menggantung
 
 - **0.3:** selesai, lima berkas uji tersedia dan lulus.
-- **0.5:** kebocoran sudah ditutup dan diuji (`ktp-kunci.js` 4/4), tetapi
-  status masih setengah karena janji "pemilik bisa memulihkan kartu"
-  bergantung pada 1.7.
+- **0.5:** selesai, kebocoran ditutup dan pemulihan tersedia di 1.7.
 - **1.4:** lencana "Tetangga Baik" sengaja dibuang karena butuh data baru.
 - **2.7:** angka batas figur (kini 80) baru boleh dinaikkan setelah ada
   pengukuran bingkai di perangkat lemah.

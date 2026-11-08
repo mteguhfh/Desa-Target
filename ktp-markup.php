@@ -6,6 +6,13 @@ $adaPesan = $pesan !== null;
 $adaGalat = $galat !== [];
 $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
 ?>
+<?php if (!empty($kodePulihBaru)): ?>
+<section class="seksi sempit pemulihan-kartu">
+    <h2>Simpan kode pemulihan kartumu</h2>
+    <p>Kode ini hanya ditampilkan sekali. Simpan bersama nomor warga di tempat pribadi.</p>
+    <output id="kodePulihTerbit"><?= e($nomorKartu) ?> | <?= e($kodePulihBaru) ?></output>
+</section>
+<?php endif; ?>
 
 <section class="seksi sempit">
     <h1>KTP Warga Desa Target</h1>
@@ -164,4 +171,8 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
         <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>
     </form>
 </section>
-
+<section class="seksi sempit">
+<?php require __DIR__ . '/includes/pemulihan-markup.php'; ?>
+</section>
+<script>window.__tokenKtp = <?= json_encode($tokenForm) ?>;</script>
+<?php require __DIR__ . '/includes/pemulihan-skrip.php'; ?>

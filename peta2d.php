@@ -7,6 +7,7 @@
 // "Peta Desa" mendarat di peta.php (3D). Pilihan mode diingat di
 // localStorage lewat includes/sakelar-peta-skrip.php.
 $modePeta = '2d';
+session_start();
 require __DIR__ . '/includes/peta-data.php';
 
 require __DIR__ . '/includes/sakelar-peta.php';

@@ -1,0 +1,48 @@
+const { jalankan } = require('./bantuan-paritas');
+jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
+  const warga = await buatWarga();
+  cek('kode terbit bersama kartu', /^[a-f0-9]{32}$/.test(warga.kode_pulih));
+  const hash = php('$s=db()->prepare("SELECT kode_pulih FROM warga WHERE id=?"); $s->execute([(int)substr($argv[1],3)]); echo json_encode($s->fetchColumn());', warga.nomor);
+  cek('basis data hanya menyimpan hash', hash !== warga.kode_pulih && hash.length === 64);
+  const page = await halaman();
+  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  const token = await page.evaluate(() => window.__tokenKtp);
+  async function pulih(form) {
+    const r = await page.request.post(BASE + '/pulihkan.php', { form: { token, ...form } });
+    return { status: r.status(), isi: await r.json() };
+  }
+  const salah = await pulih({ nomor: warga.nomor, kode: '0'.repeat(32) });
+  const asing = await pulih({ nomor: 'DT-999999999', kode: '0'.repeat(32) });
+  cek('nomor asing dan kode salah memberi galat sama', salah.status === 403 && JSON.stringify(salah) === JSON.stringify(asing));
+  const tanpaToken = await pulih({ token: '', nomor: warga.nomor, kode: warga.kode_pulih });
+  cek('token sesi wajib', tanpaToken.status === 409);
+  await page.locator('#pulihNomor').fill(warga.nomor);
+  await page.locator('#pulihKode').fill(warga.kode_pulih);
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.locator('#formPulihkan button').click()]);
+  const id = await page.evaluate(() => ({ nomor: localStorage.getItem('dt_nomor'), kunci: localStorage.getItem('dt_kunci') }));
+  cek('pemulihan menyimpan identitas baru', id.nomor === warga.nomor && id.kunci && id.kunci !== warga.kunci);
+  cek('kunci lama tidak berlaku', php('echo json_encode(warga_dari_nomor_dan_kunci(db(),$argv[1],$argv[2])===null);', warga.nomor, warga.kunci));
+  cek('kode sekali pakai sudah hangus', (await pulih({ nomor: warga.nomor, kode: warga.kode_pulih })).status === 403);
+  const baru = await pulih({ aksi: 'buat', ...id });
+  cek('perangkat pemilik bisa membuat kode baru', baru.status === 200 && /^[a-f0-9]{32}$/.test(baru.isi.kode));
+  const ulang = await pulih({ aksi: 'buat', ...id });
+  cek('pembuatan ulang mengganti kode', ulang.isi.kode !== baru.isi.kode);
+  cek('kode sebelum dibuat ulang ditolak', (await pulih({ nomor: id.nomor, kode: baru.isi.kode })).status === 403);
+  const peta = await halaman(id);
+  await peta.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+  await peta.locator('#tabBar [data-panel="aku"]').click();
+  await peta.locator('#buatKodePulih').click();
+  await peta.locator('#kodePulihBaru').waitFor({ state: 'visible' });
+  cek('panel Aku 2D dapat membuat dan menampilkan kode', (await peta.locator('#kodePulihBaru').innerText()).includes(id.nomor));
+  await peta.close();
+  const peta3d = await halaman(id);
+  await peta3d.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await peta3d.locator('#tabBar [data-panel="aku"]').click();
+  await peta3d.locator('#buatKodePulih').click();
+  await peta3d.locator('#kodePulihBaru').waitFor({ state: 'visible' });
+  cek('panel Aku 3D dapat membuat kode', (await peta3d.locator('#kodePulihBaru').innerText()).includes(id.nomor));
+  await peta3d.close();
+  const publik = await page.request.get(BASE + '/ktp.php?kartu=' + Number(id.nomor.slice(3)));
+  const html = await publik.text();
+  cek('kode dan hash tidak tercetak di kartu publik', !html.includes(ulang.isi.kode) && !html.includes(hash));
+});

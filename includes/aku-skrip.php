@@ -105,6 +105,7 @@
                 }
                 simpan(KUNCI_NOMOR, hasil.isi.nomor);
                 simpan(KUNCI_KUNCI, hasil.isi.kunci);
+                if (hasil.isi.kode_pulih && window.tampilkanKodePulih) window.tampilkanKodePulih(hasil.isi.kode_pulih);
                 form.reset();
                 tampilKartu(hasil.isi.nama);
                 tampilKabar(kabarPunya, 'Selamat! Kartu wargamu jadi, nomornya ' + hasil.isi.nomor + '.');

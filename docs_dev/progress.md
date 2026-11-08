@@ -1,5 +1,12 @@
 # Kemajuan
 
+1.7: kode pemulihan, endpoint POST bertoken sesi, formulir KTP dan panel
+Aku tersedia. Uji pemulihan 13/13, lint PHP, dan seluruh regresi lulus.
+Uji 2D menemukan sesi dibuka setelah output; session_start dipindah ke awal
+peta2d.php. Empat uji lama memakai selektor submit global, kini dibatasi
+ke formulir penerbitan KTP karena formulir pemulihan juga memiliki submit.
+Kode dipakai lewat UPDATE atomik dan mengganti kunci perangkat lama.
+
 Lima uji lulus 44 pemeriksaan. Lint PHP dan enam halaman HTTP lokal lulus.
 Seluruh 12 uji resmi sebelumnya lulus, total 539 pemeriksaan.
 Lima uji baru lulus 44 pemeriksaan. Total seluruh uji resmi: 583.

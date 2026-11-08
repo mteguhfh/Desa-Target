@@ -43,7 +43,7 @@ async function buatWarga(browser, nama, gang) {
   await page.locator('#gang').selectOption(gang);
   const [jawaban] = await Promise.all([
     page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),
-    page.locator('button[type="submit"]').click(),
+    page.locator('form[action="ktp.php"] button[type="submit"]').click(),
   ]);
   const lokasi = jawaban.headers()['location'] || '';
   const cocok = lokasi.match(/kartu=(\d+)/);

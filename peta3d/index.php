@@ -684,6 +684,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
 <?php $sambutanAwalan = $awalan; require __DIR__ . '/../includes/sambutan-skrip.php'; ?>
 <?php $rukoPanelAwalan = $awalan; require __DIR__ . '/../includes/ruko-skrip.php'; ?>
 <script>window.__tokenKtp = <?= json_encode($tokenKtpPanel) ?>;</script>
+<?php $pemulihanAwalan = $awalan; require __DIR__ . '/../includes/pemulihan-skrip.php'; ?>
 <?php $akuAwalan = $awalan; require __DIR__ . '/../includes/aku-skrip.php'; ?>
 
 <script type="module">

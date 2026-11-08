@@ -79,6 +79,7 @@ $idBaru = (int) $pdo->lastInsertId();
 // kuncinya ditulis eksplisit.
 $kunciBaru = bin2hex(random_bytes(16));
 $pdo->prepare('UPDATE warga SET kunci = ? WHERE id = ?')->execute([$kunciBaru, $idBaru]);
+$kodePulih = buat_kode_pulih($pdo, nomor_warga($idBaru), $kunciBaru);
 
 // Token lama hangus, ganti baru untuk pengiriman berikutnya. Kunci warga
 // ikut terbit saat baris dibuat (lihat skema warga.kunci di db.php).
@@ -93,6 +94,7 @@ jawab_ktp(200, [
     'ok' => true,
     'nomor' => nomor_warga($idBaru),
     'kunci' => $kunciBaru,
+    'kode_pulih' => $kodePulih,
     'nama' => (string) ($warga['nama'] ?? $nama),
     'gang' => (string) ($warga['gang'] ?? $gang),
 ]);

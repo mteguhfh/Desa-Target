@@ -60,12 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $warna['baju'], $warna['kulit'], $warna['topi'],
         ]);
         $idBaru = (int) $pdo->lastInsertId();
+        $kunciBaru = bin2hex(random_bytes(16));
 
         // Kunci rahasia terbit untuk warga baru. Ditulis eksplisit karena
         // nilai bawaan kolom tidak selalu terbaca pada baris yang baru saja
         // disisipkan.
         $pdo->prepare('UPDATE warga SET kunci = ? WHERE id = ?')
-            ->execute([bin2hex(random_bytes(16)), $idBaru]);
+            ->execute([$kunciBaru, $idBaru]);
+        $_SESSION['kode_pulih_baru'] = ['id' => $idBaru, 'kode' => buat_kode_pulih($pdo, nomor_warga($idBaru), $kunciBaru)];
 
         // Token lama hangus, ganti baru untuk pengiriman berikutnya.
         $_SESSION['token_ktp'] = bin2hex(random_bytes(16));
@@ -105,6 +107,11 @@ if (isset($_GET['kartu']) && ctype_digit((string) $_GET['kartu'])) {
 }
 
 if ($kartuWarga !== null) {
+    $kodePulihBaru = null;
+    if ((int) ($_SESSION['kode_pulih_baru']['id'] ?? 0) === (int) $kartuWarga['id']) {
+        $kodePulihBaru = $_SESSION['kode_pulih_baru']['kode'];
+        unset($_SESSION['kode_pulih_baru']);
+    }
     // Kunci rahasia hanya dicetak untuk kartu yang baru dibuat di sesi ini,
     // supaya browser pemilik bisa menyimpannya (dt_nomor + dt_kunci di
     // localStorage). Kartu warga lain yang dibuka lewat ?kartu=N tidak

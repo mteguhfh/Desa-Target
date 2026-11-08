@@ -31,6 +31,7 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 
 | berkas | yang diperiksa |
 | --- | --- |
+| `pemulihan-kartu.js` | hash kode, galat seragam, token wajib, pemulihan di peramban baru, kunci lama dicabut, kode sekali pakai dan pembuatan ulang |
 | `beranda-peta.js` | beranda 200, kanvas 3D, lima tab, vendor lokal, Tentang dan tautan sambutan |
 | `sambutan.js` | muncul pertama kali, diingat, buka ulang, Escape, sapaan warga, aksi Misi |
 | `aku-panel.js` | validasi nama, terbit KTP dari panel, nomor dan kunci tersimpan serta dikenali setelah muat ulang |

@@ -241,6 +241,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 </p>
                 <p class="panel-catatan">Poin bisa dipakai untuk usaha di desa. Misi dan riwayatnya ada di panel Misi.</p>
             </div>
+            <?php require __DIR__ . '/pemulihan-markup.php'; ?>
         </div>
 
         <?php // Ruko warga (Fitur 3), dibuka langsung dari tab Ruko (ADR-0006).
