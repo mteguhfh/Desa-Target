@@ -188,7 +188,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.4 Lencana Koleksiku
 
-- [ ] Panel Aku punya bagian Koleksiku berisi lencana yang terbuka otomatis
+- [x] Panel Aku punya bagian Koleksiku berisi lencana yang terbuka otomatis
   dari data yang sudah ada.
 - Berkas: `includes/panel-bersayap.php`, `includes/aku-skrip.php`, `db.php`,
   `assets/style.css`.

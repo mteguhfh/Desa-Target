@@ -683,6 +683,34 @@ function streak_warga(PDO $pdo, string $nomor): int
     return $streak;
 }
 
+function koleksi_warga(PDO $pdo, string $nomor): array
+{
+    $warga = warga_dari_nomor($pdo, $nomor);
+    $hari = date('Y-m-d');
+    $klaim = $pdo->prepare('SELECT COUNT(*) FROM klaim_harian WHERE nomor = ?');
+    $klaim->execute([$nomor]);
+    $misiHari = $pdo->prepare('SELECT COUNT(*) FROM misi_selesai WHERE nomor = ? AND tanggal = ?');
+    $misiHari->execute([$nomor, $hari]);
+    $chat = $pdo->prepare('SELECT COUNT(*) FROM chat_pesan WHERE nomor = ?');
+    $chat->execute([$nomor]);
+    $lapak = $pdo->prepare('SELECT COUNT(*) FROM lapak WHERE nomor = ?');
+    $lapak->execute([$nomor]);
+    $lencana = [
+        ['kode' => 'warga-baru', 'nama' => 'Warga Baru', 'syarat' => 'Punya KTP Warga', 'terbuka' => $warga !== null],
+        ['kode' => 'rajin-klaim', 'nama' => 'Rajin Klaim', 'syarat' => 'Klaim poin 7 hari beruntun', 'terbuka' => streak_warga($pdo, $nomor) >= 7],
+        ['kode' => 'tukang-usaha', 'nama' => 'Tukang Usaha', 'syarat' => 'Punya ruko aktif', 'terbuka' => ruko_milik($pdo, $nomor) !== null],
+        ['kode' => 'pedagang-pasar', 'nama' => 'Pedagang Pasar', 'syarat' => 'Pernah mengambil lapak', 'terbuka' => (int) $lapak->fetchColumn() > 0],
+        ['kode' => 'suara-gang', 'nama' => 'Suara Gang', 'syarat' => 'Pernah mengirim pesan', 'terbuka' => (int) $chat->fetchColumn() > 0],
+        ['kode' => 'penjelajah', 'nama' => 'Penjelajah', 'syarat' => 'Menyelesaikan Keliling Desa', 'terbuka' => (int) $pdo->prepare('SELECT COUNT(*) FROM misi_selesai WHERE nomor = ? AND kode = ?')->execute([$nomor, 'keliling-desa'])],
+        ['kode' => 'misi-tuntas', 'nama' => 'Misi Tuntas', 'syarat' => 'Menyelesaikan 5 misi dalam sehari', 'terbuka' => (int) $misiHari->fetchColumn() >= 5],
+    ];
+    // PDOStatement::execute mengembalikan bool, jadi hitung lencana penjelajah ulang.
+    $cekJelajah = $pdo->prepare('SELECT COUNT(*) FROM misi_selesai WHERE nomor = ? AND kode = ?');
+    $cekJelajah->execute([$nomor, 'keliling-desa']);
+    $lencana[5]['terbuka'] = (int) $cekJelajah->fetchColumn() > 0;
+    return $lencana;
+}
+
 // ---------------------------------------------------------------------------
 // Chat antar gang (Fitur 2). Publik total: tidak ada DM, tidak ada teks bebas.
 // Yang boleh dikirim hanya kode frase dari CHAT_FRASE, dan nama serta gang

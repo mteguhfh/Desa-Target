@@ -53,6 +53,7 @@ try {
             // desa yang perlu dikirim ulang, cukup status per warga.
             'ringkasan' => $ringkasan,
             'streak' => streak_warga($pdo, $nomor),
+            'koleksi' => koleksi_warga($pdo, $nomor),
             'daftar' => $daftar,
         ],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES

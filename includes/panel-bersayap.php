@@ -269,6 +269,7 @@ foreach ($panelPapanGang as $barisPapan) {
                     <a class="tombol-panel-biasa" href="<?= e($tabAwalan) ?>ktp.php">Lihat kartu lengkap</a>
                 </p>
                 <p class="panel-catatan">Poin bisa dipakai untuk usaha di desa. Misi dan riwayatnya ada di panel Misi.</p>
+                <div class="aku-koleksi" id="akuKoleksi"><h3>Koleksiku</h3><div class="aku-lencana" id="akuLencana"><p class="panel-catatan">Memuat lencana…</p></div></div>
             </div>
             <?php require __DIR__ . '/pemulihan-markup.php'; ?>
         </div>

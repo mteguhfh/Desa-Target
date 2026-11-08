@@ -1460,6 +1460,12 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .misi-klaim:disabled { background: #e2e8f0; color: var(--teks-lembut); cursor: default; }
 .misi-kabar { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: #047857; }
 .misi-kabar[hidden] { display: none; }
+.aku-koleksi { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+.aku-koleksi h3 { margin: 0 0 9px; font-size: 15px; }
+.aku-lencana { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.aku-lencana-satu { padding: 8px; border: 1px solid #e2e8f0; border-radius: 7px; color: #94a3b8; font-size: 12px; }
+.aku-lencana-satu span { display: block; margin-top: 3px; font-size: 11px; }
+.aku-lencana-satu.terbuka { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
 .misi-tamu p { margin-top: 0; }
 
 /* --- Pemilih warna warga di formulir KTP -------------------------------- */

@@ -37,6 +37,7 @@
     var elMeta = document.getElementById('akuMeta');
     var elPoin = document.getElementById('akuPoinAngka');
     var tombolKlaim = document.getElementById('akuKlaim');
+    var lencanaEl = document.getElementById('akuLencana');
     var pratinjau = document.querySelector('.aku-avatar-pratinjau');
 
     function perbaruiPratinjau() {
@@ -96,6 +97,9 @@
                 if (typeof hasil.saldo === 'number') elPoin.textContent = hasil.saldo;
                 if (hasil.nama) elNama.textContent = hasil.nama;
                 if (hasil.gang) elMeta.textContent = hasil.gang + ' · ' + nomor;
+                if (lencanaEl && Array.isArray(hasil.koleksi)) {
+                    lencanaEl.innerHTML = hasil.koleksi.map(function (l) { return '<div class="aku-lencana-satu ' + (l.terbuka ? 'terbuka' : '') + '"><strong>' + l.nama + '</strong><span>' + (l.terbuka ? 'Terbuka' : l.syarat) + '</span></div>'; }).join('');
+                }
             })
             .catch(function () { /* saldo gagal dimuat: angka tetap 0 */ });
     }
