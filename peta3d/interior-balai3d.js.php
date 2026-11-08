@@ -518,7 +518,7 @@ import * as THREE from 'three';
         // Jaraknya dikecilkan bila dinding terlalu dekat, supaya kamera tidak
         // berada di luar ruangan (dulu kamera menembus dinding belakang dan
         // yang terlihat hanya langit-langit).
-        var jarakBelakang = 210;
+        var jarakBelakang = 285;
         var tx = kamu.x + Math.sin(hadap) * jarakBelakang;
         var tz = kamu.z + Math.cos(hadap) * jarakBelakang;
         var batasX = LEBAR / 2 - 26, batasZ = DALAM / 2 - 26;
@@ -526,10 +526,10 @@ import * as THREE from 'three';
         if (tx < -batasX) tx = -batasX;
         if (tz > batasZ) tz = batasZ;
         if (tz < -batasZ) tz = -batasZ;
-        camera.position.lerp(new THREE.Vector3(tx, 205, tz), 1 - Math.pow(0.0001, dt));
+        camera.position.lerp(new THREE.Vector3(tx, 230, tz), 1 - Math.pow(0.0001, dt));
         // Lihat sedikit lebih tinggi dan lebih jauh: kepala pemain sempat
         // memenuhi separuh layar karena kamera hanya 1,3 m di belakangnya.
-        var lihat = new THREE.Vector3(kamu.x - Math.sin(hadap) * 220, 135, kamu.z - Math.cos(hadap) * 220);
+        var lihat = new THREE.Vector3(kamu.x - Math.sin(hadap) * 300, 120, kamu.z - Math.cos(hadap) * 300);
         camera.lookAt(lihat);
 
         // Bang Uju sedikit bergoyang supaya ruangan terasa hidup.
@@ -585,16 +585,16 @@ import * as THREE from 'three';
         // Pemain menghadap -z (meja layanan); kamera di +z, di belakangnya,
         // tetapi selalu di dalam ruangan.
         camera.position.set(
-            Math.max(-LEBAR / 2 + 26, Math.min(LEBAR / 2 - 26, kamu.x + Math.sin(yaw) * 210)),
-            205,
-            Math.max(-DALAM / 2 + 26, Math.min(DALAM / 2 - 26, kamu.z + Math.cos(yaw) * 210))
+            Math.max(-LEBAR / 2 + 26, Math.min(LEBAR / 2 - 26, kamu.x + Math.sin(yaw) * 285)),
+            230,
+            Math.max(-DALAM / 2 + 26, Math.min(DALAM / 2 - 26, kamu.z + Math.cos(yaw) * 285))
         );
         // Hadapkan kamera SEKETIKA. Dulu posisinya saja yang dipasang,
         // arahnya menunggu gambar() berikutnya, jadi pada bingkai pertama
         // kamera masih melihat dari tempat lama dan label titik dinilai
         // "di belakang layar" sehingga semuanya tersembunyi.
         camera.lookAt(
-            kamu.x - Math.sin(yaw) * 160, 120, kamu.z - Math.cos(yaw) * 160
+            kamu.x - Math.sin(yaw) * 300, 120, kamu.z - Math.cos(yaw) * 300
         );
         perbaruiTitik();
         renderer.render(scene, camera);

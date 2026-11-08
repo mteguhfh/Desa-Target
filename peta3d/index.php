@@ -1573,11 +1573,14 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') aturModeJalan(false);
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
 });
-window.addEventListener('keyup', (e) => { kunciDitekan[e.key.toLowerCase()] = false; });
+window.addEventListener('keyup', (e) => {
+    kunciDitekan[e.key.toLowerCase()] = false;
+    lepasSudutJalan();
+});
 dpad.querySelectorAll('button').forEach(btn => {
     const arah = btn.dataset.arah;
     const on = (e) => { e.preventDefault(); tombolDitekan[arah] = true; btn.classList.add('tertekan'); };
-    const off = () => { tombolDitekan[arah] = false; btn.classList.remove('tertekan'); };
+    const off = () => { tombolDitekan[arah] = false; btn.classList.remove('tertekan'); lepasSudutJalan(); };
     btn.addEventListener('pointerdown', on);
     btn.addEventListener('pointerup', off);
     btn.addEventListener('pointerleave', off);
@@ -1604,6 +1607,18 @@ function letakkanKamera(arah, pos, seketika) {
     camera.lookAt(pos.x, 46, pos.z);
 }
 
+// Lepas kunci sudut jalan hanya saat SEMUA tombol arah sudah dilepas.
+// Kalau kunci dilepas begitu pemain berhenti sekejap, menekan tombol lagi
+// menghitung sudut dari kamera yang masih berputar mengikuti pemain.
+function adaTombolArah() {
+    const arah = ['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'];
+    if (arah.some(k => kunciDitekan[k])) return true;
+    return Object.values(tombolDitekan).some(Boolean);
+}
+function lepasSudutJalan() {
+    if (!adaTombolArah()) sudutJalan.kunci = null;
+}
+
 // Arah "maju" & "kanan" untuk satu kombinasi tombol.
 //
 // Sudutnya DIKUNCI dari arah kamera pada saat tombol pertama kali ditekan,
@@ -1614,7 +1629,12 @@ function letakkanKamera(arah, pos, seketika) {
 // seperti di game 3D lain, dan hasilnya tidak bergantung pada fps.
 function sudutJalan(maju, samping) {
     const kunci = maju + ':' + samping;
-    if (sudutJalan.kunci !== kunci) {
+    // Kunci sudut DIHITUNG SEKALI saat rangkaian tombol dimulai, lalu
+    // dipertahankan sampai semua tombol arah dilepas. Dulu sudut dihitung
+    // dari kamera yang sedang berputar mengikuti pemain, jadi "kanan" bisa
+    // berbelok 120-180 derajat, bukan 90.
+    if (sudutJalan.kunci !== kunci || sudutJalan.lepas) {
+        sudutJalan.lepas = false;
         // Kamera melihat ke sasaran; "maju" = arah pandang kamera.
         const depan = new THREE.Vector3();
         camera.getWorldDirection(depan);
@@ -1648,7 +1668,11 @@ function perbaruiKamu(dt) {
         // Hadapkan pemain persis ke arah ia melangkah (termasuk serong).
         kamu.arah = sudut;
     } else {
-        sudutJalan.kunci = null;
+        // Kunci baru dilepas saat SEMUA tombol arah sudah dilepas. Kalau
+        // dilepas begitu saja ketika tidak ada tombol, menekan D lagi setelah
+        // sesaat menghitung ulang dari kamera yang belum kembali ke posisi
+        // bahu, dan pemain berbelok ke arah yang salah.
+        sudutJalan.lepas = true;
     }
     kamu.figur.rotation.y = kamu.arah;
     const pos = KE3(kamu.x, kamu.y);
@@ -1902,6 +1926,19 @@ function bangunDariKavling(kavling) {
     return klikBangunan.find(m => m.userData.kavling === kavling) || null;
 }
 
+// Kamera terbang ke bangunan yang dipilih dari daftar.
+let sorotan = null;
+function perbaruiSorotan(sekarang) {
+    if (!sorotan) return;
+    const t = Math.min(1, (sekarang - sorotan.mulai) / sorotan.durasi);
+    // Kurva halus: cepat di awal, lembut saat berhenti.
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    camera.position.lerpVectors(sorotan.posAwal, sorotan.posTujuan, e);
+    controls.target.lerpVectors(sorotan.targetAwal, sorotan.sasaran, e);
+    controls.update();
+    if (t >= 1) sorotan = null;
+}
+
 function sorotKavling(kavling) {
     if (!Number.isInteger(kavling) || kavling < 0 || kavling >= POSISI_KAVLING.length) return false;
     const model = bangunDariKavling(kavling);
@@ -1931,27 +1968,18 @@ function sorotKavling(kavling) {
     // yang sedang disorot, bukan cuma cincinnya.
     lompat(model);
 
-    if (animasiSorot) cancelAnimationFrame(animasiSorot);
-    const t0 = performance.now();
-    const posAwal = camera.position.clone();
-    const targetAwal = controls.target.clone();
-    const durasi = 650;
-
-    function langkah(sekarang) {
-        const t = Math.min(1, (sekarang - t0) / durasi);
-        // Kurva halus: cepat di awal, lembut saat berhenti.
-        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        camera.position.lerpVectors(posAwal, posTujuan, e);
-        controls.target.lerpVectors(targetAwal, sasaran, e);
-        controls.update();
-        if (t < 1) {
-            animasiSorot = requestAnimationFrame(langkah);
-        } else {
-            animasiSorot = null;
-            controls.update();
-        }
-    }
-    animasiSorot = requestAnimationFrame(langkah);
+    // Animasi kamera dijalankan dari putaran utama (lihat perbaruiSorotan),
+    // bukan requestAnimationFrame sendiri. Di perangkat tanpa GPU yang hanya
+    // ~2-3 fps, animasi terpisah seperti ini cuma jalan 1-2 kali lalu
+    // berhenti di tengah jalan, sehingga kamera terlihat tidak bergerak.
+    sorotan = {
+        mulai: performance.now(),
+        durasi: 650,
+        posAwal: camera.position.clone(),
+        targetAwal: controls.target.clone(),
+        posTujuan: posTujuan.clone(),
+        sasaran: sasaran.clone(),
+    };
 
     // Kartu detail bangunannya, ditempatkan di tengah atas layar.
     const data = model.userData.popover;
@@ -2287,6 +2315,10 @@ function putaran() {
         perbaruiKamu(dt);
         // Chip pintu tetap dievaluasi walau pemain diam.
         perbaruiChipMasuk();
+    } else if (sorotan) {
+        // Terbang ke bangunan yang disorot, lalu kendali diserahkan ke
+        // pengunjung seperti biasa.
+        perbaruiSorotan(performance.now());
     } else {
         controls.update();
         controls.target.x = THREE.MathUtils.clamp(controls.target.x, -1000, 1000);

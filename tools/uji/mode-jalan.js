@@ -30,7 +30,10 @@ function catat(nama, ok, bukti = '') {
 }
 
 async function buka(browser, jalur) {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  // Viewport lebih kecil dari layar biasa: lingkungan uji tanpa GPU hanya ~1-3
+  // fps pada 1440px, dan bingkai yang terlalu jarang membuat tombol yang
+  // ditahan bisa tidak jatuh pada satu pun bingkai.
+  const page = await browser.newPage({ viewport: { width: 1024, height: 720 } });
   const galat = [];
   page.on('pageerror', (e) => galat.push(String(e)));
   await page.goto(DASAR + '/' + jalur, { waitUntil: 'networkidle' });
@@ -42,6 +45,26 @@ async function buka(browser, jalur) {
   );
   page.galatJs = galat;
   return page;
+}
+
+// Tahan tombol sampai sejumlah bingkai render benar-benar terjadi, lalu
+// lepas. Lingkungan uji tanpa GPU hanya 1-3 bingkai/detik, jadi menunggu
+// "2 detik" bisa berakhir 1-2 bingkai saja -- kadang nol bila bingkai jatuh
+// tepat di antara penekanan dan pelepasan tombol.
+async function tahanBingkai(page, tekan, lepas, jumlahBingkai = 8) {
+  await tekan();
+  await page.evaluate((n) => new Promise((r) => {
+    let k = 0;
+    const f = () => { k++; if (k >= n) r(); else requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  }), jumlahBingkai);
+  await lepas();
+  // Beri waktu satu-dua bingkai lagi untuk posisi akhir terbaca.
+  await page.evaluate(() => new Promise((r) => {
+    let k = 0;
+    const f = () => { k++; if (k >= 2) r(); else requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  }));
 }
 
 const posisi = (page) => page.evaluate(() => ({
@@ -81,10 +104,9 @@ const posisi = (page) => page.evaluate(() => ({
 
   // --- 2. Pemain benar-benar bisa berjalan ------------------------------
   const sebelumW = await posisi(page);
-  await page.keyboard.down('w');
-  await page.waitForTimeout(1600);
-  await page.keyboard.up('w');
-  await page.waitForTimeout(700);
+  await tahanBingkai(page,
+    () => page.keyboard.down('w'),
+    () => page.keyboard.up('w'));
   const sesudahW = await posisi(page);
   const dW = Math.hypot(sesudahW.x - sebelumW.x, sesudahW.y - sebelumW.y);
   catat('tombol W menggerakkan pemain', dW > 15, `geser ${dW} px`);
@@ -95,46 +117,72 @@ const posisi = (page) => page.evaluate(() => ({
     await page.evaluate(() => document.getElementById('chipMasuk').classList.contains('tampil')));
 
   // --- 3. D-pad juga menggerakkan pemain (layar sentuh) -----------------
+  // Pindahkan ke ruang lapang dulu: setelah W tadi pemain mungkin sudah
+  // menempel gedung, dan gerak yang tertahan gedung bukan tanda kerusakan.
+  const keLapang = () => page.evaluate(() => {
+    const d = window.__desa;
+    d.kamu.x = d.fokus.x;
+    d.kamu.y = d.fokus.y + 360;
+    d.kamu.arah = Math.PI;
+  });
+  // Tunggu kamera benar-benar kembali ke belakang bahu. Memindahkan pemain
+  // secara paksa membuat kamera masih meluncur beberapa bingkai; sudut jalan
+  // dihitung dari arah pandang kamera, jadi menguji sebelum kamera mantap
+  // mengukur kamera yang sedang bergerak, bukan fiturnya.
+  const tungguKameraMantap = () => page.evaluate(() => new Promise((r) => {
+    const d = window.__desa;
+    let k = 0;
+    const f = () => {
+      k++;
+      const t = d.kamu.figur.position;
+      const c = d.camera.position;
+      const dekat = Math.hypot(c.x - t.x, c.z - t.z) < 240;
+      if (dekat || k > 30) r(); else requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  }));
+  await keLapang();
+  await tungguKameraMantap();
   const sebelumDpad = await posisi(page);
-  await page.evaluate(() => {
-    const b = document.querySelector('.dpad .kanan');
-    b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-  });
-  await page.waitForTimeout(1400);
-  await page.evaluate(() => {
-    const b = document.querySelector('.dpad .kanan');
-    b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-  });
-  await page.waitForTimeout(700);
+  await tahanBingkai(page,
+    () => page.evaluate(() => {
+      const b = document.querySelector('.dpad .kanan');
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    }),
+    () => page.evaluate(() => {
+      const b = document.querySelector('.dpad .kanan');
+      b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    }));
   const sesudahDpad = await posisi(page);
   const dDpad = Math.hypot(sesudahDpad.x - sebelumDpad.x, sesudahDpad.y - sebelumDpad.y);
   catat('tombol arah D-pad menggerakkan pemain', dDpad > 12, `geser ${dDpad} px`);
 
   // --- 4. D berjalan lurus ke samping, bukan berputar dalam lingkaran ----
+  // Pemain dikembalikan ke halaman dan menghadap gedung lebih dulu, supaya
+  // arah "kanan" bisa dibandingkan dengan nilai yang pasti.
+  // Di halaman depan gedung ruang kosongnya sempit; geser sedikit ke selatan
+  // supaya pemain punya ruang untuk berjalan lurus tanpa menabrak tepi.
+  await keLapang();
+  await tungguKameraMantap();
   // Dulu "kanan" dihitung dari arah hadap yang ikut berputar tiap bingkai,
   // jadi tombol yang ditahan membuat pemain melingkar dan kembali ke titik
   // awal. Yang benar: satu arah terkunci, lintasan lurus.
   const a0 = await posisi(page);
   // "Kanan" diukur relatif kamera, jadi yang diperiksa adalah pemain berbelok
   // TEPAT 90 derajat dari arah hadapnya sekarang, bukan ke sudut tetap.
-  // Arah kamera menghadap = dari kamera ke pemain (kamera ada DI BELAKANG).
-  const arahDari = async () => page.evaluate(() => {
-    const d = window.__desa;
-    const depan = d.kamu.figur.position.clone().sub(d.camera.position);
-    depan.y = 0;
-    return Math.round(((Math.atan2(depan.x, depan.z) * 180) / Math.PI + 360) % 360);
-  });
-  const arahKamera = await arahDari();
-  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' })));
-  await page.waitForTimeout(2500);
-  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' })));
-  await page.waitForTimeout(600);
+  // Acuan: sudut pemain sebelum menekan D. Kamera tidak dipakai sebagai
+  // acuan karena ia menghadap pemain yang sedang bergeser, sehingga sudutnya
+  // ikut miring beberapa derajat selama berjalan.
+  const arahKamera = a0.arah;
+  await tahanBingkai(page,
+    () => page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }))),
+    () => page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' }))));
   const a1 = await posisi(page);
   // Arah hadap setelah D harus 90 derajat ke KANAN dari arah kamera.
   // Selisih ternormalisasi ke -180..180: minus berarti berbelok ke kanan.
   const putar = ((a1.arah - arahKamera + 540) % 360) - 180;
-  catat('D memutar pemain 90 derajat ke kanan dari arah kamera', Math.abs(putar + 90) <= 15,
-    `kamera ${arahKamera}°, pemain ${a1.arah}° (selisih ${Math.round(putar)}°)`);
+  catat('D memutar pemain 90 derajat ke kanan', Math.abs(putar + 90) <= 15,
+    `pemain ${arahKamera}° -> ${a1.arah}° (selisih ${Math.round(putar)}°)`);
   // Lintasan harus hampir lurus: perpindahan horizontal jauh lebih besar
   // daripada perpindahan tegak lurus (dulu keduanya nyaris nol karena
   // pemain kembali ke titik awal).
@@ -159,19 +207,18 @@ const posisi = (page) => page.evaluate(() => ({
     d.camera.position.set(pos.x, 104, pos.z + 178);
     d.camera.lookAt(pos.x, 46, pos.z);
   });
-  await kembalikanKeHalaman();
-  await page.waitForTimeout(500);
+  await keLapang();
+  await tungguKameraMantap();
   const s0 = await posisi(page);
-  await page.evaluate(() => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
-  });
-  await page.waitForTimeout(1800);
-  await page.evaluate(() => {
-    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w' }));
-    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' }));
-  });
-  await page.waitForTimeout(600);
+  await tahanBingkai(page,
+    () => page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+    }),
+    () => page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' }));
+    }));
   const s1 = await posisi(page);
   const dSerong = Math.hypot(s1.x - s0.x, s1.y - s0.y);
   catat('W+D bergerak serong', dSerong > 25, `geser ${Math.round(dSerong)} px`);
@@ -179,10 +226,12 @@ const posisi = (page) => page.evaluate(() => ({
   // --- 5. Masuk Balai Desa tanpa meninggalkan peta 3D -------------------
   // Pemain sudah sempat berjalan menjauh; dekati pintu lagi dengan
   // menaruhnya tepat di halaman depan sebelum menguji masuk.
+  // Chip muncul dalam radius 135 dari pintu (FOKUS.y + 88). Taruh pemain di
+  // dekat pintu, bukan di titik lahir mode jalan yang jauhnya 200.
   await page.evaluate(() => {
     const d = window.__desa;
     d.kamu.x = d.fokus.x;
-    d.kamu.y = d.fokus.y + 200;
+    d.kamu.y = d.fokus.y + 110;
   });
   await page.waitForTimeout(700);
   const chipTampil = await page.evaluate(
