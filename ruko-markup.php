@@ -118,6 +118,7 @@ $kunciAktif = $kunciAktif ?? '';
                        pattern="https://.+" value="<?= e((string) $rukoSaya['tautan']) ?>">
 
                 <?php require __DIR__ . '/includes/pilih-gambar.php'; ?>
+                <?php isian_katalog($rukoSaya, 'ubahRuko'); ?>
 
                 <button type="submit" class="tombol tombol-utama">Simpan perubahan</button>
             </form>
@@ -149,6 +150,7 @@ $kunciAktif = $kunciAktif ?? '';
                 <p class="formulir-catatan">Alamat WhatsApp, marketplace, atau Instagram tokomu. Wajib diawali https://.</p>
 
                 <?php $gambarSaya = ''; require __DIR__ . '/includes/pilih-gambar.php'; ?>
+                <?php isian_katalog($isianRuko, 'baruRuko'); ?>
 
                 <button type="submit" class="tombol tombol-utama">Klaim ruko</button>
             </form>
@@ -162,12 +164,13 @@ $kunciAktif = $kunciAktif ?? '';
         <?php else: ?>
             <ul class="daftar-ruko">
                 <?php foreach ($daftarRuko as $r): ?>
-                    <li class="daftar-ruko-baris<?= !empty($r['gambar']) ? ' ada-gambar' : '' ?>">
+                    <li data-kategori="<?= e($r['kategori'] ?? 'lainnya') ?>" class="daftar-ruko-baris<?= !empty($r['gambar']) ? ' ada-gambar' : '' ?>">
                         <?php if (!empty($r['gambar'])): ?>
                             <img class="gambar-usaha daftar-ruko-gambar" src="<?= e((string) $r['gambar']) ?>"
                                  alt="Gambar <?= e((string) $r['nama']) ?>" loading="lazy" width="640" height="480">
                         <?php endif; ?>
                         <span class="daftar-ruko-nama"><?= e((string) $r['nama']) ?></span>
+                        <span><?= e(KATEGORI_USAHA[$r['kategori'] ?? 'lainnya'] ?? 'Lainnya') ?> · <?= e(harga_usaha($r['harga'] ?? null)) ?></span>
                         <span class="daftar-ruko-meta"><?= e((string) $r['diminta_oleh']) ?> &middot; <?= e((string) $r['gang']) ?></span>
                         <?php if (!empty($r['komentar'])): ?>
                             <span class="daftar-ruko-cerita"><?= e((string) $r['komentar']) ?></span>
@@ -180,6 +183,7 @@ $kunciAktif = $kunciAktif ?? '';
         <?php endif; ?>
     </section>
 </main>
+<?php require __DIR__ . '/includes/katalog-skrip.php'; ?>
 
 <form id="rukoIdentitas" method="post" action="ruko.php" hidden>
     <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">

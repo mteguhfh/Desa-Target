@@ -1,4 +1,5 @@
 <?php
+const BENTUK_TOPI = ['pet' => 'Topi pet', 'peci' => 'Peci', 'caping' => 'Caping', 'rambut' => 'Rambut'];
 # Konfigurasi aplikasi Desa Target.
 
 // Alamat publik aplikasi. Target production: https://desa.kejartarget.id

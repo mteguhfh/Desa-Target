@@ -79,7 +79,8 @@ $berikut = $pasarData['berikutnya'];
         <?php else: ?>
             <ul class="lapak-grid" id="pasarDaftarHalaman">
                 <?php foreach ($daftarTampil as $i => $l): ?>
-                    <li class="lapak-kartu">
+                    <li class="lapak-kartu" data-kategori="<?= e($l['kategori'] ?? 'lainnya') ?>">
+                        <p><?= e(KATEGORI_USAHA[$l['kategori'] ?? 'lainnya'] ?? 'Lainnya') ?> · <?= e(harga_usaha($l['harga'] ?? null)) ?></p>
                         <?php if (!empty($l['gambar'])): ?>
                             <img class="gambar-usaha lapak-kartu-gambar" src="<?= e((string) $l['gambar']) ?>"
                                  alt="Lapak <?= e((string) $l['namaUsaha']) ?>" loading="lazy" width="640" height="480">
@@ -99,6 +100,7 @@ $berikut = $pasarData['berikutnya'];
         <?php endif; ?>
     </section>
 </main>
+<?php require __DIR__ . '/includes/katalog-skrip.php'; ?>
 
 <script>
 // Hitung mundur ke acara berikutnya, dihitung dari jam peramban pengunjung.

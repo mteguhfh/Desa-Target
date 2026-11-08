@@ -74,6 +74,8 @@ $stmt->execute([
     $warna['baju'], $warna['kulit'], $warna['topi'],
 ]);
 $idBaru = (int) $pdo->lastInsertId();
+$bentuk = is_string($_POST['bentuk_topi'] ?? null) && isset(BENTUK_TOPI[$_POST['bentuk_topi']]) ? $_POST['bentuk_topi'] : 'pet';
+$pdo->prepare('UPDATE warga SET bentuk_topi = ? WHERE id = ?')->execute([$bentuk, $idBaru]);
 
 // Kunci rahasia terbit untuk warga baru. Di beberapa lingkungan PDO SQLite
 // nilai bawaan kolom tidak terbaca pada baris yang baru disisipkan, jadi

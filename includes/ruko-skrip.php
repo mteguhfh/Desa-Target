@@ -68,6 +68,7 @@
         daftar.forEach(function (r) {
             var li = document.createElement('li');
             li.className = 'ruko-kartu' + (nomorSaya && r.nomor === nomorSaya ? ' punyaku' : '');
+            li.dataset.kategori = r.kategori || 'lainnya';
 
             if (r.gambar) {
                 var img = document.createElement('img');
@@ -93,6 +94,7 @@
             var meta = document.createElement('span');
             meta.className = 'ruko-kartu-meta';
             meta.textContent = [r.diminta_oleh, r.gang].filter(Boolean).join(' · ');
+            meta.textContent += ' · ' + (r.kategori || 'lainnya') + ' · ' + (r.harga == null ? 'Tanyakan harga' : 'Rp' + Number(r.harga).toLocaleString('id-ID'));
             li.appendChild(meta);
 
             if (typeof r.tautan === 'string' && /^https:\/\//i.test(r.tautan)) {

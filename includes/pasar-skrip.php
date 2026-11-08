@@ -146,12 +146,14 @@
         daftar.forEach(function (l) {
             var li = document.createElement('li');
             li.className = 'pasar-baris';
+            li.dataset.kategori = l.kategori || 'lainnya';
             var nama = document.createElement('span');
             nama.className = 'pasar-baris-nama';
             nama.textContent = potong(l.namaUsaha, 60);
             var meta = document.createElement('span');
             meta.className = 'pasar-baris-meta';
             meta.textContent = 'Tenda ' + ((Number(l.kavling) || 0) + 1);
+            meta.textContent += ' · ' + (l.kategori || 'lainnya') + ' · ' + (l.harga == null ? 'Tanyakan harga' : 'Rp' + Number(l.harga).toLocaleString('id-ID'));
             li.appendChild(nama);
             li.appendChild(meta);
             if (typeof l.gambar === 'string' && l.gambar.indexOf('assets/img/') === 0) {
@@ -226,6 +228,7 @@
             '&kunci=' + encodeURIComponent(kunci);
         if (namaUsaha) body += '&nama_usaha=' + encodeURIComponent(namaUsaha);
         if (tautan) body += '&tautan=' + encodeURIComponent(tautan);
+        body += '&kategori=' + encodeURIComponent(document.getElementById('pasarKategori').value) + '&harga=' + encodeURIComponent(document.getElementById('pasarHarga').value);
         var pilihanGambar = document.querySelector('#pasarGambar input[name="gambar_lapak"]:checked');
         if (pilihanGambar && pilihanGambar.value) body += '&gambar=' + encodeURIComponent(pilihanGambar.value);
         if (tombolKlaim) tombolKlaim.disabled = true;

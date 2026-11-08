@@ -52,6 +52,7 @@ try {
         $warga[] = [
             'nomor' => nomor_warga((int) $baris['id']),
             'nama' => $baris['nama'],
+            'bentuk' => $baris['bentuk_topi'] ?? 'pet',
             'gang' => $baris['gang'],
             // Warna sudah dalam kode hex supaya klien tidak perlu tahu palet.
             'baju' => hex_warna($baris, 'baju'),
@@ -78,6 +79,8 @@ try {
             // Ruko warga (Fitur 3): jenis membedakan dari bangunan komentar,
             // tautan hanya berisi URL https yang sudah diperiksa server.
             'jenis' => (string) ($baris['jenis'] ?? 'komentar'),
+            'kategori' => (string) ($baris['kategori'] ?? 'lainnya'),
+            'harga' => $baris['harga'] === null ? null : (int) $baris['harga'],
             'tautan' => $baris['tautan'] ?? null,
             // Gambar usaha ruko (jalur relatif assets/img/, sudah disaring
             // server saat disimpan).

@@ -1,4 +1,6 @@
-# Task: Selesaikan seluruh Gelombang 2
+# Task: Gelombang 3
+
+Implementasi dan bukti lokal tercatat di gelombang3-verifikasi.md. Kriteria menyeluruh belum seluruhnya diverifikasi; tracker paritas tetap terbuka.
 
 ## Fase
 - [x] 2.2 Lihat dari atas

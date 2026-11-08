@@ -101,6 +101,13 @@ foreach ($panelPapanGang as $barisPapan) {
                 <?php endforeach; ?>
             </ul>
             <a class="tombol-panel-utama" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Buka Instagram</a>
+            <div class="panen-game" id="panenGame" data-endpoint="<?= e($tabAwalan) ?>main.php">
+                <h3>Panen padi</h3>
+                <p>Ketuk tombol saat padi berada di tengah. Skor minimal 60 mendapat 5 poin. Satu hasil dicatat setiap hari.</p>
+                <div class="panen-ladang" aria-label="Ladang panen"><span id="panenPadi">🌾</span></div>
+                <button type="button" class="tombol-panel-utama" id="tombolPanen">Panen sekarang</button>
+                <p class="panen-kabar" id="panenKabar" role="status" hidden></p>
+            </div>
         </div>
 
         <div class="panel-isi" data-isi="papan-gang" hidden>
@@ -181,6 +188,7 @@ foreach ($panelPapanGang as $barisPapan) {
             <div class="pasar-pilih" id="pasarPilih" role="group" aria-label="Pilih acara"></div>
 
             <ul class="pasar-lapak" id="pasarLapak"></ul>
+            <button type="button" class="tombol-panel-utama masuk-usaha" hidden onclick="window.__tabBar?.tutup(); window.__desa?.aturModeJalan(false); window.__usaha?.buka('Pasar Desa', true)">Masuk Pasar Desa</button>
 
             <?php // Pemilih gambar ringkas untuk warga tanpa ruko. Hanya
                   // dipakai saat formulir lapak terbuka. ?>
@@ -206,6 +214,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 <input id="pasarNamaUsaha" name="nama_usaha" type="text" maxlength="60" placeholder="Nama usaha" autocomplete="off">
                 <label class="sr-saja" for="pasarTautan">Tautan jualan</label>
                 <input id="pasarTautan" name="tautan" type="url" maxlength="300" placeholder="https://wa.me/62812..." autocomplete="off">
+                <?php isian_katalog([], 'pasar'); ?>
                 <button type="button" class="tombol-panel-utama" id="tombolKirimLapak">Ambil lapak gratis</button>
             </form>
 
@@ -234,6 +243,8 @@ foreach ($panelPapanGang as $barisPapan) {
                 <?php require_once __DIR__ . '/avatar-markup.php'; ?>
                 <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi'], 'aku-avatar-pratinjau') ?>
                 <form class="aku-form" id="akuFormKtp" novalidate>
+                    <?php $idBentuk = 'akuBentuk'; require __DIR__ . '/pilih-bentuk.php'; ?>
+                    <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi']) ?>
                     <label class="sr-saja" for="akuNama">Nama panggilan</label>
                     <input id="akuNama" name="nama" type="text" maxlength="50" placeholder="Nama panggilan, mis. Sari"
                            autocomplete="nickname" enterkeyhint="done">
@@ -294,6 +305,7 @@ foreach ($panelPapanGang as $barisPapan) {
               // tamu (ajakan bikin KTP) dan pemilik ruko (data rukunya).
               // Formulir klaim dan lepas ruko memakai ruko.php yang sama. ?>
         <div class="panel-isi" data-isi="ruko" hidden>
+            <button type="button" class="tombol-panel-utama masuk-usaha" hidden onclick="window.__tabBar?.tutup(); window.__desa?.aturModeJalan(false); window.__usaha?.buka('Ruko contoh', false)">Masuk ruko contoh</button>
             <div class="ruko-panel-tamu" id="rukoPanelTamu" hidden>
                 <p class="panel-deskripsi">Buka ruko usahamu di desa: nama usaha, cerita singkat, dan satu tautan jualan. Gratis, dan pembeli diarahkan langsung ke tempat jualanmu sendiri.</p>
                 <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga dulu</a>
@@ -363,3 +375,5 @@ foreach ($panelPapanGang as $barisPapan) {
 
     </div>
 </section>
+<?php require __DIR__ . '/mini-game-skrip.php'; ?>
+<?php require __DIR__ . '/katalog-skrip.php'; ?>

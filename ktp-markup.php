@@ -49,7 +49,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
         </div>
         <div class="ktp-badan">
             <?php $wKartu = warna_warga($kartuWarga); ?>
-            <?= avatar_warga_html($wKartu['baju'], $wKartu['kulit'], $wKartu['topi'], 'ktp-avatar') ?>
+            <?= avatar_warga_html($wKartu['baju'], $wKartu['kulit'], $wKartu['topi'], 'ktp-avatar bentuk-' . ($kartuWarga['bentuk_topi'] ?? 'pet')) ?>
             <dl class="ktp-data">
                 <div>
                     <dt>Nama Warga</dt>
@@ -123,6 +123,8 @@ require_once __DIR__ . '/includes/avatar-markup.php';
     <?php endif; ?>
 
     <form class="formulir" method="post" action="ktp.php">
+        <?php $idBentuk = 'ktpBentuk'; require __DIR__ . '/includes/pilih-bentuk.php'; ?>
+        <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi']) ?>
         <input type="hidden" name="token" value="<?= e($tokenForm) ?>">
         <label for="nama">Nama panggilan</label>
         <input type="text" id="nama" name="nama" required minlength="3" maxlength="50"

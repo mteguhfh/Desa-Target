@@ -118,6 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $gambarPilih
         );
         if (($hasilUbah['galat'] ?? null) === null) {
+            $rukoKatalog = ruko_milik($pdo, $nomorKirim);
+            if ($rukoKatalog) simpan_katalog($pdo, 'bangunan', (int) $rukoKatalog['id'], $_POST['kategori'] ?? 'lainnya', $_POST['harga'] ?? '');
             $_SESSION['pesan_ruko'] = 'Rukomu sudah diperbarui.';
             header('Location: ruko.php');
             exit;
@@ -152,6 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
     if (($hasil['galat'] ?? null) === null) {
+        $rukoKatalog = ruko_milik($pdo, $nomorKirim);
+        if ($rukoKatalog) simpan_katalog($pdo, 'bangunan', (int) $rukoKatalog['id'], $_POST['kategori'] ?? 'lainnya', $_POST['harga'] ?? '');
         $_SESSION['pesan_ruko'] = 'Selamat! Rukomu sudah berdiri di Desa Target.';
         header('Location: ruko.php');
         exit;

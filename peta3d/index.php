@@ -683,6 +683,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
 </noscript>
 
 <?php require __DIR__ . '/interior-balai.php'; ?>
+<?php require __DIR__ . '/interior-usaha.php'; ?>
 <?php require __DIR__ . '/interior-balai3d.js.php'; ?>
 
 <div id="stats"></div>
@@ -1247,6 +1248,7 @@ function bangunBangunan(daftar) {
         model.position.copy(pos);
         const ruko = b.jenis === 'ruko';
         const popover = {
+            jenis: b.jenis,
             kicker: ruko ? 'RUKO WARGA' : 'DETAIL BANGUNAN',
             judul: b.nama,
             lencana: b.gang ? { teks: b.gang, warna: cssGang(b.gang) } : null,
@@ -1533,7 +1535,7 @@ function jauhDariSemua(hasil, jarak) {
 // ---------------------------------------------------------------------------
 // Manusia: warga berwarna gang, Bang Uju (sprite), dan pengunjung "Kamu"
 // ---------------------------------------------------------------------------
-function buatFigur(warnaBadan, { topi = null, kulit = 0xfcd9b8 } = {}) {
+function buatFigur(warnaBadan, { topi = null, kulit = 0xfcd9b8, bentuk = 'pet' } = {}) {
     const grup = new THREE.Group();
     const dalam = new THREE.Group();
     grup.add(dalam);
@@ -1545,12 +1547,13 @@ function buatFigur(warnaBadan, { topi = null, kulit = 0xfcd9b8 } = {}) {
     kepala.position.y = 60; kepala.castShadow = true;
     dalam.add(kepala);
     if (topi) {
-        const t = new THREE.Mesh(new THREE.CylinderGeometry(12, 12.5, 6, 10), matStandar(topi));
+        const geometriTopi = bentuk === 'caping' ? new THREE.ConeGeometry(23, 16, 12) : bentuk === 'peci' ? new THREE.CylinderGeometry(12, 12, 14, 10) : bentuk === 'rambut' ? new THREE.SphereGeometry(12, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.CylinderGeometry(12, 12.5, 6, 10);
+        const t = new THREE.Mesh(geometriTopi, matStandar(bentuk === 'rambut' ? 0x292524 : topi));
         t.position.y = 68;
         dalam.add(t);
         const brim = new THREE.Mesh(new THREE.BoxGeometry(15, 3, 10), matStandar(topi));
         brim.position.set(0, 66, 11);
-        dalam.add(brim);
+        if (bentuk === 'pet') dalam.add(brim);
     }
     grup.userData.dalam = dalam;
     return grup;
@@ -1568,11 +1571,12 @@ function titikNongkrong(nomor, indeks) {
         const kunci = calon[0] + ':' + calon[1];
         if (!titikTerpakai.has(kunci) && !tabrakanJalan(calon[0], calon[1])) {
             titikTerpakai.add(kunci);
-            return calon;
+            return { x: calon[0], y: calon[1] };
         }
         pilihan = (pilihan + 1) % titik.length;
     }
-    return titik[(hash + indeks) % titik.length];
+    const cadangan = titik[(hash + indeks) % titik.length];
+    return { x: cadangan[0], y: cadangan[1] };
 }
 // Warga yang dirender dibatasi 80 figur, meniru batas peta 2D.
 const BATAS_WARGA = (navigator.hardwareConcurrency || 4) >= 8 && window.innerWidth >= 900 ? 120 : 80;
@@ -1603,7 +1607,7 @@ function bangunWarga(daftar) {
         const warnaFigur = w.baju ? new THREE.Color(w.baju).getHex() : z.warna;
         const warnaKulit = w.kulit ? new THREE.Color(w.kulit).getHex() : 0xfcd9b8;
         const warnaTopi = w.topi ? new THREE.Color(w.topi).getHex() : null;
-        const figur = buatFigur(warnaFigur, { kulit: warnaKulit, topi: warnaTopi });
+        const figur = buatFigur(warnaFigur, { kulit: warnaKulit, topi: warnaTopi, bentuk: w.bentuk });
         figur.position.copy(KE3(rumah.x, rumah.y));
         const label = labelNama(w.nama, 0.82);
         label.position.y = 92;
@@ -1625,7 +1629,6 @@ function bangunWarga(daftar) {
         });
     });
 }
-bangunWarga(WARGA_SEED);
 // Bang Uju: sprite billboard dari gambar resmi maskot, patroli alun-alun.
 const agenUju = { x: titikPatroli[0][0], y: titikPatroli[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
 let spriteUju = null;
@@ -1851,6 +1854,7 @@ function tabrakanJalan(x, y) {
     if (Math.hypot(x - KOLAM.x, y - KOLAM.y) < KOLAM.r + 14) return true;
     return RINTANGAN_JALAN.some(r => x > r.x1 - 14 && x < r.x2 + 14 && y > r.y1 - 14 && y < r.y2 + 14);
 }
+bangunWarga(WARGA_SEED);
 
 // Titik aman terdekat dari (x, y): dipakai sebagai titik lahir mode jalan
 // supaya pemain tidak pernah mulai dari dalam rintangan. Bila sudah aman,
@@ -2260,7 +2264,15 @@ document.getElementById('tombolReset').addEventListener('click', () => {
     controls.update();
     tutupPopover();
 });
-chipAksi.addEventListener('click', () => { if (objekDekat?.userData.popover) bukaPopover(objekDekat.userData.popover, objekDekat, innerWidth / 2 - 150, innerHeight * .55); });
+chipAksi.addEventListener('click', () => {
+    const data = objekDekat?.userData.popover;
+    if (!data) return;
+    if (data.jenis === 'ruko' || /pasar/i.test(data.judul || '')) {
+        aturModeJalan(false); tutupPopover();
+        window.__tabBar?.tutup();
+        window.__usaha?.buka(data.judul, data.jenis !== 'ruko');
+    } else bukaPopover(data, objekDekat, innerWidth / 2 - 150, innerHeight * .55);
+});
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'e' && !chipAksi.hidden) chipAksi.click(); });
 document.getElementById('tombolLayarPenuh').addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
@@ -2495,6 +2507,8 @@ perbaruiSuasana();
 
 // Kait untuk pengujian otomatis dan tangkapan layar.
 window.__desa = {
+    ...window.__desa,
+    sorotKavling, antarTujuan, cariWarga, modeAtas: () => modeAtas,
     renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju,
     lompat, bounce,
     sumberData: DATA_DESA ? 'langsung' : 'cadangan',

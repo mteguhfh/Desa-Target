@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/katalog.php';
 // Koneksi dan inisialisasi database SQLite Desa Target.
 // File database dibuat otomatis di data/desa-target.sqlite pada pemakaian pertama.
 
@@ -43,6 +44,7 @@ function db(): PDO
     if (!isset($kolomWarga['kode_pulih'])) {
         $pdo->exec('ALTER TABLE warga ADD COLUMN kode_pulih TEXT');
     }
+    if (!isset($kolomWarga['bentuk_topi'])) $pdo->exec("ALTER TABLE warga ADD COLUMN bentuk_topi TEXT NOT NULL DEFAULT 'pet'");
     foreach (['warna_baju', 'warna_kulit', 'warna_topi'] as $kolomBaru) {
         if (!isset($kolomWarga[$kolomBaru])) {
             $pdo->exec('ALTER TABLE warga ADD COLUMN ' . $kolomBaru . ' TEXT');
@@ -137,6 +139,7 @@ function db(): PDO
         )"
     );
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_poin_log_nomor ON poin_log (nomor, id)');
+    $pdo->exec("CREATE TABLE IF NOT EXISTS panen_harian (nomor TEXT NOT NULL, tanggal TEXT NOT NULL, skor INTEGER NOT NULL, PRIMARY KEY (nomor, tanggal))");
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS klaim_harian (
             nomor TEXT NOT NULL,
@@ -173,6 +176,8 @@ function db(): PDO
         'nomor' => 'TEXT',
         'tautan' => 'TEXT',
         'aktif' => 'INTEGER NOT NULL DEFAULT 1',
+        'kategori' => "TEXT NOT NULL DEFAULT 'lainnya'",
+        'harga' => 'INTEGER DEFAULT NULL',
     ] as $kolomBaru => $definisi) {
         if (!isset($kolomBangunan[$kolomBaru])) {
             $pdo->exec('ALTER TABLE bangunan ADD COLUMN ' . $kolomBaru . ' ' . $definisi);
@@ -208,6 +213,8 @@ function db(): PDO
     // Gambar usaha untuk lapak (fitur gambar jualan). Ruko memakai kolom
     // bangunan.gambar; lapak tanpa ruko menyimpan gambarnya sendiri.
     $kolomLapak = kolom_tabel($pdo, 'lapak');
+    if (!isset($kolomLapak['kategori'])) $pdo->exec("ALTER TABLE lapak ADD COLUMN kategori TEXT NOT NULL DEFAULT 'lainnya'");
+    if (!isset($kolomLapak['harga'])) $pdo->exec('ALTER TABLE lapak ADD COLUMN harga INTEGER DEFAULT NULL');
     if (!isset($kolomLapak['gambar'])) {
         $pdo->exec("ALTER TABLE lapak ADD COLUMN gambar TEXT NOT NULL DEFAULT ''");
     }
@@ -516,6 +523,33 @@ function tambah_poin(PDO $pdo, string $nomor, int $delta, string $sumber, ?strin
     }
 
     return saldo_poin($pdo, $nomor);
+}
+
+function panen_hari_ini(PDO $pdo, string $nomor): ?int
+{
+    $stmt = $pdo->prepare('SELECT skor FROM panen_harian WHERE nomor = ? AND tanggal = ?');
+    $stmt->execute([$nomor, date('Y-m-d')]);
+    $skor = $stmt->fetchColumn();
+    return $skor === false ? null : (int) $skor;
+}
+
+function simpan_panen(PDO $pdo, string $nomor, int $skor): array
+{
+    $warga = warga_dari_nomor($pdo, $nomor);
+    if (!$warga || $skor < 0 || $skor > 100) return ['ok' => false, 'galat' => 'Hasil panen tidak sah.'];
+    if (panen_hari_ini($pdo, $nomor) !== null) return ['ok' => false, 'sudah' => true];
+    $skor = max(0, min(100, $skor));
+    $hadiah = $skor >= 60 ? 5 : 0;
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('INSERT INTO panen_harian (nomor, tanggal, skor) VALUES (?, ?, ?)')->execute([$nomor, date('Y-m-d'), $skor]);
+        if ($hadiah) {
+            $pdo->prepare('UPDATE warga SET poin = poin + ? WHERE id = ?')->execute([$hadiah, (int) $warga['id']]);
+            $pdo->prepare('INSERT INTO poin_log (nomor, delta, sumber, ref, tanggal) VALUES (?, ?, ?, ?, ?)')->execute([$nomor, $hadiah, 'materi', 'panen-' . date('Y-m-d'), date('Y-m-d')]);
+        }
+        $pdo->commit();
+        return ['ok' => true, 'skor' => $skor, 'hadiah' => $hadiah, 'saldo' => saldo_poin($pdo, $nomor)];
+    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); return ['ok' => false]; }
 }
 
 // Riwayat poin terbaru seorang warga, paling banyak $batas baris.
@@ -1179,8 +1213,8 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
         return [];
     }
     $stmt = $pdo->prepare(
-        'SELECT id, acara, tanggal, nomor, nama_usaha, tautan, kavling, gambar, dibuat_pada
-         FROM lapak WHERE acara = ? AND tanggal = ? ORDER BY id ASC'
+        'SELECT id, acara, tanggal, nomor, nama_usaha, tautan, kavling, gambar, kategori, harga, dibuat_pada
+          FROM lapak WHERE acara = ? AND tanggal = ? ORDER BY id ASC'
     );
     $stmt->execute([$acara, $tanggal]);
     $hasil = [];
@@ -1191,6 +1225,8 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
             'tanggal' => $baris['tanggal'],
             'nomor' => $baris['nomor'],
             'namaUsaha' => $baris['nama_usaha'],
+            'kategori' => $baris['kategori'],
+            'harga' => $baris['harga'] === null ? null : (int) $baris['harga'],
             'tautan' => $baris['tautan'],
             'gambar' => (string) ($baris['gambar'] ?? ''),
             'kavling' => $i,
@@ -1203,7 +1239,7 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
 // Mengembalikan:
 //   ['ok' => true, 'lapak' => [...], 'sudah' => bool]
 //   ['galat' => 'warga' | 'acara' | 'tutup' | 'tautan' | 'nama' | 'penuh' | 'sudah']
-function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null, ?string $namaUsaha = null, ?string $tautan = null, $gambar = null): array
+function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null, ?string $namaUsaha = null, ?string $tautan = null, $gambar = null, $kategori = 'lainnya', $harga = null): array
 {
     $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
     if ($warga === null) {
@@ -1265,9 +1301,12 @@ function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null,
         return ['galat' => 'penuh'];
     }
 
+    $kategori = $ruko['kategori'] ?? $kategori;
+    if (!is_string($kategori) || !isset(KATEGORI_USAHA[$kategori])) $kategori = 'lainnya';
+    $harga = filter_var($ruko !== null ? $ruko['harga'] : $harga, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 1000000000]]);
     $pdo->prepare(
-        'INSERT INTO lapak (acara, tanggal, nomor, nama_usaha, tautan, gambar, kavling) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    )->execute([$kode, $tanggal, $nomorWarga, $namaUsaha, $tautanSah, $gambarSah, count($lapak)]);
+        'INSERT INTO lapak (acara, tanggal, nomor, nama_usaha, tautan, gambar, kavling, kategori, harga) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    )->execute([$kode, $tanggal, $nomorWarga, $namaUsaha, $tautanSah, $gambarSah, count($lapak), $kategori, $harga === false ? null : $harga]);
 
     return ['ok' => true, 'lapak' => daftar_lapak($pdo, $kode, $tanggal)];
 }

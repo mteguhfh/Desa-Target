@@ -80,7 +80,9 @@ try {
         null,
         isset($isi['nama_usaha']) ? (string) $isi['nama_usaha'] : null,
         isset($isi['tautan']) ? (string) $isi['tautan'] : null,
-        isset($isi['gambar']) ? (string) $isi['gambar'] : null
+        isset($isi['gambar']) ? (string) $isi['gambar'] : null,
+        $isi['kategori'] ?? 'lainnya',
+        $isi['harga'] ?? null
     );
 
     switch ($hasil['galat'] ?? null) {

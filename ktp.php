@@ -62,6 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $warna['baju'], $warna['kulit'], $warna['topi'],
         ]);
         $idBaru = (int) $pdo->lastInsertId();
+        $bentuk = is_string($_POST['bentuk_topi'] ?? null) && isset(BENTUK_TOPI[$_POST['bentuk_topi']]) ? $_POST['bentuk_topi'] : 'pet';
+        $pdo->prepare('UPDATE warga SET bentuk_topi = ? WHERE id = ?')->execute([$bentuk, $idBaru]);
         $kunciBaru = bin2hex(random_bytes(16));
 
         // Kunci rahasia terbit untuk warga baru. Ditulis eksplisit karena

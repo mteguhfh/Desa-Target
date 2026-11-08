@@ -1479,6 +1479,30 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .tujuan-antar-kecil { align-self: center; padding: 5px 8px; font-size: 11px; font-weight: 800; }
 .tujuan-aksi { display: flex; gap: 4px; align-self: center; }
 .daftar-bangunan-kapasitas { display: block; color: #64748b; font-size: 11px; }
+.panen-game { margin-top: 18px; padding-top: 14px; border-top: 1px solid #cbd5e1; }
+.panen-game h3 { margin: 0 0 5px; }
+.usaha-judul { position: absolute; top: 70px; left: 16px; max-width: calc(100% - 32px); margin: 0; padding: 12px; background: #fff9e8; color: #172b46; font-size: 20px; }
+.panen-ladang { position: relative; height: 62px; margin: 10px 0; border: 2px solid #166534; border-radius: 8px; background: repeating-linear-gradient(90deg, #86efac 0 18px, #4ade80 18px 20px); overflow: hidden; }
+.panen-ladang span { position: absolute; left: 50%; top: 13px; font-size: 30px; transform: translateX(-50%); }
+.panen-ladang::before { content: ''; position: absolute; left: 43%; width: 14%; height: 100%; background: #fff9e8; border-inline: 2px solid #172b46; }
+@media (prefers-reduced-motion: reduce) { .panen-ladang span { font-size: 18px; font-weight: 700; top: 20px; } }
+.panen-kabar { color: #166534; font-weight: 700; }
+.bentuk-peci .avatar-topi { height: 18px; border-radius: 3px 3px 0 0; }
+.bentuk-caping .avatar-topi { left: 10px; top: 1px; width: 72px; height: 30px; clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.bentuk-rambut .avatar-topi { background: #292524; border-radius: 55% 55% 20% 20%; }
+
+/* Kertas hangat menjaga panel terbaca di atas dunia hijau; kuning menandai aksi utama. */
+.panel-bersayap, .kartu-formulir, .ktp-kartu { background-color: #fff9e8; color: #172b46; border: 2px solid #172b46; }
+.panel-bersayap-kepala { background: #fff2ca; border-bottom: 2px solid #172b46; }
+.tombol-panel-utama, .tombol-utama { background: #f8ce46; color: #172b46; border: 2px solid #172b46; border-radius: 10px; min-height: 44px; }
+.tombol-panel-utama:hover, .tombol-utama:hover { background: #ffe486; transform: translateY(-1px); }
+.tab-bar { background: #fff9e8; border-top: 2px solid #172b46; }
+.tab-bar .tab-aktif { background: #f8ce46; color: #172b46; }
+button, a[href], select, label[for] { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .65; }
+button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid #172b46; outline-offset: 3px; }
+.panen-game button, select.pilih-bentuk { min-height: 44px; }
+@media (prefers-reduced-motion: reduce) { .tombol-panel-utama:hover, .tombol-utama:hover { transform: none; } }
 .cari-warga-baris { width: 100%; border: 0; border-bottom: 1px solid #e2e8f0; background: transparent; text-align: left; cursor: pointer; }
 @media (max-width: 420px) { .tujuan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .aku-koleksi h3 { margin: 0 0 9px; font-size: 15px; }

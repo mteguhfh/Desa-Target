@@ -474,6 +474,12 @@ function svg_warga(array $warga, float $x, float $y): string
         $warnaTopi = hex_warna($warga, 'topi');
     }
     $nama = (string) $warga['nama'];
+    $topiSvg = match ($warga['bentuk_topi'] ?? 'pet') {
+        'peci' => '<rect x="-10" y="-59" width="20" height="12" rx="2" fill="' . $warnaTopi . '"/>',
+        'caping' => '<path d="M-20,-47 L0,-65 L20,-47 Z" fill="' . $warnaTopi . '"/>',
+        'rambut' => '<path d="M-10,-44 Q-13,-62 0,-58 Q13,-62 10,-44 L5,-51 L0,-48 L-5,-51 Z" fill="#292524"/>',
+        default => '<path d="M-9.5,-45 a9.5,9.5 0 0 1 19,0 Z" fill="' . $warnaTopi . '"/>',
+    };
     $kata = preg_split('/\s+/', trim($nama)) ?: [];
     $pertama = ($kata[0] ?? '') !== '' ? $kata[0] : $nama;
     if (function_exists('mb_strlen') && mb_strlen($pertama, 'UTF-8') > 10) {
@@ -510,7 +516,7 @@ function svg_warga(array $warga, float $x, float $y): string
         . '<rect x="-11" y="-36" width="22" height="25" rx="7" fill="' . $warna . '"/>'
         . '<rect x="-11" y="-36" width="22" height="6" rx="3" fill="#ffffff" opacity="0.28"/>'
         . '<circle cx="0" cy="-45" r="9.5" fill="' . $warnaKulit . '"/>'
-        . '<path d="M-9.5,-45 a9.5,9.5 0 0 1 19,0 Z" fill="' . $warnaTopi . '"/>'
+        . $topiSvg
         . '<circle cx="-3.5" cy="-43.5" r="1" fill="#1e293b"/>'
         . '<circle cx="3.5" cy="-43.5" r="1" fill="#1e293b"/>'
         . '</g>'
