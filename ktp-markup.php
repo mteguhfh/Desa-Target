@@ -48,11 +48,15 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
                 </div>
                 <div>
                     <dt>Nomor Warga</dt>
-                    <dd><?= e(nomor_warga((int) $kartuWarga['id'])) ?></dd>
+                    <dd><?= e($nomorKartu ?? nomor_warga((int) $kartuWarga['id'])) ?></dd>
                 </div>
                 <div>
                     <dt>Gang</dt>
                     <dd><?= e($kartuWarga['gang']) ?></dd>
+                </div>
+                <div>
+                    <dt>Saldo Poin</dt>
+                    <dd class="ktp-poin"><?= (int) ($kartuWarga['poin'] ?? 0) ?> poin</dd>
                 </div>
                 <div>
                     <dt>Tanggal Bergabung</dt>
@@ -89,6 +93,23 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
         Simpan alamat halaman ini untuk melihat kartumu lagi kapan pun.
         Kembali ke <a href="peta.php">Peta Desa</a> buat lihat namamu berdiri di depan balai desa.
     </p>
+    <?php if (($kunciKartu ?? '') !== ''): ?>
+    <?php // Identitas untuk fitur poin di browser ini. Kuncinya ikut nomor,
+          // supaya sabuk pengaman: nomor saja tidak cukup untuk warga lain. ?>
+    <span id="ktpIdentitas" hidden
+          data-nomor="<?= e($nomorKartu) ?>"
+          data-kunci="<?= e($kunciKartu) ?>"></span>
+    <script>
+    (function () {
+        var identitas = document.getElementById('ktpIdentitas');
+        if (!identitas) return;
+        try {
+            localStorage.setItem('dt_nomor', identitas.getAttribute('data-nomor'));
+            localStorage.setItem('dt_kunci', identitas.getAttribute('data-kunci'));
+        } catch (e) { /* localStorage diblokir: fitur poin hanya perlu nomor saat dibuka */ }
+    })();
+    </script>
+    <?php endif; ?>
     <?php endif; ?>
 
     <form class="formulir" method="post" action="ktp.php">

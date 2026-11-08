@@ -19,6 +19,8 @@ if ($argc > 1 && in_array('--hapus', $argv, true)) {
     $pdo->exec('DELETE FROM warga');
     $pdo->exec("DELETE FROM bangunan WHERE id > 1");
     $pdo->exec('DELETE FROM misi_selesai');
+    $pdo->exec('DELETE FROM poin_log');
+    $pdo->exec('DELETE FROM klaim_harian');
     echo "Data contoh dihapus. Balai Desa dipertahankan.\n";
     exit(0);
 }
@@ -46,7 +48,7 @@ $namaWarga = [
     ['Indah Permata', 'Gang Jasa'], ['Bambang Sutrisno', 'Gang Jasa'], ['Lilis Suryani', 'Gang Jasa'],
 
     ['Rian Aditya', 'Gang Freelancer'], ['Sarah Nabila', 'Gang Freelancer'], ['Fajar Nugroho', 'Gang Freelancer'],
-    ['Intan Maharani', 'Gang Freelancer'], ['Gilang Ramadhan', 'Gang Freelancer'],
+    ['Intan Maharani', 'Gang Freelancer'], ['Gilang Ramadhan', 'Gang Freelancer'], ['Ayu Lestari', 'Gang Freelancer'],
 
     ['Siti Aminah', 'Gang Kerajinan'], ['Ahmad Fauzi', 'Gang Kerajinan'], ['Ratna Sari', 'Gang Kerajinan'],
     ['Eko Purnomo', 'Gang Kerajinan'], ['Wulan Sari', 'Gang Kerajinan'],
@@ -90,13 +92,22 @@ foreach ($bangunanContoh as [$nama, $gang, $peminta, $komentar, $kapan]) {
     $stmtB->execute([$nama, $gang, $peminta, $komentar, $hariIni->modify($kapan)->format('Y-m-d')]);
 }
 
-// --- Misi ------------------------------------------------------------------
-// Satu misi ditandai selesai supaya tampilan "sudah selesai" ikut terlihat.
+// --- Misi dan dompet poin ---------------------------------------------------
+// Satu misi ditandai selesai untuk warga pertama supaya tampilan "sudah
+// selesai" dan saldo poin per warga ikut terlihat. Warga lain tetap kosong,
+// jadi isolasi antar warga juga kelihatan di data contoh.
 $pdo->exec('DELETE FROM misi_selesai');
-tandai_misi($pdo, 'keliling-desa');
+$pdo->exec('DELETE FROM poin_log');
+$pdo->exec('DELETE FROM klaim_harian');
+$pdo->exec('UPDATE warga SET poin = 0');
+$wargaPertama = $pdo->query('SELECT id FROM warga ORDER BY id ASC LIMIT 1')->fetchColumn();
+if ($wargaPertama !== false) {
+    tandai_misi($pdo, 'keliling-desa', nomor_warga((int) $wargaPertama));
+}
 
 echo "Data contoh terisi:\n";
 echo "  warga    : " . hitung_warga($pdo) . "\n";
 echo "  bangunan : " . hitung_bangunan($pdo) . "\n";
-$r = ringkasan_misi(daftar_misi($pdo));
+$r = ringkasan_misi(daftar_misi($pdo, $wargaPertama === false ? null : nomor_warga((int) $wargaPertama)));
 echo "  misi     : " . $r['selesai'] . '/' . $r['total'] . " selesai hari ini\n";
+echo "  poin     : " . $pdo->query('SELECT COALESCE(SUM(poin), 0) FROM warga')->fetchColumn() . " poin tersebar\n";

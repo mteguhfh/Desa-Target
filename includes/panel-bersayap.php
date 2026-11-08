@@ -60,8 +60,21 @@ foreach ($panelPapanGang as $barisPapan) {
             <?php $ringkasMisi = ringkasan_misi($panelMisi); ?>
             <p class="panel-deskripsi">
                 <strong id="misiRingkasan"><?= (int) $ringkasMisi['selesai'] ?> dari <?= (int) $ringkasMisi['total'] ?></strong> misi hari ini sudah selesai.
-                Misi dihitung dari yang benar-benar terjadi di desa, bukan dari tombol yang bisa diklik bebas.
+                Status dan poin di bawah ini milikmu sendiri setelah kartu warga tersimpan di peramban ini.
             </p>
+
+            <div class="misi-dompet" id="misiDompet" hidden>
+                <p class="misi-saldo"><span class="misi-saldo-angka" id="misiSaldo">0</span> poin</p>
+                <p class="misi-saldo-ket" id="misiSaldoKet">Saldo poin milikmu. Poin nanti bisa dipakai untuk usaha di desa.</p>
+                <button type="button" class="tombol-panel-utama misi-klaim" id="tombolKlaimHarian">Klaim poin harian</button>
+                <p class="misi-kabar" id="misiKabar" role="status" hidden></p>
+            </div>
+
+            <div class="misi-tamu" id="misiTamu">
+                <p class="panel-deskripsi">Bikin KTP Warga dulu supaya misi dan poinmu tercatat atas namamu sendiri.</p>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+            </div>
+
             <ul class="daftar-misi" id="daftarMisi">
                 <?php foreach ($panelMisi as $m): ?>
                     <li class="misi-baris<?= $m['selesai'] ? ' selesai' : '' ?>" data-kode="<?= e($m['kode']) ?>">
@@ -69,8 +82,11 @@ foreach ($panelPapanGang as $barisPapan) {
                         <span class="misi-teks">
                             <span class="misi-judul"><?= e($m['judul']) ?></span>
                             <span class="misi-keterangan"><?= e($m['keterangan']) ?></span>
+                            <button type="button" class="misi-tandai" data-kode="<?= e($m['kode']) ?>"
+                                    <?= $m['selesai'] ? 'hidden' : '' ?>>Tandai selesai, +<?= (int) $m['poin'] ?> poin</button>
                         </span>
                         <span class="misi-status"><?= $m['selesai'] ? 'Selesai' : 'Belum' ?></span>
+                        <span class="misi-poin">+<?= (int) $m['poin'] ?> poin</span>
                     </li>
                 <?php endforeach; ?>
             </ul>

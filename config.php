@@ -65,3 +65,11 @@ const WARNA_TOPI = [
 
 // Kunci bawaan: dipakai bila warga belum memilih (atau kolomnya kosong).
 const WARNA_BAWAAN = ['baju' => 'teal', 'kulit' => 'cerah', 'topi' => 'merah'];
+
+// Dompet poin warga (lihat SPESIFIKASI-FITUR-BELUM-DIBANGUN.md, Fitur 1).
+// Poin didapat dari klaim harian gratis dan dari menyelesaikan misi. Isi
+// tiap misi punya poinnya sendiri di tabel misi; angka di sini hanya untuk
+// misi baru dan nilai bawaan. Ruko (Fitur 3) dan lapak (Fitur 4) nanti
+// memakai poin ini sebagai modal.
+const POIN_KLAIM_HARIAN = 10;
+const POIN_PER_MISI = 5;

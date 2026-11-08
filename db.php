@@ -37,8 +37,8 @@ function db(): PDO
     // tabel lama tanpa menghapus data. ALTER TABLE ADD COLUMN aman diulang,
     // jadi cukup periksa daftar kolom dulu.
     $kolomWarga = [];
-    foreach ($pdo->query('PRAGMA table_info(warga)') as $kolom) {
-        $kolomWarga[$kolom['name']] = true;
+    foreach (kolom_tabel($pdo, 'warga') as $namaKolom => $_) {
+        $kolomWarga[$namaKolom] = true;
     }
     foreach (['warna_baju', 'warna_kulit', 'warna_topi'] as $kolomBaru) {
         if (!isset($kolomWarga[$kolomBaru])) {
@@ -56,10 +56,11 @@ function db(): PDO
         )"
     );
 
-    // Misi harian. Satu baris per (kode misi, tanggal), jadi menandai misi
-    // selesai untuk hari ini tidak menghapus riwayat kemarin. Kodenya dipakai
-    // di kode PHP, judulnya dibaca dari tabel ini supaya bisa diubah tanpa
-    // mengubah program.
+    // Misi harian. Satu baris per (kode misi, tanggal, nomor warga), jadi
+    // menandai misi selesai untuk hari ini tidak menghapus riwayat kemarin
+    // dan tidak tercampur dengan warga lain. Kodenya dipakai di kode PHP,
+    // judulnya dibaca dari tabel ini supaya bisa diubah tanpa mengubah
+    // program.
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS misi (
             kode TEXT PRIMARY KEY,
@@ -68,13 +69,79 @@ function db(): PDO
             urutan INTEGER NOT NULL DEFAULT 0
         )"
     );
+    // Misi dulu dicatat GLOBAL per (kode, tanggal) tanpa tahu warga mana yang
+    // menyelesaikannya. Sekarang per warga, dikunci nomor kartunya (DT-0001).
+    // Tabel lama dibangun ulang menjadi misi_selesai_baru lalu ditukar, supaya
+    // kunci utamanya benar-benar (kode, tanggal, nomor) dan baris lama tetap
+    // utuh dengan nomor kosong sebagai riwayat global. Kalau migrasinya
+    // terputus di tengah jalan, jalan berikutnya menyelesaikannya.
+    $kolomMisiSelesai = kolom_tabel($pdo, 'misi_selesai');
+    if (!isset($kolomMisiSelesai['nomor'])) {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS misi_selesai_baru (
+                kode TEXT NOT NULL,
+                tanggal TEXT NOT NULL,
+                nomor TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (kode, tanggal, nomor)
+            )"
+        );
+        $sisa = (int) $pdo->query('SELECT COUNT(*) FROM misi_selesai')->fetchColumn();
+        $sudah = (int) $pdo->query('SELECT COUNT(*) FROM misi_selesai_baru')->fetchColumn();
+        if ($sisa > 0 && $sudah === 0) {
+            $pdo->exec("INSERT OR IGNORE INTO misi_selesai_baru (kode, tanggal, nomor) SELECT kode, tanggal, '' FROM misi_selesai");
+        }
+        $pdo->exec('DROP TABLE misi_selesai');
+        $pdo->exec('ALTER TABLE misi_selesai_baru RENAME TO misi_selesai');
+    }
+    // Poin yang diberikan satu misi. Tabel misi dibuat sebelum kolom ini ada,
+    // jadi kolomnya ditambahkan belakangan.
+    $kolomMisi = kolom_tabel($pdo, 'misi');
+    if (!isset($kolomMisi['poin'])) {
+        $pdo->exec('ALTER TABLE misi ADD COLUMN poin INTEGER NOT NULL DEFAULT ' . (int) POIN_PER_MISI);
+    }
+
+    // Dompet poin warga. Saldo tinggal di kolom warga.poin supaya kartu warga
+    // cepat dibaca; setiap perubahannya wajib juga tercatat di poin_log
+    // lewat tambah_poin(), jadi nilai kolom dan riwayat tidak bisa berbeda.
+    $kolomWarga = kolom_tabel($pdo);
+    if (!isset($kolomWarga['poin'])) {
+        $pdo->exec('ALTER TABLE warga ADD COLUMN poin INTEGER NOT NULL DEFAULT 0');
+    }
+    // Kunci rahasia warga. Nomor KTP mudah ditebak (DT-0001, DT-0002, ...),
+    // jadi nomor saja tidak cukup untuk membuktikan si pengunjung memang
+    // pemilik kartu itu. Pengunjung menyimpan nomor DAN kuncinya di
+    // localStorage; endpoint tulis memeriksa keduanya.
+    if (!isset($kolomWarga['kunci'])) {
+        $pdo->exec("ALTER TABLE warga ADD COLUMN kunci TEXT NOT NULL DEFAULT ''");
+    }
+    // Warga lama belum punya kunci: beri masing-masing satu kunci acak.
+    $tanpaKunci = $pdo->query("SELECT id FROM warga WHERE kunci = ''")->fetchAll(PDO::FETCH_COLUMN);
+    if ($tanpaKunci !== []) {
+        $isiKunci = $pdo->prepare('UPDATE warga SET kunci = ? WHERE id = ?');
+        foreach ($tanpaKunci as $idTanpaKunci) {
+            $isiKunci->execute([bin2hex(random_bytes(16)), (int) $idTanpaKunci]);
+        }
+    }
     $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS misi_selesai (
-            kode TEXT NOT NULL,
+        "CREATE TABLE IF NOT EXISTS poin_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nomor TEXT NOT NULL,
+            delta INTEGER NOT NULL,
+            sumber TEXT NOT NULL,
+            ref TEXT,
             tanggal TEXT NOT NULL,
-            PRIMARY KEY (kode, tanggal)
+            dibuat_pada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )"
     );
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_poin_log_nomor ON poin_log (nomor, id)');
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS klaim_harian (
+            nomor TEXT NOT NULL,
+            tanggal TEXT NOT NULL,
+            PRIMARY KEY (nomor, tanggal)
+        )"
+    );
+
     $daftarMisi = [
         ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
         ['dukung-teman', 'Dukung komentar warga lain', 'Sukai komentar warga lain yang idenya bagus. Like terbanyak besok pagi dibangun jadi bangunan.', 2],
@@ -105,6 +172,17 @@ function db(): PDO
     }
 
     return $pdo;
+}
+
+// Daftar kolom satu tabel: ['nama_kolom' => true]. Dipakai migrasi supaya
+// ALTER TABLE hanya jalan bila kolomnya memang belum ada.
+function kolom_tabel(PDO $pdo, string $tabel = 'warga'): array
+{
+    $hasil = [];
+    foreach ($pdo->query('PRAGMA table_info(' . $tabel . ')') as $kolom) {
+        $hasil[$kolom['name']] = true;
+    }
+    return $hasil;
 }
 
 // Nomor warga resmi, contoh: DT-0001, DT-0027, DT-10342.
@@ -275,24 +353,161 @@ function cari_warga_berdasarkan(PDO $pdo, string $kunci, int $batas = 40): array
 }
 
 // ---------------------------------------------------------------------------
-// Misi harian
+// Misi harian dan dompet poin warga
 //
-// Misi dihitung dari tindakan nyata yang sudah tercatat di basis data, bukan
-// dari tombol "selesai" yang bisa diklik bebas. Aturannya:
-//   usulkan-usaha : sudah ada bangunan yang berdiri hari ini
-//   dukung-teman  : ada minimal dua bangunan (berarti ada ide yang didukung
-//                   lalu dipilih untuk dibangun)
-//   bikin-ktp     : ada warga terdaftar
-//   keliling-desa : ditandai bila pengunjung menekan Keliling Desa hari ini
+// Setiap warga punya saldo poin sendiri (kolom warga.poin) dan riwayatnya
+// (tabel poin_log). Poin hanya berubah lewat tambah_poin(), yang menulis
+// saldo dan log dalam satu transaksi, jadi tidak ada saldo yang bisa berbeda
+// dari riwayatnya.
 //
-// Baris di misi_selesai hanya dipakai untuk yang tidak bisa dibuktikan dari
-// data (keliling-desa). Sisanya dihitung langsung, jadi tidak ada angka
-// yang bisa berbeda dengan kenyataan desa.
+// Misi sekarang dicatat PER WARGA. Bukti otomatis desa (bangunan hari ini,
+// jumlah bangunan, jumlah warga) berlaku untuk semua warga; sisanya, seperti
+// keliling-desa, hanya berlaku bagi warga yang menandainya di misi_selesai.
+// Poin misi diberikan sekali per warga per misi per hari.
 // ---------------------------------------------------------------------------
 
-function daftar_misi(PDO $pdo): array
+// Nomor KTP yang sah: DT-0001. Huruf besar saja, karena begitulah nomor
+// dicetak di kartu; server membuatnya sendiri dan tidak menerima variasi.
+function nomor_warga_sah($nomor): ?string
+{
+    return is_string($nomor) && preg_match('/^DT-\d{4,9}$/', $nomor) === 1 ? $nomor : null;
+}
+
+// Baris warga dari nomor KTP, atau null bila tidak ada.
+function warga_dari_nomor(PDO $pdo, string $nomor): ?array
+{
+    if (nomor_warga_sah($nomor) === null) {
+        return null;
+    }
+    $stmt = $pdo->prepare('SELECT * FROM warga WHERE id = ?');
+    $stmt->execute([(int) substr($nomor, 3)]);
+    $baris = $stmt->fetch();
+    // Pastikan baris yang terbaca memang warga pemilik nomor itu.
+    if ($baris === false || nomor_warga((int) $baris['id']) !== $nomor) {
+        return null;
+    }
+    return $baris;
+}
+
+// Nomor dan kunci rahasia milik warga, atau null bila salah satunya tidak
+// cocok. Kunci tidak pernah dikirim dalam bentuk apa pun selain ke pemilik
+// kartunya sendiri (lihat ktp.php).
+function warga_dari_nomor_dan_kunci(PDO $pdo, $nomor, $kunci): ?array
+{
+    if (!is_string($kunci) || preg_match('/^[0-9a-f]{32}$/', $kunci) !== 1) {
+        return null;
+    }
+    $warga = warga_dari_nomor($pdo, is_string($nomor) ? $nomor : '');
+    if ($warga === null || !hash_equals((string) $warga['kunci'], $kunci)) {
+        return null;
+    }
+    return $warga;
+}
+
+// Saldo poin seorang warga. Nomor tidak dikenal = 0.
+function saldo_poin(PDO $pdo, string $nomor): int
+{
+    $warga = warga_dari_nomor($pdo, $nomor);
+    return $warga === null ? 0 : (int) $warga['poin'];
+}
+
+// Tambah (atau kurangi, bila delta negatif) poin warga lalu catat di
+// poin_log. Dua tulisan ini satu transaksi supaya tidak ada saldo yang
+// berubah tanpa riwayat. Mengembalikan saldo baru, atau null bila warga
+// tidak dikenal atau transaksinya gagal.
+function tambah_poin(PDO $pdo, string $nomor, int $delta, string $sumber, ?string $ref = null): ?int
+{
+    $warga = warga_dari_nomor($pdo, $nomor);
+    if ($warga === null) {
+        return null;
+    }
+    // Sumber berasal dari kode program, bukan dari klien; tetap dijaga.
+    if (!in_array($sumber, ['klaim-harian', 'misi', 'materi', 'admin'], true)) {
+        return null;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE warga SET poin = poin + ? WHERE id = ?')
+            ->execute([$delta, (int) $warga['id']]);
+        $pdo->prepare(
+            'INSERT INTO poin_log (nomor, delta, sumber, ref, tanggal) VALUES (?, ?, ?, ?, ?)'
+        )->execute([$nomor, $delta, $sumber, $ref, date('Y-m-d')]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        return null;
+    }
+
+    return saldo_poin($pdo, $nomor);
+}
+
+// Riwayat poin terbaru seorang warga, paling banyak $batas baris.
+function riwayat_poin(PDO $pdo, string $nomor, int $batas = 20): array
+{
+    if (warga_dari_nomor($pdo, $nomor) === null) {
+        return [];
+    }
+    $stmt = $pdo->prepare(
+        'SELECT delta, sumber, ref, tanggal FROM poin_log WHERE nomor = ? ORDER BY id DESC LIMIT ' . max(1, min(50, $batas))
+    );
+    $stmt->execute([$nomor]);
+    $hasil = [];
+    foreach ($stmt->fetchAll() as $r) {
+        $hasil[] = [
+            'delta' => (int) $r['delta'],
+            'sumber' => $r['sumber'],
+            'ref' => $r['ref'],
+            'tanggal' => $r['tanggal'],
+        ];
+    }
+    return $hasil;
+}
+
+// Apakah warga ini sudah mengklaim poin harian pada tanggal itu.
+function sudah_klaim_harian(PDO $pdo, string $nomor, string $tanggal): bool
+{
+    $stmt = $pdo->prepare('SELECT 1 FROM klaim_harian WHERE nomor = ? AND tanggal = ?');
+    $stmt->execute([$nomor, $tanggal]);
+    return $stmt->fetchColumn() !== false;
+}
+
+// Klaim poin harian gratis. Mengembalikan ['saldo' => n] bila berhasil, atau
+// ['galat' => 'sudah'] bila hari itu sudah diklaim, ['galat' => 'warga'] bila
+// nomornya tidak dikenal. Tanggal boleh diisi untuk uji; kosong = hari ini.
+function klaim_harian(PDO $pdo, string $nomor, ?string $tanggal = null): array
+{
+    if (warga_dari_nomor($pdo, $nomor) === null) {
+        return ['galat' => 'warga'];
+    }
+    $tanggal = $tanggal ?? date('Y-m-d');
+
+    $pdo->beginTransaction();
+    try {
+        // Kunci utama (nomor, tanggal) membuat klaim kedua gagal di tingkat
+        // basis data, bukan hanya hasil pemeriksaan sebelumnya.
+        $pdo->prepare('INSERT INTO klaim_harian (nomor, tanggal) VALUES (?, ?)')
+            ->execute([$nomor, $tanggal]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        return ['galat' => 'sudah'];
+    }
+
+    $saldo = tambah_poin($pdo, $nomor, POIN_KLAIM_HARIAN, 'klaim-harian', $tanggal);
+    return $saldo === null ? ['galat' => 'gagal'] : ['saldo' => $saldo];
+}
+
+// Daftar misi hari ini, dengan status selesai untuk warga $nomor (bila
+// diisi). Tanpa nomor, status dihitung dari bukti otomatis desa saja.
+function daftar_misi(PDO $pdo, ?string $nomor = null): array
 {
     $hariIni = date('Y-m-d');
+    $nomor = $nomor !== null ? nomor_warga_sah($nomor) : null;
+    $warga = $nomor !== null ? warga_dari_nomor($pdo, $nomor) : null;
+    if ($warga === null) {
+        $nomor = null;
+    }
 
     $bangunanHariIni = (int) $pdo->query(
         'SELECT COUNT(*) FROM bangunan WHERE tanggal = ' . $pdo->quote($hariIni)
@@ -307,36 +522,64 @@ function daftar_misi(PDO $pdo): array
     ];
 
     $ditandai = [];
-    $stmt = $pdo->prepare('SELECT kode FROM misi_selesai WHERE tanggal = ?');
-    $stmt->execute([$hariIni]);
-    foreach ($stmt->fetchAll() as $r) {
-        $ditandai[$r['kode']] = true;
+    if ($nomor !== null) {
+        $stmt = $pdo->prepare('SELECT kode FROM misi_selesai WHERE tanggal = ? AND nomor = ?');
+        $stmt->execute([$hariIni, $nomor]);
+        foreach ($stmt->fetchAll() as $r) {
+            $ditandai[$r['kode']] = true;
+        }
     }
 
     $hasil = [];
-    foreach ($pdo->query('SELECT kode, judul, keterangan, urutan FROM misi ORDER BY urutan ASC') as $m) {
+    foreach ($pdo->query('SELECT kode, judul, keterangan, poin, urutan FROM misi ORDER BY urutan ASC') as $m) {
         $selesai = $buktiOtomatis[$m['kode']] ?? isset($ditandai[$m['kode']]);
         $hasil[] = [
             'kode' => $m['kode'],
             'judul' => $m['judul'],
             'keterangan' => $m['keterangan'],
+            'poin' => (int) $m['poin'],
             'selesai' => $selesai,
         ];
     }
     return $hasil;
 }
 
-// Tandai satu misi selesai hari ini. Hanya boleh untuk kode yang memang ada.
-function tandai_misi(PDO $pdo, string $kode): bool
+// Tandai satu misi selesai hari ini untuk seorang warga, lalu beri poin
+// misi itu SEKALI per warga per hari. Mengembalikan:
+//   ['ok' => true, 'baru' => bool, 'poin' => n, 'saldo' => n]
+//   ['galat' => 'warga' | 'kode']
+function tandai_misi(PDO $pdo, string $kode, string $nomor): array
 {
-    $ada = $pdo->prepare('SELECT 1 FROM misi WHERE kode = ?');
-    $ada->execute([$kode]);
-    if ($ada->fetchColumn() === false) {
-        return false;
+    if (preg_match('/^[a-z0-9-]{1,40}$/', $kode) !== 1) {
+        return ['galat' => 'kode'];
     }
-    $stmt = $pdo->prepare('INSERT INTO misi_selesai (kode, tanggal) VALUES (?, ?) ON CONFLICT(kode, tanggal) DO NOTHING');
-    $stmt->execute([$kode, date('Y-m-d')]);
-    return true;
+    if (warga_dari_nomor($pdo, $nomor) === null) {
+        return ['galat' => 'warga'];
+    }
+    $stmt = $pdo->prepare('SELECT poin FROM misi WHERE kode = ?');
+    $stmt->execute([$kode]);
+    $poinMisi = $stmt->fetchColumn();
+    if ($poinMisi === false) {
+        return ['galat' => 'kode'];
+    }
+
+    $tanggal = date('Y-m-d');
+    $insert = $pdo->prepare(
+        'INSERT INTO misi_selesai (kode, tanggal, nomor) VALUES (?, ?, ?)
+         ON CONFLICT(kode, tanggal, nomor) DO NOTHING'
+    );
+    $insert->execute([$kode, $tanggal, $nomor]);
+    // Baris baru berarti misi ini belum pernah selesai untuk warga ini hari
+    // ini, jadi hanya saat itulah poin diberikan.
+    $baru = $insert->rowCount() > 0;
+
+    $poin = 0;
+    if ($baru) {
+        $poin = (int) $poinMisi;
+        tambah_poin($pdo, $nomor, $poin, 'misi', $kode);
+    }
+
+    return ['ok' => true, 'baru' => $baru, 'poin' => $poin, 'saldo' => saldo_poin($pdo, $nomor)];
 }
 
 function ringkasan_misi(array $daftar): array

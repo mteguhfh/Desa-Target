@@ -19,7 +19,8 @@ Papan peringkat gang,community,should,yes,selesai,includes/papan-gang.php + papa
 Siang dan malam mengikuti jam setempat,ambience,could,yes,selesai,?jam= di peta3d baris 1427,
 Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,selesai,chipSuasana di peta3d/index.php,Selesai bersama bilah atas; disembunyikan di layar <=700px
 Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru video pembanding
-Misi harian untuk menggerakkan komentar,gamification,could,yes,belum,tidak ada tabel misi,Butuh tabel + UI; paling dekat ke konsep komentar terbanyak
+Misi harian untuk menggerakkan komentar,gamification,could,yes,selesai,daftar_misi()/tandai_misi() + misi.php + panel Misi,Per warga sejak Fitur 1: status dan poin tidak tercampur antar warga
+Dompet poin warga (klaim harian + poin misi),gamification,must,no,selesai,poin.php + klaim.php + tambah_poin()/klaim_harian() di db.php,Identitas nomor KTP + kunci rahasia dari kartu; fondasi ruko dan lapak
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding
 Koperasi afiliasi TikTok Shop,commerce,skip,yes,tidak dikerjakan,-,Perjanjian komersial mereka bukan fitur produk
 Video YouTube dan absen murid,media,skip,yes,tidak dikerjakan,-,Kanal mereka sendiri

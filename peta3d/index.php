@@ -121,6 +121,16 @@ try {
     .chip-suasana.ramai::before { background: #22c55e; }
     .chip-suasana.sepi::before { background: #f59e0b; }
     @media (max-width: 700px) { .chip-suasana { display: none; } }
+    /* Saldo poin warga aktif. Hanya tampil bila peramban sudah punya kartu. */
+    .chip-poin {
+        display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+        background: #fef3c7; border: none; cursor: pointer;
+        border-radius: 999px; padding: 10px 14px;
+        font: 700 13.5px system-ui, sans-serif; color: #92400e;
+        box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
+    }
+    .chip-poin:hover { background: #fde68a; }
+    .chip-poin[hidden] { display: none; }
     @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
 
     /* --- Kartu pengantar --- */
@@ -436,6 +446,11 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
+    <?php // Saldo poin warga aktif. Disembunyikan sampai peramban tahu nomor
+          // warga (localStorage dt_nomor); tanpa itu bilah atas tidak berubah. ?>
+    <button type="button" class="chip-poin" id="chipPoin" hidden
+            data-panel="misi"
+            title="Buka misi dan dompet poinmu">Poin <strong id="chipPoinAngka">0</strong></button>
     <span class="chip-waktu" id="chipWaktu">&#9728;&#65039; Siang</span>
     <span class="chip-suasana" id="chipSuasana" title="Suasana desa dihitung dari jumlah warga yang berdiri di peta">Memuat…</span>
 </div>
@@ -506,6 +521,7 @@ require __DIR__ . '/../includes/tab-bar.php';
 <?php require __DIR__ . '/../includes/sakelar-peta-skrip.php'; ?>
 <?php require __DIR__ . '/../includes/tab-bar-skrip.php'; ?>
 <?php require __DIR__ . '/../includes/cari-warga-skrip.php'; ?>
+<?php $awalanPoin = $awalan; require __DIR__ . '/../includes/dompet-skrip.php'; ?>
 <?php $awalanMisi = $awalan; require __DIR__ . '/../includes/misi-skrip.php'; ?>
 
 <script type="module">

@@ -7,9 +7,14 @@ pekerjaan yang benar-benar belum ada.
 Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
-**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai. Sekarang 19 selesai,
-0 sebagian, 3 belum, 5 sengaja tidak dikerjakan. Yang tersisa semuanya
-Tahap 3, dan semuanya prioritas `could`.
+**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1 dari
+`SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga dan misi per warga).
+Sekarang 21 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan. Yang
+tersisa di tabel Tahap 3: suara latar desa dan pembagian warga per huruf awal.
+
+Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
+masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah
+selesai: Fitur 1 (dompet poin warga dan misi per warga).
 
 ## Prinsip urutan
 
@@ -90,14 +95,50 @@ percobaan injeksi SQL, wildcard, dan pemotongan kunci panjang.
 
 Semua di sini prioritas `could`. Dikerjakan hanya bila tahap 1 dan 2 sudah rapi.
 
-| # | pekerjaan | status awal |
+| # | pekerjaan | status |
 | --- | --- | --- |
-| 3.1 | Misi harian | belum (perlu tabel misi + UI) |
+| 3.1 | Misi harian | **selesai** (Fitur 1: per warga, berpoin) |
 | 3.2 | Suara latar desa, mati secara bawaan | belum |
 | 3.3 | Pembagian warga per huruf awal nama | belum |
 
 Catatan: 3.1 paling dekat dengan konsep asli Desa Target (komentar terbanyak
 dibangun besok), jadi kalau hanya satu yang dikerjakan, ini yang dipilih.
+3.1 sudah dikerjakan bersama dompet poin (Fitur 1), karena poin misi butuh
+tempat menampung saldo.
+
+---
+
+## Fitur 1 — Dompet poin warga dan misi per warga
+
+Sumber acuan: `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` bagian 3.
+
+| # | pekerjaan | status | bukti |
+| --- | --- | --- | --- |
+| F1.1 | Skema poin: `warga.poin`, `poin_log`, `klaim_harian`, `misi.poin`, `misi_selesai.nomor` | **selesai** | migrasi idempoten di `db.php` |
+| F1.2 | Fungsi dompet: `saldo_poin()`, `tambah_poin()`, `klaim_harian()`, `riwayat_poin()` | **selesai** | `db.php`; saldo dan log satu transaksi |
+| F1.3 | Misi per warga: `daftar_misi($nomor)`, `tandai_misi($kode, $nomor)`, poin sekali per hari | **selesai** | `db.php` + `misi.php` |
+| F1.4 | Endpoint baca `poin.php` dan tulis `klaim.php` | **selesai** | butuh nomor + kunci warga |
+| F1.5 | UI panel Misi (saldo, klaim harian, tombol tandai misi) + chip saldo di bilah atas | **selesai** | `includes/dompet-skrip.php`, `panel-bersayap.php` |
+
+**Keputusan yang diambil di luar teks spesifikasi:**
+
+- **Kunci rahasia per warga.** Nomor KTP mudah ditebak (DT-0001, DT-0002),
+  jadi nomor saja tidak cukup sebagai bukti pemilik. Kolom `warga.kunci`
+  (32 hex) diterbitkan saat kartu dibuka di `ktp.php` dan disimpan browser di
+  `localStorage` kunci `dt_kunci`. Semua endpoint tulis wajib nomor + kunci;
+  kunci tidak pernah muncul di daftar warga atau pencarian.
+- **Status desa tetap berlaku untuk semua warga.** `usulkan-usaha`,
+  `dukung-teman`, dan `bikin-ktp` dihitung dari data desa, jadi berlaku untuk
+  setiap warga. Hanya misi seperti `keliling-desa` yang dicatat di
+  `misi_selesai` per warga. Poin tetap diberikan sekali per warga per hari.
+- **`misi_selesai` dibangun ulang** menjadi kunci utama `(kode, tanggal,
+  nomor)`. Baris lama tetap ada dengan nomor kosong sebagai riwayat global.
+- **Misi tanpa nomor masih bisa dibaca.** Pengunjung tanpa KTP tetap melihat
+  daftar misi desa (hanya baca), tidak bisa menandai atau mendapat poin.
+
+**Uji:** `tools/uji/dompet-poin.js`, 47 pemeriksaan (klaim ganda 409, klaim
+hari berikutnya, isolasi dua warga, kunci salah atau milik warga lain,
+injeksi nomor/kunci/kode, dan panel di peta 3D dan 2D).
 
 ---
 

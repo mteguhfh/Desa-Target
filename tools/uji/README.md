@@ -24,6 +24,11 @@ Sesuaikan `CHROME` di setiap berkas uji ke lokasi Chromium di mesinmu
 cp tools/uji/*.js /tmp/uji/ && cd /tmp/uji && node peta-3d-sakelar.js
 ```
 
+`dompet-poin.js` memanggil `php -r` dari akar repo untuk menguji klaim hari
+berikutnya. Bila berkas uji dijalankan dari salinan, isi `CWD_UJI` dengan akar
+repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
+`http://localhost:8100`.
+
 | berkas | yang diperiksa |
 | --- | --- |
 | `peta-3d-sakelar.js` | 3D jadi default, sakelar pindah mode, pilihan diingat, jalan di ponsel |
@@ -31,6 +36,7 @@ cp tools/uji/*.js /tmp/uji/ && cd /tmp/uji && node peta-3d-sakelar.js
 | `adr0004-satu-sumber-data.js` | koordinat 3D berasal dari `peta-posisi.php`, bukan salinan; cadangan tetap jalan bila endpoint mati |
 | `tab-bar-panel.js` | tab bar dan panel bersayap di 4 ukuran layar × peta 3D/2D: panel tidak menimpa tab atau sakelar, tab aktif benar-benar bisa diketuk, dunia peta tetap terlihat |
 | `tahap2-cari-sorot-interior.js` | pencarian warga (termasuk uji injeksi SQL dan wildcard), sorot bangunan dari daftar di 3D dan 2D, interior Balai Desa tanpa pindah halaman |
+| `dompet-poin.js` | Fitur 1: kartu menerbitkan nomor + kunci, klaim harian sekali sehari (409 pada klaim kedua), poin misi sekali per warga per hari, isolasi saldo dua warga, kunci wajib, injeksi nomor/kunci/kode, panel Misi dan chip saldo di 3D dan 2D |
 | `mode-jalan.js` | Keliling Desa: pemain lahir di luar tapak gedung, WASD dan D-pad benar-benar menggeser pemain, D memutar 90°, kamera langsung di belakang bahu, masuk/keluar Balai Desa tanpa pindah halaman, jalan di ponsel 390px |
 
 Semua berkas keluar dengan kode 1 bila ada yang gagal.

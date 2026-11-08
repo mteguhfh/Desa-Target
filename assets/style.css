@@ -1295,6 +1295,48 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     margin-top: 1px;
 }
 .misi-baris.selesai .misi-status { color: #047857; background: #d1fae5; }
+.misi-poin {
+    grid-column: 3;
+    justify-self: end;
+    font-size: 12px; font-weight: 700;
+    color: #92400e;
+    background: #fef3c7;
+    border-radius: 999px;
+    padding: 2px 9px;
+}
+.misi-baris.selesai .misi-poin { color: var(--teks-lembut); background: #f1f5f9; }
+.misi-tandai {
+    align-self: flex-start;
+    margin-top: 4px;
+    border: 1px solid var(--garis);
+    background: var(--putih);
+    color: var(--biru);
+    font: 700 12.5px system-ui, sans-serif;
+    border-radius: 999px;
+    padding: 5px 11px;
+    cursor: pointer;
+}
+.misi-tandai:hover { background: var(--biru-pucat); }
+.misi-tandai[hidden] { display: none; }
+.misi-tandai:disabled { cursor: default; opacity: 0.6; }
+
+/* --- Dompet poin warga di panel Misi ------------------------------------ */
+.misi-dompet {
+    padding: 14px 16px;
+    margin: 0 0 14px;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius);
+    background: #fffbeb;
+}
+.misi-dompet[hidden] { display: none; }
+.misi-saldo { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #92400e; }
+.misi-saldo-angka { font-size: 26px; font-weight: 800; vertical-align: -2px; }
+.misi-saldo-ket { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: var(--teks-lembut); }
+.misi-klaim { font: inherit; font-weight: 700; border: none; cursor: pointer; }
+.misi-klaim:disabled { background: #e2e8f0; color: var(--teks-lembut); cursor: default; }
+.misi-kabar { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: #047857; }
+.misi-kabar[hidden] { display: none; }
+.misi-tamu p { margin-top: 0; }
 
 /* --- Pemilih warna warga di formulir KTP -------------------------------- */
 .pilih-warna {

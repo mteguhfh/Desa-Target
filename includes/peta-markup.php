@@ -1502,6 +1502,8 @@ require __DIR__ . '/panel-bersayap.php';
 require __DIR__ . '/tab-bar.php';
 require __DIR__ . '/tab-bar-skrip.php';
 require __DIR__ . '/cari-warga-skrip.php';
+$awalanPoin = '';
+require __DIR__ . '/dompet-skrip.php';
 $awalanMisi = '';
 require __DIR__ . '/misi-skrip.php';
 ?>
