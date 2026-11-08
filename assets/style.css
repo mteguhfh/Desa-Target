@@ -2164,3 +2164,62 @@ body.sambutan-terbuka #panggung { pointer-events: none; }
 .bentuk-peci .avatar-topi { height: 18px; border-radius: 3px 3px 0 0; }
 .bentuk-caping .avatar-topi { left: 10px; top: 1px; width: 72px; height: 30px; clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
 .bentuk-rambut .avatar-topi { background: #292524; border-radius: 55% 55% 20% 20%; }
+
+/* Halaman layanan memakai ruang kertas yang lapang agar form dan jadwal mudah dipindai. */
+.ruko-halaman, .pasar-halaman { max-width: 1040px; padding: 48px 24px 64px; gap: 28px; }
+.ruko-halaman > .kartu-formulir, .pasar-halaman > .kartu-formulir {
+    padding: clamp(24px, 4vw, 48px); border: 1px solid #d8d5c8; border-radius: 22px;
+    box-shadow: 0 8px 28px rgb(23 43 70 / .05);
+}
+.ruko-halaman h1, .pasar-halaman h1, .ktp-halaman h1 {
+    font-size: clamp(28px, 3.2vw, 42px); line-height: 1.16; letter-spacing: -.035em;
+    color: #172b46; margin: 8px 0 18px; text-wrap: balance;
+}
+.ruko-halaman .seksi-deskripsi, .pasar-halaman .seksi-deskripsi, .ktp-halaman > .seksi-deskripsi {
+    max-width: 66ch; line-height: 1.8; color: #526078; margin-bottom: 26px;
+}
+.ruko-halaman .label-kecil, .pasar-halaman .label-kecil { color: #526078; font-size: 12px; letter-spacing: .09em; margin: 0; }
+.ruko-halaman .ruko-subjudul { margin-top: 28px; }
+.ruko-halaman .formulir { padding: 28px; border: 1px solid #dedfdc; box-shadow: none; border-radius: 16px; margin-top: 24px; }
+.ruko-halaman .formulir label, .ktp-halaman .formulir > label { margin-top: 12px; }
+.ruko-halaman .formulir input:not([type="hidden"]):not([type="radio"]),
+.ruko-halaman .formulir select, .ruko-halaman .formulir textarea,
+.ktp-halaman .formulir input[type="text"], .ktp-halaman .formulir select,
+.ktp-pemulihan input {
+    width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #bdc6ce;
+    border-radius: 9px; background: #fff; font: inherit; color: #172b46;
+}
+.ruko-halaman .formulir textarea { min-height: 112px; }
+.ruko-halaman .formulir-catatan, .ktp-halaman .formulir-catatan { color: #526078; line-height: 1.65; }
+.pasar-halaman .pasar-status { padding: 20px 24px; margin: 28px 0; background: #fff0b6; border: 0; color: #172b46; font-size: 15px; }
+.pasar-halaman .pasar-mundur { display: block; margin-top: 6px; font-size: 23px; font-variant-numeric: tabular-nums; }
+.pasar-halaman .pasar-jadwal { grid-template-columns: 1fr 1fr; gap: 24px; margin: 0 0 28px; }
+.pasar-halaman .pasar-jadwal-baris { padding: 20px 0; border-top: 1px solid #d8d5c8; gap: 8px; }
+.pasar-halaman .pasar-jadwal dt { font-size: 20px; }
+.pasar-halaman .pasar-jadwal dd { font-size: 14px; color: #526078; line-height: 1.65; }
+.pasar-halaman .tombol, .ruko-halaman .tombol { border-radius: 9px; margin: 0 8px 8px 0; }
+.pasar-halaman .catatan { color: #526078; font-size: 14px; line-height: 1.8; margin-bottom: 0; }
+.ktp-halaman { max-width: 800px; padding: 48px 24px 24px; }
+.ktp-halaman .formulir { padding: clamp(22px, 4vw, 36px); border-radius: 20px; box-shadow: none; border: 1px solid #d8d5c8; gap: 12px; }
+.ktp-halaman .pilih-warna { padding: 20px; background: #fff9e8; border-color: #ded7bf; }
+.ktp-halaman .izin-penerbitan { font-size: 13px; line-height: 1.7; padding: 16px; background: #f4f6f8; border-radius: 9px; }
+.ktp-pemulihan { max-width: 752px; padding: 28px 32px 32px; margin: 12px auto 64px; border: 1px solid #d8d5c8; border-radius: 20px; background: #fff9e8; }
+.ktp-pemulihan .pemulihan-kartu { margin: 0; }
+.ktp-pemulihan h2 { font-size: 23px; margin: 0 0 12px; color: #172b46; }
+.ktp-pemulihan p { color: #526078; line-height: 1.75; font-size: 14px; }
+.ktp-pemulihan form { gap: 10px; }
+.ktp-pemulihan label { font-weight: 600; font-size: 14px; margin-top: 8px; }
+.ktp-pemulihan button { min-height: 48px; border: 1px solid #172b46; border-radius: 9px; font: 700 14px/1.4 inherit; background: #f8ce46; color: #172b46; padding: 12px 18px; margin-top: 10px; cursor: pointer; }
+.ktp-pemulihan button:hover { background: #ffe486; }
+.ktp-pemulihan button:active { transform: translateY(1px); }
+.ktp-pemulihan :is(button, input):focus-visible, .ruko-halaman :is(input, select, textarea):focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+@media (max-width: 600px) {
+    .ruko-halaman, .pasar-halaman { padding: 24px 14px 36px; gap: 18px; }
+    .ruko-halaman > .kartu-formulir, .pasar-halaman > .kartu-formulir { padding: 24px 20px; border-radius: 16px; }
+    .ruko-halaman .formulir { padding: 18px 14px; }
+    .pasar-halaman .pasar-jadwal { grid-template-columns: 1fr; gap: 0; }
+    .pasar-halaman .tombol { display: flex; justify-content: center; margin-right: 0; }
+    .ktp-halaman { padding: 28px 16px 20px; }
+    .ktp-pemulihan { margin: 0 16px 36px; padding: 24px 20px; }
+    .ktp-halaman .pilih-warna { padding: 16px 10px; }
+}

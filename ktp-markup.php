@@ -15,7 +15,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
 </section>
 <?php endif; ?>
 
-<section class="seksi sempit">
+<section class="seksi sempit ktp-halaman">
     <h1>KTP Warga Desa Target</h1>
     <p class="seksi-deskripsi">
         KTP ini tanda kamu resmi jadi warga Desa Target. Gratis, tanpa ribet.
@@ -176,7 +176,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
         <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>
     </form>
 </section>
-<section class="seksi sempit">
+<section class="seksi sempit ktp-pemulihan">
 <?php require __DIR__ . '/includes/pemulihan-markup.php'; ?>
 </section>
 <script>window.__tokenKtp = <?= json_encode($tokenForm) ?>;</script>
