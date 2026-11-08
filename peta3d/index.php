@@ -121,6 +121,13 @@ try {
         pointer-events: none; z-index: 20;
     }
     .bar-atas > * { pointer-events: auto; flex-shrink: 0; }
+    .kabar-peta { position: fixed; z-index: 12; top: 74px; left: 50%; display: flex; align-items: center; gap: 10px; width: min(620px, calc(100vw - 32px)); transform: translateX(-50%); padding: 9px 12px; border: 1px solid #fbbf24; border-radius: 7px; background: #fffbeb; color: #78350f; box-shadow: 0 4px 14px rgb(15 23 42 / .18); font-size: 13px; }
+    .kabar-peta p { flex: 1; margin: 0; line-height: 1.4; }
+    .kabar-peta a { color: #92400e; font-weight: 800; white-space: nowrap; }
+    .kabar-peta button { min-width: 32px; min-height: 32px; border: 0; border-radius: 5px; background: transparent; color: #78350f; font-size: 22px; cursor: pointer; }
+    .kabar-peta[hidden] { display: none; }
+    @media (max-width: 700px) { .kabar-peta { top: 62px; } }
+    @media (max-width: 420px) { .kabar-peta { display: none; } }
     .lencana-merek {
         display: inline-flex; align-items: center; gap: 8px;
         height: 38px;
@@ -567,6 +574,10 @@ require __DIR__ . '/../includes/sakelar-peta.php';
     <button type="button" class="chip-suasana" id="chipSuasana" data-panel="pasar"
             title="Suasana desa dihitung dari jumlah warga yang berdiri di peta">Memuat…</button>
 </div>
+<aside class="kabar-peta" id="kabarPeta" aria-label="Kabar Desa" hidden>
+    <p><?= e(KABAR_PETA['teks']) ?> <a href="<?= e($awalan . KABAR_PETA['tautan']) ?>"><?= e(KABAR_PETA['label']) ?></a></p>
+    <button type="button" id="kabarPetaTutup" aria-label="Tutup kabar">&times;</button>
+</aside>
 
 <?php
 // Tab bar bawah (Desa · Misi · Papan Gang · Aku) dan panel bersayap.
@@ -882,13 +893,14 @@ const kubah = (() => {
     return { kanvas: c, ctx, tex, kunci: '' };
 })();
 scene.background = new THREE.Color(0xd6f0f7);
-scene.fog = new THREE.Fog(0xd6f0f7, 1500, 3400);
+scene.fog = new THREE.Fog(0xd6f0f7, 1900, 4700);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 8000);
 // Kamera terbang sendiri dari ketinggian ke posisi awal, lalu pop-up
 // sambutan boleh muncul (ADR-0005). Terbang dilewati bila pengunjung memilih
 // gerak dikurangi atau alamatnya memuat ?terbang=0.
-const KAMERA_AWAL = new THREE.Vector3(120, 1150, 1460);
+// Pandangan awal lebih jauh supaya seluruh gang dan kavling punya napas visual.
+const KAMERA_AWAL = new THREE.Vector3(150, 1450, 1860);
 const TARGET_AWAL = KE3(1017, 760);
 const TERBANG_DETIK = 1.8;
 const kurangiGerak = window.matchMedia
@@ -904,8 +916,8 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.copy(TARGET_AWAL);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.minDistance = 240;
-controls.maxDistance = 2500;
+controls.minDistance = 300;
+controls.maxDistance = 3600;
 controls.maxPolarAngle = 1.35;
 controls.update();
 
@@ -2331,6 +2343,24 @@ function perbaruiSuasana() {
     chip.setAttribute('data-suasana', kelas);
 }
 perbaruiSuasana();
+
+// Kabar hanya disembunyikan sampai pergantian hari. Parameter ini sengaja
+// tersedia supaya pemeriksaan manual dan uji otomatis dapat membukanya lagi.
+(function () {
+    const kabar = document.getElementById('kabarPeta');
+    const tutup = document.getElementById('kabarPetaTutup');
+    if (!kabar || !tutup) return;
+    const hari = new Date().toISOString().slice(0, 10);
+    const kunci = 'dt_kabar_peta_' + hari;
+    let sudahDitutup = false;
+    try { sudahDitutup = localStorage.getItem(kunci) === '1'; } catch (e) {}
+    const paksa = new URLSearchParams(window.location.search).get('kabar') === '1';
+    kabar.hidden = sudahDitutup && !paksa;
+    tutup.addEventListener('click', function () {
+        kabar.hidden = true;
+        try { localStorage.setItem(kunci, '1'); } catch (e) {}
+    });
+})();
 
 // Kait untuk pengujian otomatis dan tangkapan layar.
 window.__desa = {

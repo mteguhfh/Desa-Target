@@ -11,6 +11,11 @@ define('APP_NAME', 'Desa Target');
 define('APP_INSTAGRAM', 'https://www.instagram.com/desatarget');
 // Tanggal berdiri yang menjadi titik awal hitungan usia desa.
 define('DESA_DIBUKA', '2026-01-01');
+const KABAR_PETA = [
+    'teks' => 'Ada kabar baru dari Desa Target. Lihat jadwal pasar dan lapak warga.',
+    'tautan' => 'pasar.php',
+    'label' => 'Lihat pasar desa',
+];
 
 date_default_timezone_set('Asia/Jakarta');
 

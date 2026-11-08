@@ -217,7 +217,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.6 Banner kabar di atas peta
 
-- [ ] Satu baris kabar di atas kanvas, bisa ditutup, berisi satu tautan.
+- [x] Satu baris kabar di atas kanvas, bisa ditutup, berisi satu tautan.
   Contoh: "Pasar Malam malam ini, buka pukul 18.00" atau "Ruko baru dibuka di
   Gang Kuliner".
 - Berkas: `peta3d/index.php`, `includes/peta-markup.php`, `config.php`,

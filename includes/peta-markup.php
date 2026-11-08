@@ -489,6 +489,10 @@
                 Masih banyak tanah kosong, desa ini menunggu usulan usahamu.
             </p>
         </div>
+        <aside class="kabar-peta" id="kabarPeta" aria-label="Kabar Desa" hidden>
+            <p><?= e(KABAR_PETA['teks']) ?> <a href="<?= e($tabAwalan . KABAR_PETA['tautan']) ?>"><?= e(KABAR_PETA['label']) ?></a></p>
+            <button type="button" id="kabarPetaTutup" aria-label="Tutup kabar">&times;</button>
+        </aside>
 
         <p class="peta-chip" id="petaChip">Geser buat keliling. Tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</p>
 
