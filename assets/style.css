@@ -1170,7 +1170,7 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
        dan menutupi tab bar. Dipakai clip, bukan hidden: flex dengan
        overflow hidden menolak menyusut di bawah tinggi isinya. */
     overflow: clip;
-    transition: transform 180ms ease-out, visibility 0s linear 180ms;
+    transition: transform 240ms cubic-bezier(.4, 0, 1, 1), visibility 0s linear 240ms;
     visibility: hidden;
 }
 /* Panel dan tab bar berbagi titik tengah yang sama. Sebelumnya panel digeser
@@ -1180,12 +1180,8 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .panel-bersayap.terbuka {
     transform: translateX(-50%) translateY(0);
     visibility: visible;
-    transition: transform 180ms ease-out, visibility 0s;
+    transition: transform 320ms cubic-bezier(.16, 1, .3, 1), visibility 0s;
 }
-/* Dipasang skrip saat halaman punya kanvas 3D: bingkai terlalu jarang untuk
-   animasi, jadi panel dibuka tanpa transisi. */
-.panel-bersayap.segera,
-.panel-bersayap.segera.terbuka { transition: none; }
 
 .panel-bersayap-kepala {
     display: flex;

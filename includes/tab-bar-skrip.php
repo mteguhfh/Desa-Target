@@ -49,23 +49,21 @@
         }
     }
 
-    // Di halaman dengan kanvas 3D, peramban hanya menggambar sekitar 3 bingkai
-    // per detik (perenderan WebGL memakan seluruh waktu bingkai), sehingga
-    // animasi 300ms bisa tertinggal hampir satu detik. Animasi hanya dipakai
-    // bila halaman memang sanggup menggambarnya; kalau tidak, panel muncul
-    // seketika. Dengan begitu ketukan selalu terasa langsung dijawab.
-    var ada3D = !!document.getElementById('panggung');
+    var tutupTimer = null;
 
     function buka(nama, tab) {
         if (!JUDUL[nama]) return;
+        window.clearTimeout(tutupTimer);
+        var dariTersembunyi = panel.hidden;
         isiUntuk(nama);
         judul.textContent = JUDUL[nama];
         panel.hidden = false;
         panel.setAttribute('aria-hidden', 'false');
-        if (ada3D) panel.classList.add('segera');
-        // Paksa peramban menghitung tata letak sekali, supaya transisi
-        // transform berjalan dari posisi tertutup.
-        void panel.offsetHeight;
+        panel.inert = false;
+        if (dariTersembunyi) {
+            // Rekam posisi tertutup sebelum transisi dimulai di bingkai berikut.
+            void panel.offsetHeight;
+        }
         panel.classList.add('terbuka');
         tandaiTab(nama);
         tabTerakhir = tab || null;
@@ -74,11 +72,13 @@
     function tutup(kembalikanFokus) {
         if (!panel.classList.contains('terbuka') && panel.hidden) return;
         panel.classList.remove('terbuka');
+        panel.inert = true;
         panel.setAttribute('aria-hidden', 'true');
         tandaiTab(null);
-        window.setTimeout(function () {
+        window.clearTimeout(tutupTimer);
+        tutupTimer = window.setTimeout(function () {
             if (!panel.classList.contains('terbuka')) panel.hidden = true;
-        }, 300);
+        }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
         if (kembalikanFokus && tabTerakhir) tabTerakhir.focus();
         tabTerakhir = null;
     }

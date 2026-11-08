@@ -58,7 +58,7 @@ function tumpang(a, b) {
 
       // Ruko kini tab kelima yang setara, bukan pil kecil terpisah.
       const jumlahTab = await page.locator('#tabBar .tab-item').count();
-      catat(label + ': 5 tab tampil', jumlahTab === 5, String(jumlahTab));
+      catat(label + ': 6 tab tampil', jumlahTab === 6, String(jumlahTab));
       catat(label + ': tidak ada pil Ruko terpisah',
         await page.locator('#tabBar .tab-pil').count() === 0);
       catat(label + ': tab Ruko membuka panel di peta',
