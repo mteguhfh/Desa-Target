@@ -221,9 +221,10 @@ foreach ($panelPapanGang as $barisPapan) {
                 <?php require_once __DIR__ . '/avatar-markup.php'; ?>
                 <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi'], 'aku-avatar-pratinjau') ?>
                 <form class="aku-form" id="akuFormKtp" novalidate>
-                    <label class="sr-saja" for="akuNama">Nama lengkap</label>
-                    <input id="akuNama" name="nama" type="text" maxlength="50" placeholder="Nama lengkap"
-                           autocomplete="name" enterkeyhint="done">
+                    <label class="sr-saja" for="akuNama">Nama panggilan</label>
+                    <input id="akuNama" name="nama" type="text" maxlength="50" placeholder="Nama panggilan, mis. Sari"
+                           autocomplete="nickname" enterkeyhint="done">
+                    <p class="formulir-catatan">Gunakan nama panggilan, bukan nama lengkap.</p>
                     <label class="sr-saja" for="akuGang">Gang profesi</label>
                     <select id="akuGang" name="gang">
                         <option value="">Pilih gang profesimu</option>
@@ -252,6 +253,7 @@ foreach ($panelPapanGang as $barisPapan) {
                             </div>
                         <?php endforeach; ?>
                     </fieldset>
+                    <label class="izin-penerbitan"><input type="checkbox" name="izin_penerbitan" value="1" required> <span>Saya mengizinkan nama panggilan dan tampilan kartu ini tampil di web. Jika belum 18 tahun, saya sudah mendapat izin orang tua atau wali.</span></label>
                     <button type="submit" class="tombol-panel-utama">Bikin KTP Warga, Gratis</button>
                 </form>
                 <p class="aku-kabar" id="akuKabar" role="status" hidden></p>
