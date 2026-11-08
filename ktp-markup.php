@@ -123,9 +123,8 @@ require_once __DIR__ . '/includes/avatar-markup.php';
     <?php endif; ?>
 
     <form class="formulir" method="post" action="ktp.php">
-        <?php $idBentuk = 'ktpBentuk'; require __DIR__ . '/includes/pilih-bentuk.php'; ?>
-        <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi']) ?>
         <input type="hidden" name="token" value="<?= e($tokenForm) ?>">
+        <h2 class="ktp-form-judul">Kenalan dulu, yuk</h2>
         <label for="nama">Nama panggilan</label>
         <input type="text" id="nama" name="nama" required minlength="3" maxlength="50"
                autocomplete="nickname" placeholder="Contoh: Sari, Ucup, atau Sari W."
@@ -144,6 +143,12 @@ require_once __DIR__ . '/includes/avatar-markup.php';
             buat pembuat produk tangan.
         </p>
 
+        <div class="ktp-tampilan">
+        <div class="ktp-figur">
+            <h2 class="ktp-form-judul">Figur wargamu</h2>
+            <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi']) ?>
+            <?php $idBentuk = 'ktpBentuk'; require __DIR__ . '/includes/pilih-bentuk.php'; ?>
+        </div>
         <fieldset class="pilih-warna">
             <legend>Tampilan figurnya di peta</legend>
             <p class="formulir-catatan">
@@ -171,6 +176,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
                 </div>
             <?php endforeach; ?>
         </fieldset>
+        </div>
         <label class="izin-penerbitan"><input type="checkbox" name="izin_penerbitan" value="1" required> Saya mengizinkan nama panggilan dan tampilan kartu ini tampil di web Desa Target. Jika belum 18 tahun, saya sudah mendapat izin orang tua atau wali.</label>
 
         <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>

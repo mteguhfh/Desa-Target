@@ -811,7 +811,7 @@ function pesan_chat(PDO $pdo, string $kanal, int $sejak = 0, int $batas = 50): a
             'frase' => $kode,
             // Frase yang sudah dihapus dari CHAT_FRASE tetap terbaca netral,
             // bukan kosong, supaya riwayat lama tidak jadi baris tanpa arti.
-            'teks' => CHAT_FRASE[$kode] ?? 'Pesan lama',
+            'teks' => str_starts_with($kode, 'teks:') ? substr($kode, 5) : (CHAT_FRASE[$kode] ?? 'Pesan lama'),
             'dibuat_pada' => $baris['dibuat_pada'],
         ];
     }
@@ -828,7 +828,7 @@ function kirim_chat(PDO $pdo, $kanal, $frase, $nomor, $kunci): array
     if ($kanal === null) {
         return ['galat' => 'kanal'];
     }
-    $frase = frase_chat_sah($frase);
+    $frase = is_string($frase) && str_starts_with($frase, 'teks:') && preg_match('//u', $frase) && preg_match_all('/./us', substr($frase, 5)) <= 280 && trim(substr($frase, 5)) !== '' && !preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $frase) ? $frase : frase_chat_sah($frase);
     if ($frase === null) {
         return ['galat' => 'frase'];
     }
@@ -980,7 +980,7 @@ function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita,
     // daftar_gambar_usaha(): tidak ada URL bebas yang masuk ke src gambar.
     $gambarSah = '';
     if (is_string($gambar) && trim($gambar) !== '') {
-        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        $gambarSah = gambar_usaha_sah(trim($gambar), $nomorWarga) ?? '';
         if ($gambarSah === '') {
             return ['galat' => 'gambar'];
         }
@@ -1046,7 +1046,8 @@ function ubah_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, 
     if ($warga === null) {
         return ['galat' => 'warga'];
     }
-    $ruko = ruko_milik($pdo, nomor_warga((int) $warga['id']));
+    $nomorWarga = nomor_warga((int) $warga['id']);
+    $ruko = ruko_milik($pdo, $nomorWarga);
     if ($ruko === null) {
         return ['galat' => 'tidak-ada'];
     }
@@ -1067,7 +1068,7 @@ function ubah_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, 
     // Kosong berarti menghapus gambar. Selain kosong wajib gambar yang sah.
     $gambarSah = '';
     if (is_string($gambar) && trim($gambar) !== '') {
-        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        $gambarSah = gambar_usaha_sah(trim($gambar), $nomorWarga) ?? '';
         if ($gambarSah === '') {
             return ['galat' => 'gambar'];
         }
@@ -1131,11 +1132,12 @@ function daftar_gambar_usaha(): array
     return $hasil;
 }
 
-function gambar_usaha_sah($gambar): ?string
+function gambar_usaha_sah($gambar, ?string $pemilik = null): ?string
 {
     if (!is_string($gambar) || $gambar === '') {
         return null;
     }
+    if (preg_match('~^assets/uploads/usaha/(DT-[0-9]+)-[a-f0-9]{24}\.jpg$~D', $gambar, $cocok) && ($pemilik === null || $pemilik === $cocok[1]) && is_file(__DIR__ . '/' . $gambar)) return $gambar;
     return in_array($gambar, daftar_gambar_usaha(), true) ? $gambar : null;
 }
 
@@ -1289,7 +1291,7 @@ function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null,
     if ($gambarRuko !== '') {
         $gambarSah = $gambarRuko;
     } elseif (is_string($gambar) && trim($gambar) !== '') {
-        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        $gambarSah = gambar_usaha_sah(trim($gambar), $nomorWarga) ?? '';
         if ($gambarSah === '') {
             return ['galat' => 'gambar'];
         }

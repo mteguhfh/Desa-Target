@@ -7,3 +7,4 @@ data/*.sqlite-shm
 
 # Catatan deploy lokal (berisi detail server, jangan dipublikasikan)
 DEPLOY.local.md
+assets/uploads/usaha/*.jpg

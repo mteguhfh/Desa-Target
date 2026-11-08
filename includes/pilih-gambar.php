@@ -2,8 +2,7 @@
 // Pemilih gambar usaha untuk ruko (dipakai ruko-markup.php).
 //
 // Gambar disajikan sebagai deretan kartu radio. Hanya berkas yang ada di
-// assets/img/ yang muncul (daftar_gambar_usaha() di db.php), jadi tidak ada
-// unggahan berkas dan tidak ada URL bebas yang masuk ke src gambar.
+// assets/img/ yang muncul; foto unggahan pemilik ditampilkan terpisah.
 //
 // Variabel yang dipakai:
 //   $pilihanGambar  daftar jalur gambar yang sah
@@ -16,6 +15,9 @@ $hapusTercentang = !empty($isianRuko['hapus_gambar']);
 ?>
 <fieldset class="pilih-gambar">
     <legend>Gambar usaha</legend>
+    <?php if (str_starts_with($gambarSaya, 'assets/uploads/usaha/')): ?>
+        <label class="pilih-gambar-kartu"><input type="radio" name="gambar" value="<?= e($gambarSaya) ?>"<?= $terpilih === $gambarSaya ? ' checked' : '' ?>><img src="<?= e($gambarSaya) ?>" alt="Foto usahamu" width="640" height="480"></label>
+    <?php endif; ?>
     <p class="formulir-catatan">Pilih satu gambar yang paling mirip usahamu. Gambar juga tampil di lapak Pasar Malam dan CFD.</p>
     <?php if ($pilihanGambar === []): ?>
         <p class="formulir-catatan">Belum ada gambar yang bisa dipilih.</p>

@@ -20,6 +20,7 @@
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+require_once __DIR__ . '/db.php';
 
 $metode = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($metode !== 'GET' && $metode !== 'POST') {
@@ -46,7 +47,8 @@ try {
     }
 
     if ($metode === 'POST') {
-        $hasil = kirim_chat($pdo, $kanal, $isi['frase'] ?? '', $isi['nomor'] ?? '', $isi['kunci'] ?? '');
+        $frase = isset($isi['teks']) && is_string($isi['teks']) ? 'teks:' . trim($isi['teks']) : ($isi['frase'] ?? '');
+        $hasil = kirim_chat($pdo, $kanal, $frase, $isi['nomor'] ?? '', $isi['kunci'] ?? '');
         switch ($hasil['galat'] ?? null) {
             case null:
                 http_response_code(201);
@@ -54,7 +56,7 @@ try {
                 exit;
             case 'frase':
                 http_response_code(400);
-                echo json_encode(['galat' => 'Frasa tidak tersedia. Pilih dari tombol yang ada.']);
+                echo json_encode(['galat' => 'Tulis pesan 1 sampai 280 karakter atau pilih kalimat cepat.']);
                 exit;
             case 'kanal-lain':
                 http_response_code(403);

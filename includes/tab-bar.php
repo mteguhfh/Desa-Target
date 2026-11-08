@@ -44,6 +44,7 @@ $daftarTab = [
     // seperti empat tab utama (bukan pil kecil) supaya barisnya rata, lalu
     // membuka panel Ruko di dalam peta, bukan halaman baru (ADR-0006).
     ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'panel' => 'ruko'],
+    ['id' => 'pasar', 'ikon' => '&#128717;', 'teks' => 'Pasar', 'panel' => 'pasar'],
 ];
 ?>
 <nav class="tab-bar" id="tabBar" aria-label="Navigasi utama desa">

@@ -2049,7 +2049,48 @@ function perbaruiKamu(dt) {
 function perbaruiChipMasuk() {
     const dekatPintu = Math.hypot(kamu.x - FOKUS.x, kamu.y - (FOKUS.y + 88)) < 135;
     chipMasuk.classList.toggle('tampil', dekatPintu);
+    let terdekat = null, jarak = 110;
+    const pusat = KE3(kamu.x, kamu.y);
+    for (const agen of agenWarga) {
+        const warga = agen.figur.userData.popover;
+        if (!warga?.nomor || warga.nomor === localStorage.getItem('dt_nomor')) continue;
+        const d = Math.hypot(agen.figur.position.x-pusat.x, agen.figur.position.z-pusat.z);
+        if (d < jarak) { jarak=d; terdekat=warga; }
+    }
+    tombolBicara.hidden = !terdekat;
+    if (terdekat) { tombolBicara.textContent='Bicara ke ' + terdekat.judul; tombolBicara.onclick=()=> { aturModeJalan(false); window.__bicaraWarga?.(terdekat.nomor, terdekat.judul); }; }
 }
+const tombolBicara = document.createElement('button');
+tombolBicara.type='button'; tombolBicara.id='bicaraWarga'; tombolBicara.hidden=true;
+document.body.append(tombolBicara);
+setInterval(()=> { if (!modeJalan) tombolBicara.hidden=true; }, 300);
+let chatCursor = null, chatMemuat = false;
+setInterval(async () => {
+    if (document.hidden || chatMemuat) return;
+    chatMemuat=true;
+    try {
+        const r=await fetch('<?= $awalan ?>chat.php?kanal=alun-alun&sejak=' + (chatCursor || 0));
+        if (!r.ok) return;
+        const data=await r.json();
+        if (chatCursor !== null) for (const p of data.pesan || []) {
+            const agen=p.nomor===localStorage.getItem('dt_nomor') && modeJalan ? {figur:kamu.figur} : agenWarga.find(a=>a.figur.userData.popover?.nomor===p.nomor);
+            if (!agen || Date.now()-Date.parse(p.dibuat_pada.replace(' ', 'T')+'Z')>15000) continue;
+            const texte=Array.from(p.teks).slice(0,100).join('');
+            const canvas=document.createElement('canvas'); canvas.width=640; canvas.height=200;
+            const ctx=canvas.getContext('2d'); ctx.fillStyle='#fff9e8'; ctx.beginPath(); ctx.roundRect(8,8,624,168,22); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(300,174); ctx.lineTo(320,198); ctx.lineTo(340,174); ctx.fill();
+            ctx.fillStyle='#172b46'; ctx.font='600 27px system-ui'; ctx.textAlign='center';
+            const lignes=[]; let ligne='';
+            for(const lettre of Array.from(texte)) { if(ctx.measureText(ligne+lettre).width>570){lignes.push(ligne);ligne='';} ligne+=lettre; } lignes.push(ligne);
+            lignes.slice(0,4).forEach((l,i)=>ctx.fillText(l,320,45+i*34));
+            const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace;
+            const bubble=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthWrite:false})); bubble.name='bubbleChat'; bubble.scale.set(190,60,1); bubble.position.y=145;
+            agen.figur.add(bubble);
+            setTimeout(()=> { agen.figur.remove(bubble); bubble.material.map?.dispose(); bubble.material.dispose(); },8000);
+        }
+        chatCursor=data.terakhir;
+    } catch (_) {} finally { chatMemuat=false; }
+},3000);
 // ---------------------------------------------------------------------------
 // Interior Balai Desa langsung di dalam peta 3D.
 //

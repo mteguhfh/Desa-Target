@@ -100,7 +100,7 @@ $kunciAktif = $kunciAktif ?? '';
             <p class="catatan">Melepas ruko tidak menghapus ceritamu; bangunanmu hanya tidak tampil lagi di peta.</p>
 
             <h3 class="ruko-subjudul">Ubah rukomu</h3>
-            <form class="formulir" method="post" action="ruko.php" id="formUbahRuko">
+            <form class="formulir" method="post" action="ruko.php" id="formUbahRuko" enctype="multipart/form-data">
                 <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
                 <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
                 <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
@@ -118,6 +118,7 @@ $kunciAktif = $kunciAktif ?? '';
                        pattern="https://.+" value="<?= e((string) $rukoSaya['tautan']) ?>">
 
                 <?php require __DIR__ . '/includes/pilih-gambar.php'; ?>
+                <?php isian_foto_usaha('ubahFotoUsaha'); ?>
                 <?php isian_katalog($rukoSaya, 'ubahRuko'); ?>
 
                 <button type="submit" class="tombol tombol-utama">Simpan perubahan</button>
@@ -128,7 +129,7 @@ $kunciAktif = $kunciAktif ?? '';
                 Ruko menempati kavling kosong berikutnya di peta. Gang rukomu mengikuti gang di kartumu:
                 <strong><?= e((string) ($wargaAktif['gang'] ?? '')) ?></strong>.
             </p>
-            <form class="formulir" method="post" action="ruko.php" id="formRuko">
+            <form class="formulir" method="post" action="ruko.php" id="formRuko" enctype="multipart/form-data">
                 <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
                 <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
                 <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
@@ -150,6 +151,7 @@ $kunciAktif = $kunciAktif ?? '';
                 <p class="formulir-catatan">Alamat WhatsApp, marketplace, atau Instagram tokomu. Wajib diawali https://.</p>
 
                 <?php $gambarSaya = ''; require __DIR__ . '/includes/pilih-gambar.php'; ?>
+                <?php isian_foto_usaha('baruFotoUsaha'); ?>
                 <?php isian_katalog($isianRuko, 'baruRuko'); ?>
 
                 <button type="submit" class="tombol tombol-utama">Klaim ruko</button>
@@ -183,6 +185,21 @@ $kunciAktif = $kunciAktif ?? '';
         <?php endif; ?>
     </section>
 </main>
+<script>
+document.querySelectorAll('.unggah-usaha input').forEach(function (input) {
+    let url;
+    input.addEventListener('change', function () {
+        const img = input.parentElement.querySelector('img');
+        if (url) URL.revokeObjectURL(url);
+        img.hidden = true;
+        input.setCustomValidity('');
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { input.setCustomValidity('Pilih foto maksimal 5 MB.'); input.reportValidity(); return; }
+        url = URL.createObjectURL(file); img.src = url; img.hidden = false;
+    });
+});
+</script>
 <?php require __DIR__ . '/includes/katalog-skrip.php'; ?>
 
 <form id="rukoIdentitas" method="post" action="ruko.php" hidden>

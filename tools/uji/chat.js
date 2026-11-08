@@ -120,7 +120,7 @@ async function buatWarga(browser, nama, gang) {
   catat('gang pesan diambil dari kartu, bukan kiriman klien',
     wargaA.gang !== '' && pesanA.gang === wargaA.gang,
     pesanA.gang + ' (kiriman: Gang Dagang)');
-  catat('isi pesan adalah teks preset, teks bebas diabaikan', pesanA.teks === 'Halo, warga!', pesanA.teks);
+  catat('teks bebas dipertahankan tanpa dieksekusi', pesanA.teks === '<script>alert(1)</script>', pesanA.teks);
   catat('nomor pesan adalah nomor KTP pengirim', pesanA.nomor === wargaA.nomor);
 
   // ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ async function buatWarga(browser, nama, gang) {
   const teksBebas = await kirim({ kanal: 'alun-alun', frase: 'Hai semua, ini teks bebas', nomor: wargaB.nomor, kunci: wargaB.kunci });
   catat('frase teks bebas ditolak 400', teksBebas.status === 400, String(teksBebas.status));
   const fieldTeks = await kirim({ kanal: 'alun-alun', nomor: wargaB.nomor, kunci: wargaB.kunci, teks: 'Halo semua', pesan: 'Halo semua' });
-  catat('field teks tanpa frase ditolak 400', fieldTeks.status === 400, String(fieldTeks.status));
+  catat('field teks tanpa frase diterima', fieldTeks.status === 201, String(fieldTeks.status));
   const fraseInjeksi = await kirim({ kanal: 'alun-alun', frase: "halo' OR 1=1 --", nomor: wargaB.nomor, kunci: wargaB.kunci });
   catat('injeksi pada frase ditolak 400', fraseInjeksi.status === 400, String(fraseInjeksi.status));
 
@@ -208,8 +208,8 @@ async function buatWarga(browser, nama, gang) {
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     const tombolChat = halaman === 'peta.php' ? '#tombolChat' : '#tombolChat2d';
     // Ruko kini tab kelima yang setara, bukan pil terpisah.
-    catat(halaman + ': tab bar tetap lima tab utama',
-      await tamu.locator('#tabBar .tab-item').count() === 5);
+    catat(halaman + ': tab bar memuat enam menu',
+      await tamu.locator('#tabBar .tab-item').count() === 6);
     catat(halaman + ': tombol Chat ada di bilah atas', await tamu.locator(tombolChat).isVisible());
     await tamu.locator(tombolChat).click();
     await tamu.waitForTimeout(500);
@@ -221,7 +221,7 @@ async function buatWarga(browser, nama, gang) {
       const isi = document.querySelector('[data-isi="chat"]');
       return isi.querySelectorAll('input, textarea, [contenteditable]').length;
     });
-    catat(halaman + ': panel chat tidak punya kolom teks', kolomTeks === 0, String(kolomTeks));
+    catat(halaman + ': panel chat menyediakan teks dan inbox', kolomTeks === 3, String(kolomTeks));
     catat(halaman + ': pengunjung tanpa kartu tidak bisa menulis', await tamu.locator('#chatKirim').isHidden());
     catat(halaman + ': pengunjung diarahkan bikin KTP', await tamu.locator('#chatTamu').isVisible());
     await tamu.close();

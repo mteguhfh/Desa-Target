@@ -127,7 +127,7 @@
             isi.className = 'chat-pesan-isi';
             // Teks dari daftar preset server, ditulis sebagai teks biasa jadi
             // tidak ada HTML yang bisa disusupkan lewat nama warga.
-            isi.textContent = potong(m.teks, 120);
+            isi.textContent = potong(m.teks, 560);
 
             var meta = document.createElement('span');
             meta.className = 'chat-pesan-meta';
@@ -212,14 +212,16 @@
         return elFrase ? Array.prototype.slice.call(elFrase.querySelectorAll('button')) : [];
     }
 
-    function kirim(frase) {
+    var formTeks = document.getElementById('chatFormTeks');
+    if (formTeks) formTeks.addEventListener('submit', function (event) { event.preventDefault(); kirim(null, document.getElementById('chatTeks').value); });
+    function kirim(frase, teks) {
         if (!bolehTulis()) {
             tampilKabar('Kanal ini hanya bisa dibaca. Menulis hanya di gangmu sendiri dan Alun-Alun.', true);
             return;
         }
         tombolFrase().forEach(function (b) { b.disabled = true; });
         var body = 'kanal=' + encodeURIComponent(kanalAktif) +
-            '&frase=' + encodeURIComponent(frase) +
+            (teks !== undefined ? '&teks=' + encodeURIComponent(teks) : '&frase=' + encodeURIComponent(frase)) +
             '&nomor=' + encodeURIComponent(nomor) +
             '&kunci=' + encodeURIComponent(kunci);
         fetch(endpoint, {
@@ -233,6 +235,7 @@
         }).then(function (hasil) {
             if (hasil.status === 201 && hasil.data.pesan) {
                 tampilkan(hasil.data.pesan);
+                if (teks !== undefined) document.getElementById('chatTeks').value = '';
                 tampilKabar('Terkirim.');
             } else if (hasil.status === 429) {
                 tampilKabar(hasil.data.galat || 'Terlalu cepat. Tunggu beberapa detik lagi.', true);
@@ -329,5 +332,32 @@
         terakhir: function () { return terakhir; },
         pollingJalan: function () { return pewaktu !== null; }
     };
+    const inbox = document.getElementById('inboxDesa');
+    const inboxKabar = document.getElementById('inboxKabar');
+    async function muatInbox(teks) {
+        const nomor = localStorage.getItem('dt_nomor') || '', kunci = localStorage.getItem('dt_kunci') || '';
+        if (!nomor || !kunci) { inboxKabar.textContent = 'Bikin atau pulihkan KTP untuk membuka inbox.'; return; }
+        const data = new URLSearchParams({nomor, kunci});
+        if (teks !== undefined) { data.set('teks', teks); data.set('tujuan', document.getElementById('inboxTujuan').value); }
+        try {
+            const response = await fetch(endpoint.replace('chat.php', 'inbox.php'), {method:'POST', body:data});
+            const hasil = await response.json();
+            if (!response.ok) throw new Error(hasil.galat || 'Inbox belum tersedia.');
+            const riwayat = document.getElementById('inboxRiwayat'); riwayat.replaceChildren();
+            (hasil.pesan || []).forEach(p => {
+                const b = document.createElement('button'); b.type='button'; b.className='inbox-pesan';
+                b.textContent = (p.pengirim === nomor ? 'Kamu ke ' + p.nama_penerima : p.nama_pengirim + ' ke kamu') + ': ' + p.teks;
+                b.onclick = () => { document.getElementById('inboxTujuan').value = p.pengirim === nomor ? p.penerima : p.pengirim; document.getElementById('inboxTeks').focus(); };
+                riwayat.append(b);
+            });
+            if (!hasil.pesan.length) riwayat.textContent='Belum ada pesan pribadi.';
+            inboxKabar.textContent = teks !== undefined ? 'Pesan pribadi terkirim.' : '';
+            if (teks !== undefined) document.getElementById('inboxTeks').value='';
+        } catch (e) { inboxKabar.textContent=e.message; }
+    }
+    inbox.addEventListener('toggle', () => { if (inbox.open) muatInbox(); });
+    document.getElementById('inboxForm').addEventListener('submit', e => { e.preventDefault(); muatInbox(document.getElementById('inboxTeks').value); });
+    setInterval(() => { if (inbox.open && panelTampil()) muatInbox(); }, 5000);
+    window.__bicaraWarga = function (nomor, nama) { window.__tabBar.buka('chat'); inbox.open=true; document.getElementById('inboxTujuan').value=nomor; inboxKabar.textContent='Bicara ke ' + nama; document.getElementById('inboxTeks').focus(); };
 })();
 </script>

@@ -353,6 +353,7 @@ foreach ($panelPapanGang as $barisPapan) {
               // dari tombol Chat di bilah atas. Hanya frase preset, tanpa kolom
               // teks bebas, dan semua pesan publik. ?>
         <div class="panel-isi" data-isi="chat" hidden>
+            <details id="inboxDesa"><summary>Inbox pribadi</summary><p>Pesan hanya terlihat oleh pengirim dan penerima.</p><div id="inboxRiwayat" aria-live="polite"></div><form id="inboxForm"><label for="inboxTujuan">Nomor warga tujuan</label><input id="inboxTujuan" placeholder="DT-0001" required pattern="DT-[0-9]+"><label for="inboxTeks">Pesan pribadi</label><textarea id="inboxTeks" required maxlength="280" rows="3"></textarea><button type="submit">Kirim pesan pribadi</button></form><p id="inboxKabar" role="status"></p></details>
             <p class="panel-deskripsi">Sapa warga desa lewat pilihan kalimat di bawah. Chat ini publik, semua warga bisa membaca, tidak ada pesan pribadi.</p>
 
             <div class="chat-pilih" id="chatPilih" role="group" aria-label="Pilih kanal chat"></div>
@@ -362,7 +363,8 @@ foreach ($panelPapanGang as $barisPapan) {
             </div>
 
             <div class="chat-kirim" id="chatKirim" hidden>
-                <p class="chat-kirim-judul">Pilih kalimat untuk dikirim</p>
+                <form id="chatFormTeks"><label for="chatTeks">Pesan untuk warga</label><textarea id="chatTeks" maxlength="280" rows="3" required placeholder="Tulis sapaanmu…"></textarea><button type="submit">Kirim pesan</button></form>
+                <p class="chat-kirim-judul">Atau pilih kalimat cepat</p>
                 <div class="chat-frase" id="chatFrase"></div>
                 <p class="chat-kabar" id="chatKabar" role="status" hidden></p>
             </div>

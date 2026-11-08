@@ -12,6 +12,7 @@
 // Ruko menempati kavling kosong berikutnya menurut urutan id bangunan, jalur
 // yang sama dengan peta 2D dan peta 3D (tidak ada logika kavling kedua).
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/includes/unggah-usaha.php';
 
 // Panel Ruko di peta (ADR-0006) membaca data lewat jalur yang sama:
 //   GET ruko.php?json=1&nomor=DT-0001&kunci=...
@@ -95,6 +96,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['token_ruko'] = bin2hex(random_bytes(16));
 
     $aksi = (string) ($_POST['aksi'] ?? 'klaim');
+    $fotoBaru = null;
+    if (is_string($_POST['gambar'] ?? null) && str_starts_with($_POST['gambar'], 'assets/uploads/') && !str_starts_with($_POST['gambar'], 'assets/uploads/usaha/' . $nomorKirim . '-')) {
+        $_SESSION['galat_ruko'] = ['Pilih foto milik usahamu sendiri.'];
+        header('Location: ruko.php');
+        exit;
+    }
+    if (in_array($aksi, ['klaim', 'ubah'], true) && empty($_POST['hapus_gambar']) && ($_FILES['foto_usaha']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        try {
+            $fotoBaru = unggah_foto_usaha($_FILES['foto_usaha'], $nomorKirim);
+            $_POST['gambar'] = $fotoBaru;
+        } catch (RuntimeException $e) {
+            $_SESSION['galat_ruko'] = [$e->getMessage()];
+            header('Location: ruko.php');
+            exit;
+        }
+    }
     if ($aksi === 'lepas') {
         $hasil = lepas_ruko($pdo, $nomorKirim, $kunciKirim);
         $_SESSION['pesan_ruko'] = ($hasil['galat'] ?? null) === null
@@ -130,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'tautan' => (string) ($_POST['tautan'] ?? ''),
             'gambar' => (string) ($_POST['gambar'] ?? ''),
         ];
+        if ($fotoBaru) unlink(__DIR__ . '/' . $fotoBaru);
         $_SESSION['galat_ruko'] = match ($hasilUbah['galat']) {
             'nama' => ['Nama usaha diisi 3 sampai 60 karakter.'],
             'cerita' => ['Cerita usaha paling panjang ' . RUKO_CERITA_MAKS . ' karakter.'],
@@ -171,6 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'gambar' => ['Gambar itu tidak tersedia. Pilih salah satu gambar yang ada di daftar.'],
         default => ['Kartu wargamu tidak dikenali. Buka lagi kartu wargamu.'],
     };
+    if ($fotoBaru) unlink(__DIR__ . '/' . $fotoBaru);
     $_SESSION['isian_ruko'] = [
         'nama_usaha' => (string) ($_POST['nama_usaha'] ?? ''),
         'cerita' => (string) ($_POST['cerita'] ?? ''),
