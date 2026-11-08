@@ -4,7 +4,7 @@ const { chromium } = require('playwright-core');
 // Membuktikan posisi kavling di peta 3D benar-benar berasal dari
 // includes/peta-posisi.php (lewat data-desa.php), bukan salinan di JavaScript.
 
-const BASE = 'http://localhost:8100';
+const BASE = process.env.BASE_UJI || 'http://localhost:8100';
 const CHROME = '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
 const hasil = [];
 const catat = (nama, lulus, detail = '') => {

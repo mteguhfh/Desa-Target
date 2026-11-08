@@ -31,6 +31,9 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 
 | berkas | yang diperiksa |
 | --- | --- |
+| `paritas-mini-game.js` | latensi, waktu tidak sah, autentikasi, token replay, hadiah harian dan saldo |
+| `paritas-katalog.js` | kategori dan harga, filter, fallback, interior Pasar/ruko, keyboard dan D-pad pada 360/1440px |
+| `paritas-bentuk.js` | empat pratinjau kepala, penyimpanan, kartu dan fallback nilai asing |
 | `pemulihan-kartu.js` | hash kode, galat seragam, token wajib, pemulihan di peramban baru, kunci lama dicabut, kode sekali pakai dan pembuatan ulang |
 | `beranda-peta.js` | beranda 200, kanvas 3D, lima tab, vendor lokal, Tentang dan tautan sambutan |
 | `sambutan.js` | muncul pertama kali, diingat, buka ulang, Escape, sapaan warga, aksi Misi |
@@ -51,6 +54,10 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | `ktp-kunci.js` | kunci rahasia warga tidak tercetak di `ktp.php?kartu=N` saat dibuka pengunjung lain, tetapi nama dan gang kartu tetap tampil |
 
 Semua berkas keluar dengan kode 1 bila ada yang gagal.
+
+Suite ruko membutuhkan kavling kosong. Untuk basis data pengembangan yang penuh,
+jalankan pada salinan proyek dan basis data terpisah; arahkan `BASE_UJI` serta
+`CWD_UJI` ke salinan yang sama. Jangan mengosongkan data produksi demi fixture.
 
 Lima uji paritas memakai `bantuan-paritas.js` bersama. Salin berkas bantuan
 itu juga saat menjalankan dari folder lain. Warga dan ruko yang dibuatnya

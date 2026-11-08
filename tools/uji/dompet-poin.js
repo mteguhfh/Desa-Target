@@ -43,6 +43,7 @@ async function buatWarga(browser, nama, gang) {
   await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
   const token = await page.locator('input[name="token"]').inputValue();
   await page.locator('#nama').fill(nama);
+  await page.locator('[name="izin_penerbitan"]').check();
   await page.locator('#gang').selectOption(gang);
   const [jawaban] = await Promise.all([
     page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),

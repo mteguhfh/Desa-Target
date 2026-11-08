@@ -4,7 +4,7 @@ const { chromium } = require('playwright-core');
 //
 // Situs harus sudah berjalan di localhost:8100.
 
-const BASE = 'http://localhost:8100';
+const BASE = process.env.BASE_UJI || 'http://localhost:8100';
 const CHROME = '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
 const hasil = [];
 const catat = (nama, lulus, detail = '') => {
@@ -54,7 +54,7 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     }
 
     const kosong = await cari('');
-    catat('kunci kosong tidak mengembalikan warga', kosong.jumlah === 0);
+    catat('kunci kosong menampilkan maksimal delapan warga terbaru', kosong.jumlah > 0 && kosong.jumlah <= 8);
 
     // Wildcard SQL tidak boleh bocor: '%' dan '_' bukan pola pencarian.
     const persen = await cari('%');
@@ -116,8 +116,8 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     // Hasil pencarian berupa tautan ke KTP warga itu.
     await page.locator('#cariWargaKunci').fill(nomorUji || 'a');
     await page.waitForTimeout(900);
-    const href = await page.locator('.cari-warga-baris').first().getAttribute('href');
-    catat(url + ': hasil bisa diketuk menuju KTP', /ktp\.php\?kartu=\d+$/.test(href || ''), String(href));
+    const baris = page.locator('.cari-warga-baris').first();
+    catat(url + ': hasil membawa nomor tujuan warga', await baris.getAttribute('data-warga-nomor') === nomorUji);
     await page.close();
   }
 

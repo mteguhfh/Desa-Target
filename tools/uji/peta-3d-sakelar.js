@@ -1,6 +1,6 @@
 const { chromium } = require('playwright-core');
 
-const BASE = 'http://localhost:8100';
+const BASE = process.env.BASE_UJI || 'http://localhost:8100';
 const CHROME = '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
 const hasil = [];
 const catat = (nama, lulus, detail = '') => {

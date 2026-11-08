@@ -34,8 +34,8 @@ Aturan status:
 | 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
 | 1 | Identitas dan alasan balik lagi | 8 | 8 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 8 |
-| 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **18** |
+| 3 | Permainan, katalog, dan rasa visual | 5 | 5 |
+| **Total** | | **27** | **27** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -146,7 +146,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 - [x] Panel Aku punya pemilih warna kulit, baju, dan topi seperti halaman KTP,
   dan pilihan itu ikut dikirim saat KTP dibuat dari panel.
-- [ ] `ktp-json.php` menerima `warna_baju`, `warna_kulit`, `warna_topi`
+- [x] `ktp-json.php` menerima `warna_baju`, `warna_kulit`, `warna_topi`
   memakai `warna_sah()` seperti `ktp.php`, bukan selalu memakai warna bawaan.
 - Berkas: `includes/panel-bersayap.php`, `includes/aku-skrip.php`,
   `ktp-json.php`, `ktp-markup.php`, `assets/style.css`.
@@ -349,7 +349,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 3.1 Mini game panen padi
 
-- [ ] Satu mini game di dalam panel: padi muncul di petak, pemain mengetuk
+- [x] Satu mini game di dalam panel: padi muncul di petak, pemain mengetuk
   pada waktu yang tepat, skor akhirnya memberi poin sekali per hari.
 - Berkas: `includes/panel-bersayap.php`, berkas baru
   `includes/mini-game-skrip.php`, endpoint baru `main.php`, `db.php`,
@@ -361,7 +361,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 3.2 Katalog produk ruko dan lapak
 
-- [ ] Halaman Pasar dan panel Ruko memakai kategori (makanan, jasa, kerajinan),
+- [x] Halaman Pasar dan panel Ruko memakai kategori (makanan, jasa, kerajinan),
   kartu produk berharga, dan tombol kunjungi.
 - Berkas: `pasar-markup.php`, `ruko-markup.php`, `includes/panel-bersayap.php`,
   `db.php`, `assets/style.css`.
@@ -373,7 +373,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 3.3 Interior tambahan
 
-- [ ] Minimal dua bangunan lain bisa dimasuki. Balai Desa sudah ada, jadi yang
+- [x] Minimal dua bangunan lain bisa dimasuki. Balai Desa sudah ada, jadi yang
   ditambah adalah Pasar dan satu ruko contoh. Tidak ada gedung "Kantin" di desa
   ini, jadi jangan memakai nama itu.
 - Berkas: `includes/interior-balai.php`, `peta3d/index.php`,
@@ -383,7 +383,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 3.4 Sapuan gaya visual kertas
 
-- [ ] Panel, tombol, dan kartu memakai satu bahasa visual yang lebih hangat:
+- [x] Panel, tombol, dan kartu memakai satu bahasa visual yang lebih hangat:
   latar kertas, garis navy, tombol kuning, ikon besar, sudut membulat.
 - Berkas: `assets/style.css`, `includes/panel-bersayap.php`,
   `includes/tab-bar.php`, `peta3d/index.php`.
@@ -394,7 +394,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 3.5 Variasi bentuk topi dan rambut
 
-- [ ] Tambah 3 sampai 5 bentuk topi atau rambut, bukan hanya warna, supaya
+- [x] Tambah 3 sampai 5 bentuk topi atau rambut, bukan hanya warna, supaya
   figur warga lebih mudah dibedakan.
 - Berkas: `config.php`, `db.php` (kolom bentuk bila perlu), `ktp-markup.php`,
   `peta3d/index.php`, `assets/style.css`.
@@ -451,7 +451,7 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 - **1.4:** lencana "Tetangga Baik" sengaja dibuang karena butuh data baru.
 - **2.7:** angka batas figur (kini 80) baru boleh dinaikkan setelah ada
   pengukuran bingkai di perangkat lemah.
-- **3.4:** belum ada nilai kontras yang diukur; wajib dicek sebelum dicentang.
+- **3.4:** kontras pasangan utama diukur 4,52:1 sampai 13,58:1; bukti di `docs_dev/gelombang3-verifikasi.md`.
 - **3.3:** nama gedung memakai Pasar dan ruko, bukan "Kantin".
 
 ## Ketergantungan antar item
@@ -488,6 +488,8 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 - Akun, email, dan nomor HP: identitas tetap nomor KTP dan kunci rahasia.
 
 ## Riwayat
+
+- 2026-11-09: Gelombang 3 selesai diverifikasi. Panen 15/15, katalog/interior 26/26, bentuk kepala 19/19; regresi lama lulus setelah fixture izin dan ekspektasi pencarian disesuaikan. Berkas, batas waktu klien, ruang contoh interior, kontras dan bukti tercatat di `docs_dev/gelombang3-verifikasi.md`.
 
 - 2026-11-08: dokumen dibuat setelah jelajah langsung situs pembanding.
 - 2026-11-08: ditinjau ulang. Ditambah temuan kebocoran kunci kartu,

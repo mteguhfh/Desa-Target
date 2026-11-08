@@ -1,0 +1,47 @@
+const { jalankan } = require('./bantuan-paritas');
+jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
+  const warga = await buatWarga();
+  const hasil = php('echo json_encode(klaim_ruko(db(),$argv[1],$argv[2],"Katalog Uji","Produk uji","https://example.com","Gang Kuliner",999));', warga.nomor, warga.kunci);
+  cek('ruko fixture tersedia', hasil.ok);
+  php('$p=db(); $s=$p->prepare("SELECT id FROM bangunan WHERE nomor=?"); $s->execute([$argv[1]]); simpan_katalog($p,"bangunan",(int)$s->fetchColumn(),"makanan",15000); echo "true";', warga.nomor);
+  for (const width of [360, 1440]) {
+    const page = await halaman(warga, true, width);
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.locator('#tabBar [data-panel="ruko"]').click();
+    const kartu = page.locator('#rukoPanelGrid > *').filter({ hasText: 'Katalog Uji' });
+    await kartu.waitFor();
+    cek('kategori terbaca ' + width, await kartu.getAttribute('data-kategori') === 'makanan');
+    cek('harga tampil ' + width, /15\.000/.test(await kartu.innerText()));
+    const filter = page.locator('#rukoPanelGrid').locator('xpath=preceding-sibling::select[1]');
+    await filter.selectOption('jasa');
+    cek('filter menyembunyikan kategori lain ' + width, await kartu.isHidden());
+    await filter.selectOption('makanan');
+    cek('filter menampilkan makanan ' + width, await kartu.isVisible());
+    await page.locator('.masuk-usaha').filter({ hasText: 'ruko' }).click();
+    cek('ruko terbuka tanpa navigasi ' + width, await page.locator('#interiorUsaha').isVisible() && new URL(page.url()).pathname === '/');
+    const awal = await page.evaluate(() => window.__usaha.posisi());
+    await page.keyboard.down('ArrowUp');
+    await page.waitForFunction(z => window.__usaha.posisi().z < z, awal.z);
+    await page.keyboard.up('ArrowUp');
+    cek('keyboard menggerakkan figur ' + width, (await page.evaluate(() => window.__usaha.posisi())).z < awal.z);
+    await page.keyboard.press('Escape');
+    cek('Escape keluar ' + width, await page.locator('#interiorUsaha').isHidden());
+    await page.evaluate(() => window.__tabBar.buka('pasar'));
+    await page.locator('.masuk-usaha').filter({ hasText: 'Pasar' }).click();
+    cek('Pasar terbuka ' + width, await page.locator('#usahaJudul').innerText() === 'Pasar Desa');
+    const sebelum = await page.evaluate(() => window.__usaha.posisi());
+    await page.locator('#usahaDpad .atas').hover();
+    await page.mouse.down();
+    await page.waitForFunction(z => window.__usaha.posisi().z < z, sebelum.z);
+    await page.mouse.up();
+    cek('D-pad menggerakkan figur ' + width, (await page.evaluate(() => window.__usaha.posisi())).z < sebelum.z);
+    await page.locator('#usahaKeluar').click();
+    cek('tombol keluar menutup Pasar ' + width, await page.locator('#interiorUsaha').isHidden());
+    cek('tanpa overflow ' + width, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    cek('tanpa galat JavaScript ' + width, errors.length === 0);
+    await page.close();
+  }
+  cek('harga kosong dan kategori asing aman', php('$p=db(); $s=$p->prepare("SELECT id FROM bangunan WHERE nomor=?"); $s->execute([$argv[1]]); $id=(int)$s->fetchColumn(); simpan_katalog($p,"bangunan",$id,"asing",""); $s=$p->prepare("SELECT kategori,harga FROM bangunan WHERE id=?");$s->execute([$id]);$r=$s->fetch();echo json_encode($r["kategori"]==="lainnya" && harga_usaha($r["harga"])==="Tanyakan harga");', warga.nomor));
+});

@@ -1487,9 +1487,6 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .panen-ladang::before { content: ''; position: absolute; left: 43%; width: 14%; height: 100%; background: #fff9e8; border-inline: 2px solid #172b46; }
 @media (prefers-reduced-motion: reduce) { .panen-ladang span { font-size: 18px; font-weight: 700; top: 20px; } }
 .panen-kabar { color: #166534; font-weight: 700; }
-.bentuk-peci .avatar-topi { height: 18px; border-radius: 3px 3px 0 0; }
-.bentuk-caping .avatar-topi { left: 10px; top: 1px; width: 72px; height: 30px; clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
-.bentuk-rambut .avatar-topi { background: #292524; border-radius: 55% 55% 20% 20%; }
 
 /* Kertas hangat menjaga panel terbaca di atas dunia hijau; kuning menandai aksi utama. */
 .panel-bersayap, .kartu-formulir, .ktp-kartu { background-color: #fff9e8; color: #172b46; border: 2px solid #172b46; }
@@ -2164,3 +2161,6 @@ body.sambutan-terbuka #panggung { pointer-events: none; }
 .avatar-mata { top: 31px; width: 3px; height: 3px; border-radius: 50%; background: #1e293b; }.avatar-mata-kiri { left: 40px; }.avatar-mata-kanan { left: 52px; }
 .ktp-avatar { width: 128px; height: 150px; margin: 0 auto; transform: scale(1.15); transform-origin: center bottom; }
 .aku-avatar-pratinjau { margin: .5rem auto 1rem; }
+.bentuk-peci .avatar-topi { height: 18px; border-radius: 3px 3px 0 0; }
+.bentuk-caping .avatar-topi { left: 10px; top: 1px; width: 72px; height: 30px; clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 0; }
+.bentuk-rambut .avatar-topi { background: #292524; border-radius: 55% 55% 20% 20%; }

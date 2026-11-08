@@ -19,7 +19,7 @@
 
 const { chromium } = require('playwright-core');
 
-const DASAR = process.env.DESA_TARGET_BASE_URL || 'http://localhost:8100';
+const DASAR = process.env.BASE_UJI || process.env.DESA_TARGET_BASE_URL || 'http://localhost:8100';
 const CHROME = process.env.CHROME_PATH
   || '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
 

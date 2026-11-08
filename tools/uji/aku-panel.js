@@ -18,6 +18,7 @@ jalankan(async ({ halaman, nomorUji, cek, BASE }) => {
   await page.locator('#akuKabar').waitFor({ state: 'visible' });
   cek('formulir bisa dicoba lagi', await page.locator('#akuFormKtp button[type="submit"]').isEnabled());
   await page.locator('#akuNama').fill('Warga Uji Panel Aku');
+  await page.locator('#akuFormKtp [name="izin_penerbitan"]').check();
   jawaban = page.waitForResponse(r => r.url().endsWith('/ktp-json.php'));
   await page.locator('#akuFormKtp button[type="submit"]').click();
   const warga = await (await jawaban).json();

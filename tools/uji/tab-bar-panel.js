@@ -6,7 +6,7 @@ const { chromium } = require('playwright-core');
 // boleh menimpa tab bar maupun sakelar 3D/2D, dan ketukan harus benar-benar
 // sampai ke tombolnya (bukan tertutup lapisan lain).
 
-const BASE = 'http://localhost:8100';
+const BASE = process.env.BASE_UJI || 'http://localhost:8100';
 const CHROME = '/home/mteguhfh/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome';
 const UKURAN = [
   { width: 1440, height: 900, nama: 'desktop besar' },

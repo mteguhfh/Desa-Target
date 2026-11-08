@@ -7,7 +7,10 @@ Mode jalan keliling desa (avatar sendiri terlihat),3d map,must,yes,selesai,aturM
 Label nama bangunan melayang di dunia 3D,3d map,must,yes,selesai,labelNama() dipanggil baris 856,
 Label nama warga melayang di dekat avatarnya,3d map,should,yes,selesai,labelNama(w.nama) baris 1103,
 Tap bangunan membuka detail bangunan,3d map,must,yes,selesai,popover + bisaDiklik,Data dari data-desa.php (ADR-0004)
-Masuk ke dalam bangunan (interior),3d map,should,yes,selesai,peta3d/interior-balai.php + chipMasuk,Interior Balai Desa tampil di atas kanvas 3D tanpa pindah halaman
+Masuk ke dalam bangunan (interior),3d map,should,yes,selesai,peta3d/interior-usaha.php + tools/uji/paritas-katalog.js,Balai Desa serta ruang contoh Pasar dan ruko tanpa pindah halaman
+Panen harian,permainan,should,no,selesai,main.php + tools/uji/paritas-mini-game.js,Hadiah 5 poin untuk skor minimal 60; satu hasil per hari; waktu klien dibatasi sesi
+Kategori dan harga usaha,katalog,should,no,selesai,includes/katalog.php + tools/uji/paritas-katalog.js,Filter kategori dan harga opsional; fallback Lainnya dan Tanyakan harga
+Bentuk kepala warga,identitas,should,no,selesai,includes/pilih-bentuk.php + tools/uji/paritas-bentuk.js,Pet peci caping rambut; fallback pet
 Kontrol zoom tombol plus dan minus,shell,should,yes,selesai,tombolZoomIn/Out baris 1385,
 Bilah atas: nama desa statistik dan suasana,shell,must,yes,selesai,chipWaktu + chipSuasana di peta3d/index.php,Suasana ramai/sepi dihitung dari warga yang berdiri dan jumlah bangunan
 Tab bar bawah: Bangunan/Warga/Gang/Aku/Ruko,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; kelimanya membuka panel di dalam dunia; pil Ruko terpisah sudah dihapus (ADR-0006)
