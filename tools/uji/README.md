@@ -33,6 +33,7 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | --- | --- |
 | `peta-3d-sakelar.js` | 3D jadi default, sakelar pindah mode, pilihan diingat, jalan di ponsel |
 | `tata-letak-sakelar.js` | sakelar tidak menimpa tombol atau chip di 3 ukuran layar |
+| `bilah-atas.js` | chip bilah atas peta 3D (merek, Chat, Poin, Siang, suasana) sama tinggi dan sejajar di 5 ukuran layar, tidak keluar layar, maksimal dua baris |
 | `adr0004-satu-sumber-data.js` | koordinat 3D berasal dari `peta-posisi.php`, bukan salinan; cadangan tetap jalan bila endpoint mati |
 | `tab-bar-panel.js` | tab bar lima tab dan panel bersayap di 4 ukuran layar × peta 3D/2D: panel tidak menimpa tab atau sakelar, tab aktif benar-benar bisa diketuk, dunia peta tetap terlihat |
 | `tahap2-cari-sorot-interior.js` | pencarian warga (termasuk uji injeksi SQL dan wildcard), sorot bangunan dari daftar di 3D dan 2D, interior Balai Desa tanpa pindah halaman |

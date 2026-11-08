@@ -117,13 +117,14 @@ try {
     /* --- Lencana merek dan navigasi melayang, sama seperti peta 2D --- */
     .bar-atas {
         position: fixed; top: 12px; left: 12px; right: 12px;
-        display: flex; align-items: flex-start; gap: 8px;
+        display: flex; align-items: center; gap: 8px;
         pointer-events: none; z-index: 20;
     }
-    .bar-atas > * { pointer-events: auto; }
+    .bar-atas > * { pointer-events: auto; flex-shrink: 0; }
     .lencana-merek {
         display: inline-flex; align-items: center; gap: 8px;
-        background: #ffffff; border-radius: 999px; padding: 9px 16px 9px 12px;
+        height: 38px;
+        background: #ffffff; border-radius: 999px; padding: 0 16px 0 12px;
         font-weight: 800; font-size: 17px; color: #1e3a8a;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
         white-space: nowrap;
@@ -135,8 +136,9 @@ try {
     }
     .pil-nav {
         display: inline-flex; align-items: center;
+        height: 38px;
         background: #ffffff; border: none; cursor: pointer; text-decoration: none;
-        border-radius: 999px; padding: 10px 16px;
+        border-radius: 999px; padding: 0 16px;
         font: 600 14px system-ui, sans-serif; color: #1f2937;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
         white-space: nowrap;
@@ -144,24 +146,44 @@ try {
     .pil-nav:hover { background: #eff6ff; }
     .chip-petunjuk {
         margin-left: auto;
+        display: inline-flex; align-items: center;
+        min-height: 38px;
         background: rgba(255,255,255,0.94); border-radius: 999px;
-        padding: 10px 16px; font-size: 13.5px; font-weight: 600; color: #374151;
+        padding: 6px 16px; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: #374151;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
         max-width: 430px;
     }
     @media (max-width: 900px) { .chip-petunjuk { display: none; } }
+    /* Di layar sempit chip petunjuk hilang, jadi kelompok kanan menempel ke
+       ujung kanan. Bila masih tidak muat, bilah atas turun baris alih-alih
+       meluber keluar layar. */
+    .bar-atas { flex-wrap: wrap; }
+    @media (max-width: 900px) {
+        .bar-atas > .pil-nav:first-of-type { margin-left: auto; }
+    }
+    /* Antara 901-1150px petunjuk masih tampil, tetapi satu baris tidak muat:
+       ia pindah ke baris kedua dan mengisi sisa lebar supaya tidak ada baris
+       ketiga. */
+    @media (min-width: 901px) and (max-width: 1150px) {
+        .chip-petunjuk { order: 1; flex: 1 1 100%; margin-left: 0; max-width: none; }
+        .chip-petunjuk ~ * { order: 0; }
+    }
     .chip-waktu {
         display: inline-flex; align-items: center; white-space: nowrap;
+        height: 38px;
         background: rgba(255,255,255,0.94); border-radius: 999px;
-        padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: #374151;
+        padding: 0 14px; font-size: 13.5px; font-weight: 700; color: #374151;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
     }
     .chip-waktu.malam { background: rgba(30,41,59,0.92); color: #e2e8f0; }
     /* Suasana desa: ramai atau sepi, dihitung dari warga yang berdiri. */
     .chip-suasana {
         display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        height: 38px;
+        min-width: 0; overflow: hidden; text-overflow: ellipsis;
+        flex-shrink: 1;
         background: rgba(255,255,255,0.94); border-radius: 999px;
-        padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: #374151;
+        padding: 0 14px; font-size: 13.5px; font-weight: 700; color: #374151;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
     }
     .chip-suasana::before {
@@ -183,14 +205,19 @@ try {
     /* Saldo poin warga aktif. Hanya tampil bila peramban sudah punya kartu. */
     .chip-poin {
         display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+        height: 38px;
         background: #fef3c7; border: none; cursor: pointer;
-        border-radius: 999px; padding: 10px 14px;
+        border-radius: 999px; padding: 0 14px;
         font: 700 13.5px system-ui, sans-serif; color: #92400e;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
     }
     .chip-poin:hover { background: #fde68a; }
     .chip-poin[hidden] { display: none; }
     @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
+    @media (max-width: 420px) {
+        .lencana-merek { height: 34px; font-size: 15px; }
+        .pil-nav, .chip-waktu, .chip-suasana, .chip-poin { height: 34px; font-size: 12.5px; padding: 0 12px; }
+    }
 
     /* --- Kartu pengantar --- */
     .kartu-intro {
