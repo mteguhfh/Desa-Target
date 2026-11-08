@@ -120,6 +120,14 @@ foreach ($panelPapanGang as $barisPapan) {
         </div>
 
         <div class="panel-isi" data-isi="bangunan" hidden>
+            <div class="daftar-tujuan">
+                <p class="panel-subjudul">Pergi ke tujuan</p>
+                <div class="tujuan-grid">
+                    <button type="button" class="tujuan-tombol" data-antar="balai">🏛️ <span>Balai Desa</span></button>
+                    <button type="button" class="tujuan-tombol" data-antar="pasar">🛍️ <span>Pasar Desa</span></button>
+                    <button type="button" class="tujuan-tombol" data-antar="gerbang">🚪 <span>Gerbang Desa</span></button>
+                </div>
+            </div>
             <?php if ($panelBangunan === []): ?>
                 <p class="panel-deskripsi">Belum ada bangunan berdiri. Usulkan usaha impianmu lewat komentar Instagram.</p>
             <?php else: ?>
@@ -150,6 +158,9 @@ foreach ($panelPapanGang as $barisPapan) {
                                     <span class="daftar-bangunan-gang"><?= e($b['gang']) ?></span>
                                 <?php endif; ?>
                             </button>
+                            <?php if ($kavling !== null): ?>
+                                <button type="button" class="tujuan-antar-kecil" data-antar-kavling="<?= (int) $kavling ?>">Antar</button>
+                            <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>

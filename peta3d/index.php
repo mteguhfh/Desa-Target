@@ -2296,6 +2296,31 @@ function sorotKavling(kavling) {
     if (window.__desa) window.__desa.kavlingDisorot = kavling;
     return true;
 }
+function antarTujuan(kode) {
+    const tujuan = {
+        balai: { x: FOKUS.x, y: FOKUS.y + 42, label: 'Balai Desa' },
+        pasar: { x: 1510, y: 850, label: 'Pasar Desa' },
+        gerbang: { x: 1000, y: 1260, label: 'Gerbang Desa' },
+    }[kode];
+    if (!tujuan) return;
+    const sasaran = KE3(tujuan.x, tujuan.y);
+    const arah = camera.position.clone().sub(controls.target).normalize();
+    const jarak = Math.max(420, controls.getDistance());
+    sorotan = {
+        mulai: performance.now(), durasi: 850,
+        posAwal: camera.position.clone(),
+        posTujuan: sasaran.clone().add(arah.multiplyScalar(jarak)),
+        targetAwal: controls.target.clone(),
+        sasaran,
+    };
+    tutupPopover();
+}
+document.addEventListener('click', function (e) {
+    const tombol = e.target.closest ? e.target.closest('[data-antar]') : null;
+    if (tombol) antarTujuan(tombol.getAttribute('data-antar'));
+    const kavling = e.target.closest ? e.target.closest('[data-antar-kavling]') : null;
+    if (kavling) sorotKavling(Number(kavling.getAttribute('data-antar-kavling')));
+});
 
 document.addEventListener('click', (e) => {
     const tombol = e.target.closest ? e.target.closest('.daftar-bangunan-tombol') : null;
@@ -2304,7 +2329,7 @@ document.addEventListener('click', (e) => {
     if (kavling === '') return; // bangunan di luar tabel kavling
     sorotKavling(Number(kavling));
 });
-if (window.__desa) window.__desa.sorotKavling = sorotKavling;
+if (window.__desa) { window.__desa.sorotKavling = sorotKavling; window.__desa.antarTujuan = antarTujuan; }
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

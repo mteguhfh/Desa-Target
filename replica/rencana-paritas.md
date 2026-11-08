@@ -263,7 +263,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.1a Pergi ke tujuan: Antar
 
-- [ ] Panel Kampus berisi daftar tujuan: Balai Desa, setiap ruko, Pasar,
+- [x] Panel Kampus berisi daftar tujuan: Balai Desa, setiap ruko, Pasar,
   dan gerbang. Aksi Antar menerbangkan kamera langsung ke tujuan.
 - Berkas: `includes/panel-bersayap.php`, berkas baru
   `includes/pergi-ke-skrip.php`, `peta3d/index.php`, `db.php`,
