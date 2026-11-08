@@ -4,6 +4,18 @@
 // dengan halaman Belajar penuh (belajar.php?format=json, ADR-0004).
 // Dibuka dari popover bangunan Pusat Pembelajaran; isinya dirender oleh
 // skrip kecil di bawah ini, bukan mesin Three.js ruangan Balai Desa.
+//
+// Partial ini juga dibuka langsung sebagai alamat sendiri, jadi e() dan
+// $awalan dijaga di sini. $awalan berasal dari peta3d/index.php saat
+// disertakan; bila berdiri sendiri, berkas ini ada di dalam folder peta3d/,
+// sehingga '../' menunjuk ke akar situs untuk belajar.php.
+if (!function_exists('e')) {
+    function e(?string $teks): string
+    {
+        return htmlspecialchars($teks ?? '', ENT_QUOTES, 'UTF-8');
+    }
+}
+$awalan = $awalan ?? '../';
 ?>
 <div class="interior-3d interior-belajar" id="interiorBelajar3d" role="dialog" aria-modal="true" aria-labelledby="judulInteriorBelajar" hidden>
     <div class="interior-belajar-kepala">
