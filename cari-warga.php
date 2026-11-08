@@ -19,15 +19,12 @@ $kunci = (string) ($_GET['cari'] ?? '');
 $kunci = function_exists('mb_substr') ? mb_substr($kunci, 0, 50) : substr($kunci, 0, 50);
 $kunci = trim(preg_replace('/[\x00-\x1F\x7F]/u', '', $kunci) ?? '');
 
-if ($kunci === '') {
-    echo json_encode(['cari' => '', 'jumlah' => 0, 'hasil' => []], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 try {
     require_once __DIR__ . '/db.php';
     $pdo = db();
-    $baris = cari_warga_berdasarkan($pdo, $kunci, 20);
+    $baris = $kunci === ''
+        ? $pdo->query('SELECT * FROM warga ORDER BY id DESC LIMIT 8')->fetchAll(PDO::FETCH_ASSOC)
+        : cari_warga_berdasarkan($pdo, $kunci, 20);
 
     $hasil = [];
     foreach ($baris as $w) {

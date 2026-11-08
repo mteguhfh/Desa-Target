@@ -47,7 +47,7 @@ foreach ($panelPapanGang as $barisPapan) {
     <div class="panel-bersayap-isi">
 
         <div class="panel-isi" data-isi="warga" hidden>
-            <p class="panel-deskripsi">Cari warga berdasarkan nama atau nomor kartu. Contoh: "sari" atau "DT-0007".</p>
+            <p class="panel-deskripsi">Cari warga berdasarkan nama atau nomor kartu. Pilih warga untuk menerbangkan kamera ke titik nongkrongnya.</p>
             <form class="cari-warga" id="cariWargaForm" method="get" action="<?= e($tabAwalan) ?>warga.php"
                   data-endpoint="<?= e($tabAwalan) ?>cari-warga.php">
                 <label class="sr-saja" for="cariWargaKunci">Nama atau nomor warga</label>
@@ -149,6 +149,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 <ul class="daftar-bangunan">
                     <?php foreach (array_reverse($panelBangunan) as $b): ?>
                         <?php $kavling = $panelKavling[$b['id']] ?? null; ?>
+                        <?php $kapasitas = stripos((string) ($b['jenis'] ?? ''), 'ruko') !== false ? '1 kios' : (stripos((string) $b['nama'], 'pasar') !== false ? '12 tenda' : 'muat 40 warga'); ?>
                         <li class="daftar-bangunan-baris">
                             <button type="button" class="daftar-bangunan-tombol"
                                     data-bangunan="<?= (int) $b['id'] ?>"
@@ -157,6 +158,7 @@ foreach ($panelPapanGang as $barisPapan) {
                                 <?php if (!empty($b['gang'])): ?>
                                     <span class="daftar-bangunan-gang"><?= e($b['gang']) ?></span>
                                 <?php endif; ?>
+                                <span class="daftar-bangunan-kapasitas"><?= e($kapasitas) ?></span>
                             </button>
                             <?php if ($kavling !== null): ?>
                                 <span class="tujuan-aksi"><button type="button" class="tujuan-antar-kecil" data-antar-kavling="<?= (int) $kavling ?>">Antar</button><button type="button" class="tujuan-antar-kecil" data-ikuti-kavling="<?= (int) $kavling ?>">Ikuti</button></span>

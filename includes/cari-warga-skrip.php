@@ -34,16 +34,16 @@
         var html = '';
         for (var i = 0; i < daftar.length; i++) {
             var w = daftar[i];
-            html += '<a class="cari-warga-baris" href="ktp.php?kartu=' + encodeURIComponent(w.nomor.replace(/^DT-0*/, '')) + '">' +
+            html += '<button type="button" class="cari-warga-baris" data-warga-nomor="' + bersihkan(w.nomor) + '" data-warga-nama="' + bersihkan(w.nama) + '">' +
                 '<span class="cari-warga-nama">' + bersihkan(w.nama) + '</span>' +
                 '<span class="cari-warga-meta">' + bersihkan(w.nomor) + ' &middot; ' + bersihkan(w.gang) + '</span>' +
-                '</a>';
+                '</button>';
         }
         hasil.innerHTML = html;
     }
 
     function cari(kunci) {
-        if (kunci === '') { hasil.innerHTML = ''; return; }
+        if (kunci === '' && arguments.length === 0) { kunci = ''; }
         var nomor = ++permintaanTerakhir;
         hasil.innerHTML = '<p class="cari-warga-memuat">Mencari…</p>';
         // Endpoint relatif terhadap HALAMAN, bukan folder: halaman peta 3D
@@ -71,6 +71,14 @@
         pewaktu = window.setTimeout(function () { cari(kunci); }, 250);
     });
 
+    function wargaTerbaru() { cari(''); }
+    hasil.addEventListener('click', function (e) {
+        var baris = e.target.closest ? e.target.closest('[data-warga-nomor]') : null;
+        if (!baris || !window.__desa || !window.__desa.cariWarga) return;
+        e.preventDefault();
+        window.__desa.cariWarga(baris.getAttribute('data-warga-nomor'), baris.getAttribute('data-warga-nama'));
+    });
+
     form.addEventListener('submit', function (e) {
         // Tetap di halaman: hasil muncul di panel, bukan halaman baru.
         e.preventDefault();
@@ -95,6 +103,7 @@
         cari(kunciUrl.trim());
     }
 
-    window.__cariWarga = { cari: cari, hasil: hasil, isian: isian };
+    window.__cariWarga = { cari: cari, hasil: hasil, isian: isian, wargaTerbaru: wargaTerbaru };
+    wargaTerbaru();
 })();
 </script>

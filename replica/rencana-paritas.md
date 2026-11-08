@@ -32,10 +32,10 @@ Aturan status:
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
 | 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
-| 1 | Identitas dan alasan balik lagi | 8 | 4 |
-| 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
+| 1 | Identitas dan alasan balik lagi | 8 | 8 |
+| 2 | Navigasi dan dunia yang terasa hidup | 8 | 8 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **10** |
+| **Total** | | **27** | **18** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -285,7 +285,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.2 Lihat dari atas
 
-- [ ] Tombol "Lihat dari atas" mengubah kamera ke tampilan seluruh desa, lalu
+- [x] Tombol "Lihat dari atas" mengubah kamera ke tampilan seluruh desa, lalu
   tombol yang sama kembali ke tampilan awal.
 - Berkas: `peta3d/index.php`, `assets/style.css`.
 - Ukuran selesai: satu ketukan, kamera bergerak halus, tidak ada bangunan yang
@@ -293,7 +293,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.3 Titik nongkrong tiap warga
 
-- [ ] Setiap warga punya satu titik tetap di desa. Titiknya dipakai untuk
+- [x] Setiap warga punya satu titik tetap di desa. Titiknya dipakai untuk
   menaruh avatar saat warga itu dicari, bukan hanya saat sedang dilihat.
 - Berkas: `db.php`, `peta3d/data-desa.php`, `includes/cari-warga-skrip.php`,
   `peta3d/index.php`.
@@ -305,9 +305,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.4 Cari teman langsung terbang
 
-- [ ] Mengetik nama warga lalu memilih hasilnya menerbangkan kamera ke titik
+- [x] Mengetik nama warga lalu memilih hasilnya menerbangkan kamera ke titik
   nongkrong warga itu, dengan cincin penanda dan kartu nama.
-- [ ] Panel Warga juga menampilkan "warga terbaru" sebagai daftar awal, supaya
+- [x] Panel Warga juga menampilkan "warga terbaru" sebagai daftar awal, supaya
   panel tidak kosong sebelum ada kata kunci.
 - Berkas: `includes/cari-warga-skrip.php`, `includes/panel-bersayap.php`,
   `peta3d/index.php`, `assets/style.css`.
@@ -317,7 +317,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.5 Daftar gedung berkapasitas
 
-- [ ] Daftar bangunan menampilkan keterangan jumlah, misalnya "muat 40 warga"
+- [x] Daftar bangunan menampilkan keterangan jumlah, misalnya "muat 40 warga"
   untuk balai, "1 kios" untuk ruko, "12 tenda" untuk pasar.
 - Berkas: `db.php`, `includes/panel-bersayap.php`, `assets/style.css`.
 - Ukuran selesai: angka berasal dari data, bukan teks tetap; ruko baru langsung
@@ -325,7 +325,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.6 Tombol aksi kontekstual
 
-- [ ] Saat avatar dekat bangunan, muncul satu tombol aksi yang jelas, misalnya
+- [x] Saat avatar dekat bangunan, muncul satu tombol aksi yang jelas, misalnya
   "Buka ruko" atau "Masuk balai", dan bisa dipicu dengan tombol E.
 - Berkas: `peta3d/index.php`, `assets/style.css`.
 - Ukuran selesai: tombol hanya muncul saat dekat; tidak bentrok dengan D-pad
@@ -333,9 +333,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.7 Dunia lebih padat
 
-- [ ] Tambah properti yang membuat desa terasa dihuni: bangku, lampu taman,
+- [x] Tambah properti yang membuat desa terasa dihuni: bangku, lampu taman,
   gapura, bendera, petak bunga, dan papan nama lorong.
-- [ ] Naikkan batas figur yang digambar bila perangkat kuat, tanpa membuat
+- [x] Naikkan batas figur yang digambar bila perangkat kuat, tanpa membuat
   perangkat lemah tersendat.
 - Berkas: `peta3d/index.php`, `peta3d/bangunan3d.js`, `assets/style.css`.
 - Keputusan: jumlah figur tetap dibatasi, tetapi properti statis tidak
@@ -496,6 +496,10 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
   0.2 selesai setelah seluruh uji lama dijalankan ulang, dan uji `ruko.js`
   diperbaiki agar tidak gagal karena data contoh memenuhi kavling.
 - 2026-11-08: kebocoran kunci kartu ditutup dan uji `ktp-kunci.js` ditambah.
+- 2026-11-08: Gelombang 2 selesai: tampilan atas, titik nongkrong tetap,
+  pencarian warga terbang, kapasitas bangunan, aksi dekat bangunan, serta
+  dekorasi dan batas figur adaptif ditambahkan. Uji browser tertunda karena
+  `playwright-core` belum tersedia di lingkungan kerja.
   Semua uji lama dan baru lulus. Catatan fitur (`replica/features.csv`,
   `replica/rencana-kerja.md`, `tools/uji/README.md`) diperbarui untuk beranda
   peta 3D, pop-up sambutan, panel Aku, panel Ruko, dan gambar usaha.

@@ -619,6 +619,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
     <button type="button" class="bulat" id="tombolZoomIn" aria-label="Zoom masuk">+</button>
     <button type="button" class="bulat" id="tombolZoomOut" aria-label="Zoom keluar">&minus;</button>
     <button type="button" class="bulat" id="tombolReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
+    <button type="button" class="bulat" id="tombolAtas" aria-label="Lihat dari atas" title="Lihat dari atas">⬆</button>
     <button type="button" class="bulat" id="tombolLayarPenuh" aria-label="Layar penuh">&#9974;</button>
     <?php // Ruko warga (Fitur 3) dan Tentang (ADR-0005). Ruko kini membuka
           // panel Ruko di dalam peta (ADR-0006), sama seperti tab bar, bukan
@@ -921,6 +922,18 @@ controls.minDistance = 190;
 controls.maxDistance = 3600;
 controls.maxPolarAngle = 1.35;
 controls.update();
+const POSISI_ATAS = new THREE.Vector3(0, 2450, 90);
+let modeAtas = false;
+function lihatDariAtas() {
+    if (sorotan) sorotan = null;
+    modeAtas = !modeAtas;
+    const pos = modeAtas ? POSISI_ATAS : KAMERA_AWAL;
+    const target = modeAtas ? KE3(1000, 680) : TARGET_AWAL;
+    sorotan = { mulai: performance.now(), durasi: 900, posAwal: camera.position.clone(), posTujuan: pos.clone(), targetAwal: controls.target.clone(), sasaran: target.clone(), atas: modeAtas };
+    const tombol = document.getElementById('tombolAtas');
+    if (tombol) { tombol.classList.toggle('aktif', modeAtas); tombol.title = modeAtas ? 'Kembali ke tampilan awal' : 'Lihat dari atas'; }
+}
+document.getElementById('tombolAtas')?.addEventListener('click', lihatDariAtas);
 
 const cahayaHemi = new THREE.HemisphereLight(0xeaf6ff, 0x86c06c, 0.95);
 scene.add(cahayaHemi);
@@ -1465,6 +1478,16 @@ function jauhDariSemua(hasil, jarak) {
     bahanKepalaLampu = matStandar(0xfef08a, { emissive: 0xfacc15, emissiveIntensity: 0.7 });
     buatInstansi(new THREE.SphereGeometry(8.5, 8, 6), bahanKepalaLampu, titikLampu,
         (p, d) => { d.position.set(p.x, 70, p.z); d.rotation.set(0, 0, 0); d.scale.setScalar(1); });
+    // Bangku dan tiang kecil memberi titik singgah visual tanpa objek per bingkai.
+    const dekor = new THREE.Group();
+    [[360,760],[780,850],[1160,760],[1540,820],[620,1120],[1320,1080]].forEach(([x,y]) => {
+        const c = KE3(x, y);
+        const bangku = new THREE.Mesh(new THREE.BoxGeometry(48, 8, 14), matStandar(0x92400e));
+        bangku.position.set(c.x, 22, c.z); dekor.add(bangku);
+        const tiang = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 48, 6), matStandar(0x475569));
+        tiang.position.set(c.x, 52, c.z); dekor.add(tiang);
+    });
+    dunia.add(dekor);
     // Pagar kayu di tepi beberapa zona (garis dari peta 2D, koordinat lokal).
     const bahanPagar = matStandar(0xb45309);
     const garisPagar = [
@@ -1533,8 +1556,26 @@ function buatFigur(warnaBadan, { topi = null, kulit = 0xfcd9b8 } = {}) {
     return grup;
 }
 const agenWarga = [];
+const titikWarga = new Map();
+const titikTerpakai = new Set();
+function titikNongkrong(nomor, indeks) {
+    let hash = 0; for (const c of String(nomor)) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+    const titik = [];
+    for (let y = 380; y <= 1100; y += 120) for (let x = 180; x <= 1820; x += 150) titik.push([x, y]);
+    let pilihan = (hash + indeks * 17) % titik.length;
+    for (let langkah = 0; langkah < titik.length; langkah++) {
+        const calon = titik[pilihan];
+        const kunci = calon[0] + ':' + calon[1];
+        if (!titikTerpakai.has(kunci) && !tabrakanJalan(calon[0], calon[1])) {
+            titikTerpakai.add(kunci);
+            return calon;
+        }
+        pilihan = (pilihan + 1) % titik.length;
+    }
+    return titik[(hash + indeks) % titik.length];
+}
 // Warga yang dirender dibatasi 80 figur, meniru batas peta 2D.
-const BATAS_WARGA = 80;
+const BATAS_WARGA = (navigator.hardwareConcurrency || 4) >= 8 && window.innerWidth >= 900 ? 120 : 80;
 function bangunWarga(daftar) {
     for (const a of agenWarga) {
         dunia.remove(a.figur);
@@ -1555,7 +1596,8 @@ function bangunWarga(daftar) {
         const gridX = (t2[0] + 27 + (idx % 5) * 36) * SKALA;
         const gridY = (t2[1] + 82 + Math.floor(idx / 5) * 34) * SKALA;
         const diDalam = gridX >= rect.x && gridX <= rect.x + rect.w && gridY >= rect.y && gridY <= rect.y + rect.h;
-        const rumah = diDalam ? { x: gridX, y: gridY } : { x: rect.x + rect.w * (0.25 + 0.5 * acak()), y: rect.y + rect.h * (0.25 + 0.5 * acak()) };
+        const rumah = titikNongkrong(w.nomor, i);
+        titikWarga.set(w.nomor, rumah);
         // Warna pilihan warga sendiri (dari KTP). Bila data belum membawa
         // warna -- mis. server lama -- pakai warna gang seperti dulu.
         const warnaFigur = w.baju ? new THREE.Color(w.baju).getHex() : z.warna;
@@ -1571,7 +1613,7 @@ function bangunWarga(daftar) {
         // pengunjung mendekat. Aturannya di perbaruiLabelWarga().
         label.userData.labelWarga = true;
         figur.add(label);
-        figur.userData.popover = { kicker: 'WARGA DESA', judul: w.nama, lencana: { teks: w.gang, warna: z.css }, kutipan: null, isi: 'Nomor warga ' + w.nomor + '. Warga ' + w.gang + ' yang sedang keliling lingkungan gang-nya.' };
+        figur.userData.popover = { kicker: 'WARGA DESA', judul: w.nama, nomor: w.nomor, lencana: { teks: w.gang, warna: z.css }, kutipan: null, isi: 'Nomor warga ' + w.nomor + '. Warga ' + w.gang + ' yang sedang keliling desa.' };
         dunia.add(figur);
         bisaDiklik.push(figur);
         agenWarga.push({
@@ -1794,6 +1836,9 @@ let tujuanJalan = null;
 const tombolJalan = document.getElementById('tombolJalan');
 const dpad = document.getElementById('dpad');
 const chipMasuk = document.getElementById('chipMasuk');
+const chipAksi = document.createElement('button');
+chipAksi.type = 'button'; chipAksi.id = 'chipAksi'; chipAksi.className = 'chip-masuk'; chipAksi.hidden = true; document.body.appendChild(chipAksi);
+let objekDekat = null;
 const chipJalan = document.getElementById('chipJalan');
 const tombolDitekan = {};
 const kunciDitekan = {};
@@ -1953,6 +1998,19 @@ function perbaruiKamu(dt) {
         if (Math.hypot(dx, dy) < 18) { tujuanJalan = null; chipJalan.textContent = 'Sudah sampai tujuan.'; }
         else { const sudut = Math.atan2(dx, dy); maju = 1; samping = 0; sudutJalan.kunci = '1:0'; sudutJalan.sudut = sudut; sudutJalan.lepas = false; }
     }
+    let dekat = null, jarakDekat = 9999;
+    for (const bangunan of klikBangunan) {
+        const dx = bangunan.position.x - kamu.figur.position.x, dz = bangunan.position.z - kamu.figur.position.z;
+        const jarak = Math.hypot(dx, dz);
+        if (jarak < jarakDekat) { jarakDekat = jarak; dekat = bangunan; }
+    }
+    const tampilAksi = dekat && jarakDekat < 180;
+    chipAksi.hidden = !tampilAksi;
+    if (tampilAksi && dekat !== objekDekat) {
+        objekDekat = dekat;
+        chipAksi.textContent = dekat.userData.popover?.jenis === 'ruko' ? 'Buka ruko' : 'Masuk ' + (dekat.userData.popover?.judul || 'bangunan');
+    }
+    if (!tampilAksi) objekDekat = null;
     if (maju || samping) {
         // Koordinat dunia: x = kamu.x, z = kamu.y.
         const sudut = sudutJalan(maju, samping);
@@ -2202,6 +2260,8 @@ document.getElementById('tombolReset').addEventListener('click', () => {
     controls.update();
     tutupPopover();
 });
+chipAksi.addEventListener('click', () => { if (objekDekat?.userData.popover) bukaPopover(objekDekat.userData.popover, objekDekat, innerWidth / 2 - 150, innerHeight * .55); });
+document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'e' && !chipAksi.hidden) chipAksi.click(); });
 document.getElementById('tombolLayarPenuh').addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen().catch(() => {});
@@ -2303,6 +2363,21 @@ function sorotKavling(kavling) {
     if (window.__desa) window.__desa.kavlingDisorot = kavling;
     return true;
 }
+function cariWarga(nomor, nama) {
+    const titik = titikWarga.get(nomor);
+    if (!titik) return false;
+    if (modeJalan) aturModeJalan(false);
+    const pusat = KE3(titik[0], titik[1]);
+    const cincin = buatCincinSorot();
+    cincin.position.set(pusat.x, 0.6, pusat.z); cincin.visible = true; cincin.material.opacity = 0.9;
+    const sasaran = new THREE.Vector3(pusat.x, 55, pusat.z);
+    const arah = camera.position.clone().sub(controls.target).normalize();
+    sorotan = { mulai: performance.now(), durasi: 800, posAwal: camera.position.clone(), posTujuan: sasaran.clone().add(arah.multiplyScalar(460)), targetAwal: controls.target.clone(), sasaran };
+    const agen = agenWarga.find(a => a.figur.userData.popover?.nomor === nomor);
+    if (agen) lompat(agen.figur);
+    bukaPopover({ kicker: 'WARGA DESA', judul: nama || nomor, lencana: null, kutipan: null, isi: 'Titik nongkrong warga ' + nomor + '.' }, null, innerWidth / 2 - 150, innerHeight * .55);
+    return true;
+}
 function antarTujuan(kode) {
     const tujuan = {
         balai: { x: FOKUS.x, y: FOKUS.y + 42, label: 'Balai Desa' },
@@ -2357,7 +2432,7 @@ document.addEventListener('click', (e) => {
     if (kavling === '') return; // bangunan di luar tabel kavling
     sorotKavling(Number(kavling));
 });
-if (window.__desa) { window.__desa.sorotKavling = sorotKavling; window.__desa.antarTujuan = antarTujuan; }
+if (window.__desa) { window.__desa.sorotKavling = sorotKavling; window.__desa.antarTujuan = antarTujuan; window.__desa.cariWarga = cariWarga; window.__desa.modeAtas = () => modeAtas; }
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
