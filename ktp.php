@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $nama = trim((string) ($_POST['nama'] ?? ''));
     $gang = trim((string) ($_POST['gang'] ?? ''));
+    $izin = ($_POST['izin_penerbitan'] ?? '') === '1';
 
     // Warna tampilan. Bila tidak dikirim atau tidak dikenal, pakai bawaan:
     // warna bukan hal wajib, jadi tidak boleh menggagalkan pendaftaran.
@@ -43,13 +44,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (panjang_teks($nama) < 3 || panjang_teks($nama) > 50) {
-        $galat[] = 'Nama lengkap diisi 3 sampai 50 karakter ya.';
+        $galat[] = 'Nama panggilan diisi 3 sampai 50 karakter ya.';
     } elseif (!preg_match("/^[\p{L} .'-]+$/u", $nama)) {
         $galat[] = 'Nama hanya boleh berisi huruf, spasi, titik, apostrof, dan tanda hubung.';
     }
     if (!in_array($gang, GANG_WARGA, true)) {
         $galat[] = 'Pilih dulu gang profesimu.';
     }
+    if (!$izin) $galat[] = 'Setujui izin penerbitan kartu dulu ya.';
 
     if ($galat === []) {
         $stmt = $pdo->prepare(

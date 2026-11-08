@@ -39,6 +39,7 @@ if ($tokenSesi === '' || !hash_equals($tokenSesi, $tokenForm)) {
 
 $nama = trim((string) ($_POST['nama'] ?? ''));
 $gang = trim((string) ($_POST['gang'] ?? ''));
+$izin = ($_POST['izin_penerbitan'] ?? '') === '1';
 
 $galat = [];
 if (function_exists('mb_strlen')) {
@@ -47,13 +48,14 @@ if (function_exists('mb_strlen')) {
     $panjang = (int) preg_match_all('/./us', $nama);
 }
 if ($panjang < 3 || $panjang > 50) {
-    $galat[] = 'Nama lengkap diisi 3 sampai 50 karakter ya.';
+    $galat[] = 'Nama panggilan diisi 3 sampai 50 karakter ya.';
 } elseif (!preg_match("/^[\p{L} .'-]+$/u", $nama)) {
     $galat[] = 'Nama hanya boleh berisi huruf, spasi, titik, apostrof, dan tanda hubung.';
 }
 if (!in_array($gang, GANG_WARGA, true)) {
     $galat[] = 'Pilih dulu gang profesimu.';
 }
+if (!$izin) $galat[] = 'Setujui izin penerbitan kartu dulu ya.';
 if ($galat !== []) {
     jawab_ktp(422, ['galat' => $galat]);
 }

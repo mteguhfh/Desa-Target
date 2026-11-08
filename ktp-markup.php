@@ -124,10 +124,11 @@ require_once __DIR__ . '/includes/avatar-markup.php';
 
     <form class="formulir" method="post" action="ktp.php">
         <input type="hidden" name="token" value="<?= e($tokenForm) ?>">
-        <label for="nama">Nama lengkap</label>
+        <label for="nama">Nama panggilan</label>
         <input type="text" id="nama" name="nama" required minlength="3" maxlength="50"
-               autocomplete="name" placeholder="Contoh: Sari Wulandari"
+               autocomplete="nickname" placeholder="Contoh: Sari, Ucup, atau Sari W."
                value="<?= e($isian['nama']) ?>">
+        <p class="formulir-catatan">Pakai nama panggilan yang nyaman dilihat warga. Jangan gunakan nama lengkap.</p>
         <label for="gang">Gang profesimu</label>
         <select id="gang" name="gang" required>
             <option value="">Pilih gang dulu</option>
@@ -168,6 +169,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
                 </div>
             <?php endforeach; ?>
         </fieldset>
+        <label class="izin-penerbitan"><input type="checkbox" name="izin_penerbitan" value="1" required> Saya mengizinkan nama panggilan dan tampilan kartu ini tampil di web Desa Target. Jika belum 18 tahun, saya sudah mendapat izin orang tua atau wali.</label>
 
         <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>
     </form>

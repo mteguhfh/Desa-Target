@@ -1464,6 +1464,8 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .kabar-peta p { flex: 1; margin: 0; line-height: 1.4; }.kabar-peta a { color: #92400e; font-weight: 800; }.kabar-peta button { min-width: 32px; min-height: 32px; border: 0; background: transparent; color: #78350f; font-size: 22px; cursor: pointer; }.kabar-peta[hidden] { display: none; }
 @media (max-width: 420px) { .kabar-peta { display: none; } }
 .aku-koleksi { margin-top: 18px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+.izin-penerbitan { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0; font-size: 12px; line-height: 1.45; }
+.izin-penerbitan input { flex: 0 0 auto; margin-top: 2px; }
 .aku-koleksi h3 { margin: 0 0 9px; font-size: 15px; }
 .aku-lencana { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .aku-lencana-satu { padding: 8px; border: 1px solid #e2e8f0; border-radius: 7px; color: #94a3b8; font-size: 12px; }

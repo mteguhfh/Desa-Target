@@ -893,14 +893,15 @@ const kubah = (() => {
     return { kanvas: c, ctx, tex, kunci: '' };
 })();
 scene.background = new THREE.Color(0xd6f0f7);
-scene.fog = new THREE.Fog(0xd6f0f7, 1900, 4700);
+scene.fog = new THREE.Fog(0xd6f0f7, 1250, 3000);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 8000);
 // Kamera terbang sendiri dari ketinggian ke posisi awal, lalu pop-up
 // sambutan boleh muncul (ADR-0005). Terbang dilewati bila pengunjung memilih
 // gerak dikurangi atau alamatnya memuat ?terbang=0.
-// Pandangan awal lebih jauh supaya seluruh gang dan kavling punya napas visual.
-const KAMERA_AWAL = new THREE.Vector3(150, 1450, 1860);
+// Dunia dibuat memenuhi layar sejak awal. Pengunjung tetap bisa memperjauh
+// pandangan lewat roda mouse atau pinch bila ingin melihat seluruh desa.
+const KAMERA_AWAL = new THREE.Vector3(105, 820, 1040);
 const TARGET_AWAL = KE3(1017, 760);
 const TERBANG_DETIK = 1.8;
 const kurangiGerak = window.matchMedia
@@ -916,7 +917,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.copy(TARGET_AWAL);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.minDistance = 300;
+controls.minDistance = 190;
 controls.maxDistance = 3600;
 controls.maxPolarAngle = 1.35;
 controls.update();
@@ -1729,14 +1730,16 @@ function dalamRintangan(x, y) {
 }
 function pilihTarget(agen) {
     for (let coba = 0; coba < 8; coba++) {
-        const tx = agen.rect.x + Math.random() * agen.rect.w;
-        const ty = agen.rect.y + Math.random() * agen.rect.h;
+        // Warga tidak dikurung di gang asalnya. Gang hanya menjadi titik
+        // lahir; setelah itu mereka dapat berjalan ke seluruh desa.
+        const tx = 82 + Math.random() * 1836;
+        const ty = 82 + Math.random() * 1120;
         const jarak = Math.hypot(tx - agen.x, ty - agen.y);
-        if (jarak < 34 || jarak > 200) continue;
+        if (jarak < 34 || jarak > 620 || tabrakanJalan(tx, ty)) continue;
         let aman = true;
-        for (let s = 1; s <= 5; s++) {
-            const px = agen.x + (tx - agen.x) * s / 5, py = agen.y + (ty - agen.y) * s / 5;
-            if (dalamRintangan(px, py)) { aman = false; break; }
+        for (let s = 1; s <= 10; s++) {
+            const px = agen.x + (tx - agen.x) * s / 10, py = agen.y + (ty - agen.y) * s / 10;
+            if (tabrakanJalan(px, py)) { aman = false; break; }
         }
         if (aman) return { x: tx, y: ty };
     }

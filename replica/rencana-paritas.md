@@ -246,9 +246,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.8 Nama panggilan dan izin
 
-- [ ] Formulir meminta nama panggilan, bukan nama lengkap, dan memberi contoh
+- [x] Formulir meminta nama panggilan, bukan nama lengkap, dan memberi contoh
   yang jelas. Teks bantuan mengingatkan jangan memakai nama lengkap.
-- [ ] Ada satu kotak izin sebelum kartu diterbitkan: nama dan tampilan boleh
+- [x] Ada satu kotak izin sebelum kartu diterbitkan: nama dan tampilan boleh
   tampil di web, dan orang tua atau wali mengizinkan bila belum 18 tahun.
 - Berkas: `ktp.php`, `ktp-markup.php`, `ktp-json.php`,
   `includes/panel-bersayap.php`, `includes/aku-skrip.php`, `assets/style.css`.
