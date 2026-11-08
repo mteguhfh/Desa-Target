@@ -53,12 +53,19 @@ $namaWarga = [
 ];
 
 $pdo->exec('DELETE FROM warga');
-$stmt = $pdo->prepare('INSERT INTO warga (nama, gang, created_at) VALUES (?, ?, ?)');
+$stmt = $pdo->prepare(
+    'INSERT INTO warga (nama, gang, created_at, warna_baju, warna_kulit, warna_topi) VALUES (?, ?, ?, ?, ?, ?)'
+);
 $hariIni = new DateTimeImmutable('today');
+// Acak yang bisa diulang: setiap kali data contoh diisi ulang, hasilnya sama.
+// Tanpa ini, tiap isi ulang menghasilkan desa yang berbeda dan uji jadi goyah.
+mt_srand(20261108);
+$acak = static fn (): float => mt_rand(0, 100000) / 100000;
 foreach ($namaWarga as $i => [$nama, $gang]) {
     // Tanggal daftar mundur beberapa hari supaya terlihat bervariasi.
     $tanggal = $hariIni->modify('-' . (count($namaWarga) - $i) . ' days')->format('Y-m-d H:i:s');
-    $stmt->execute([$nama, $gang, $tanggal]);
+    $warna = warna_acak($acak);
+    $stmt->execute([$nama, $gang, $tanggal, $warna['baju'], $warna['kulit'], $warna['topi']]);
 }
 
 // --- Bangunan --------------------------------------------------------------

@@ -4,3 +4,6 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 .DS_Store
 .codebase-memory/
+
+# Catatan deploy lokal (berisi detail server, jangan dipublikasikan)
+DEPLOY.local.md

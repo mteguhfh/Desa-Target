@@ -35,6 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama = trim((string) ($_POST['nama'] ?? ''));
     $gang = trim((string) ($_POST['gang'] ?? ''));
 
+    // Warna tampilan. Bila tidak dikirim atau tidak dikenal, pakai bawaan:
+    // warna bukan hal wajib, jadi tidak boleh menggagalkan pendaftaran.
+    $warna = [];
+    foreach (['baju', 'kulit', 'topi'] as $bagian) {
+        $warna[$bagian] = warna_sah($bagian, $_POST['warna_' . $bagian] ?? null) ?? WARNA_BAWAAN[$bagian];
+    }
+
     if (panjang_teks($nama) < 3 || panjang_teks($nama) > 50) {
         $galat[] = 'Nama lengkap diisi 3 sampai 50 karakter ya.';
     } elseif (!preg_match("/^[\p{L} .'-]+$/u", $nama)) {
@@ -45,8 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($galat === []) {
-        $stmt = $pdo->prepare('INSERT INTO warga (nama, gang, created_at) VALUES (?, ?, ?)');
-        $stmt->execute([$nama, $gang, date('Y-m-d H:i:s')]);
+        $stmt = $pdo->prepare(
+            'INSERT INTO warga (nama, gang, created_at, warna_baju, warna_kulit, warna_topi) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $nama, $gang, date('Y-m-d H:i:s'),
+            $warna['baju'], $warna['kulit'], $warna['topi'],
+        ]);
         $idBaru = (int) $pdo->lastInsertId();
 
         // Token lama hangus, ganti baru untuk pengiriman berikutnya.
@@ -58,7 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Ada galat validasi: simpan isian lama supaya tidak perlu mengetik ulang.
-    $_SESSION['isian_ktp'] = ['nama' => $nama, 'gang' => $gang];
+    $_SESSION['isian_ktp'] = ['nama' => $nama, 'gang' => $gang] + array_combine(
+        ['warna_baju', 'warna_kulit', 'warna_topi'],
+        [$warna['baju'], $warna['kulit'], $warna['topi']]
+    );
     $_SESSION['galat_ktp'] = $galat;
     header('Location: ktp.php');
     exit;
@@ -67,7 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Ambil pesan dan isian dari sesi (sekali tampil, lalu dibersihkan).
 $pesan = $_SESSION['pesan_ktp'] ?? null;
 $galat = $_SESSION['galat_ktp'] ?? [];
-$isian = $_SESSION['isian_ktp'] ?? ['nama' => '', 'gang' => ''];
+$isian = $_SESSION['isian_ktp'] ?? [
+    'nama' => '', 'gang' => '',
+    'warna_baju' => WARNA_BAWAAN['baju'],
+    'warna_kulit' => WARNA_BAWAAN['kulit'],
+    'warna_topi' => WARNA_BAWAAN['topi'],
+];
 unset($_SESSION['pesan_ktp'], $_SESSION['galat_ktp'], $_SESSION['isian_ktp']);
 
 if (isset($_GET['kartu']) && ctype_digit((string) $_GET['kartu'])) {

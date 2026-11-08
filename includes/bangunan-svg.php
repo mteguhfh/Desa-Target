@@ -441,7 +441,21 @@ function svg_zona_gang(string $gang, array $zona, int $totalWarga, int $berdiri)
 // tunda dan durasi berbeda per warga supaya desa tidak bergerak serempak.
 function svg_warga(array $warga, float $x, float $y): string
 {
+    // Baju memakai warna pilihan warga sendiri (dari KTP). Warga lama yang
+    // belum memilih -- warna kosong di basis data -- tetap memakai warna gang
+    // dan warna kulit/topi bawaan seperti versi sebelumnya.
     $warna = warna_atap_gang($warga['gang'] ?? null);
+    $warnaKulit = '#f6c48a';
+    $warnaTopi = '#40342a';
+    if (($warga['warna_baju'] ?? '') !== '') {
+        $warna = hex_warna($warga, 'baju');
+    }
+    if (($warga['warna_kulit'] ?? '') !== '') {
+        $warnaKulit = hex_warna($warga, 'kulit');
+    }
+    if (($warga['warna_topi'] ?? '') !== '') {
+        $warnaTopi = hex_warna($warga, 'topi');
+    }
     $nama = (string) $warga['nama'];
     $kata = preg_split('/\s+/', trim($nama)) ?: [];
     $pertama = ($kata[0] ?? '') !== '' ? $kata[0] : $nama;
@@ -478,8 +492,8 @@ function svg_warga(array $warga, float $x, float $y): string
         . '<path d="M-11,-29 L-16,-17 M11,-29 L16,-17" stroke="' . $warna . '" stroke-width="4.5" stroke-linecap="round" fill="none"/>'
         . '<rect x="-11" y="-36" width="22" height="25" rx="7" fill="' . $warna . '"/>'
         . '<rect x="-11" y="-36" width="22" height="6" rx="3" fill="#ffffff" opacity="0.28"/>'
-        . '<circle cx="0" cy="-45" r="9.5" fill="#f6c48a"/>'
-        . '<path d="M-9.5,-45 a9.5,9.5 0 0 1 19,0 Z" fill="#40342a"/>'
+        . '<circle cx="0" cy="-45" r="9.5" fill="' . $warnaKulit . '"/>'
+        . '<path d="M-9.5,-45 a9.5,9.5 0 0 1 19,0 Z" fill="' . $warnaTopi . '"/>'
         . '<circle cx="-3.5" cy="-43.5" r="1" fill="#1e293b"/>'
         . '<circle cx="3.5" cy="-43.5" r="1" fill="#1e293b"/>'
         . '</g>'

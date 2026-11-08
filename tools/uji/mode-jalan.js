@@ -145,6 +145,22 @@ const posisi = (page) => page.evaluate(() => ({
     `jarak tempuh bersih ${Math.round(geser)} px`);
 
   // --- 4b. W+D bergerak serong, bukan berpusing -------------------------
+  // Kembalikan pemain ke halaman depan: setelah D dan W+D sebelumnya ia
+  // mungkin sudah menempel dinding, dan gerak yang tertahan dinding bukan
+  // tanda ada yang rusak.
+  const kembalikanKeHalaman = () => page.evaluate(() => {
+    const d = window.__desa;
+    d.kamu.x = d.fokus.x;
+    d.kamu.y = d.fokus.y + 200;
+    d.kamu.arah = Math.PI;
+    // Kamera ikut dipindah ke belakang bahu seketika: kalau dibiarkan
+    // meluncur, arah "maju" pada uji berikutnya dihitung dari posisi lama.
+    const pos = { x: d.kamu.x - 1000, y: 0, z: d.kamu.y - 666.5 };
+    d.camera.position.set(pos.x, 104, pos.z + 178);
+    d.camera.lookAt(pos.x, 46, pos.z);
+  });
+  await kembalikanKeHalaman();
+  await page.waitForTimeout(500);
   const s0 = await posisi(page);
   await page.evaluate(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
@@ -178,7 +194,14 @@ const posisi = (page) => page.evaluate(() => ({
     await page.waitForTimeout(800);
     catat('interior terbuka di atas peta 3D',
       await page.evaluate(() => !document.getElementById('interior3d').hidden));
-    catat('interior punya isi (SVG)', (await page.locator('#interior3d svg').count()) >= 1);
+    // Ruangan Balai Desa kini 3D: kanvas Three.js terpisah dari peta luar.
+    await page.waitForFunction(
+      () => window.__interior3d && window.__interior3d.siap(),
+      null, { timeout: 15000 },
+    ).catch(() => {});
+    catat('interior punya ruangan 3D', (await page.locator('#interior3dKanvas canvas').count()) === 1);
+    catat('interior bisa dijelajahi (mesin siap)',
+      await page.evaluate(() => !!(window.__interior3d && window.__interior3d.siap())));
     catat('URL tetap di halaman peta 3D', page.url().includes('peta.php'), page.url());
     await page.evaluate(() => document.getElementById('tombolKeluarInterior3d').click());
     await page.waitForTimeout(600);

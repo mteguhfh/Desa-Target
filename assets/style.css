@@ -1295,3 +1295,62 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     margin-top: 1px;
 }
 .misi-baris.selesai .misi-status { color: #047857; background: #d1fae5; }
+
+/* --- Pemilih warna warga di formulir KTP -------------------------------- */
+.pilih-warna {
+    border: 1px solid var(--garis);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+    margin: 6px 0 18px;
+}
+.pilih-warna legend {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--teks);
+    padding: 0 6px;
+}
+.pilih-warna-baris {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.pilih-warna-label {
+    min-width: 96px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--teks-lembut);
+}
+.pilih-warna-swal { display: flex; flex-wrap: wrap; gap: 8px; }
+.pilih-warna-satu { position: relative; cursor: pointer; display: inline-flex; }
+.pilih-warna-satu input {
+    position: absolute; opacity: 0; width: 1px; height: 1px;
+}
+.pilih-warna-bulat {
+    width: 30px; height: 30px;
+    border-radius: 999px;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1.5px var(--garis), 0 2px 6px rgba(15,23,42,0.12);
+    display: block;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.pilih-warna-satu:hover .pilih-warna-bulat { transform: scale(1.08); }
+.pilih-warna-satu input:checked + .pilih-warna-bulat {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 3px var(--teks), 0 3px 10px rgba(15,23,42,0.25);
+}
+.pilih-warna-satu input:focus-visible + .pilih-warna-bulat {
+    outline: 3px solid #f59e0b;
+    outline-offset: 3px;
+}
+
+/* Titik warna di kartu KTP */
+.ktp-warna { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ktp-warna-titik {
+    width: 14px; height: 14px; border-radius: 999px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px var(--garis);
+    display: inline-block;
+}
+.ktp-warna-teks { font-size: 13px; color: var(--teks-lembut); }

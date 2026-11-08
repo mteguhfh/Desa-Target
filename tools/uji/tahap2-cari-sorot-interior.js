@@ -164,9 +164,17 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     catat('interior terbuka tanpa pindah halaman',
       (await page.locator('#interior3d').isVisible()) && page.url().endsWith('/peta.php'));
     catat('interior punya 4 hotspot', (await page.locator('#interior3d .hotspot-interior').count()) === 4);
-    catat('interior punya tautan loket KTP', (await page.locator('#interior3d a[href="ktp.php"]').count()) === 1);
+    catat('interior punya tautan loket KTP', (await page.locator('#interior3d a[href$="ktp.php"]').count()) === 1);
+    // Sejak ruangan ini dijadikan 3D, isinya kanvas Three.js tersendiri.
+    catat('interior berupa ruangan 3D', (await page.locator('#interior3dKanvas canvas').count()) === 1);
 
-    await page.locator('#interior3d .hotspot-interior').first().click();
+    // Hotspot ditempel di objek 3D lewat proyeksi; tunggu mesinnya siap lalu
+    // ketuk titik Papan Pengumuman (satu-satunya yang membuka kartu).
+    await page.waitForFunction(
+      () => window.__interior3d && window.__interior3d.siap(),
+      null, { timeout: 15000 },
+    ).catch(() => {});
+    await page.locator('#interior3d .hotspot-interior[data-pos="papan"]').click();
     await page.waitForTimeout(600);
     catat('hotspot interior membuka kartu', await page.locator('#popover').isVisible());
     await page.keyboard.press('Escape');

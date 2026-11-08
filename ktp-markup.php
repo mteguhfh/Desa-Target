@@ -58,6 +58,26 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
                     <dt>Tanggal Bergabung</dt>
                     <dd><?= e(format_tanggal($kartuWarga['created_at'])) ?></dd>
                 </div>
+                <div>
+                    <dt>Warna di Peta</dt>
+                    <dd class="ktp-warna">
+                        <?php $wKartu = warna_warga($kartuWarga); ?>
+                        <?php foreach ([
+                            'baju' => ['label' => 'Baju', 'palet' => WARNA_BAJU],
+                            'kulit' => ['label' => 'Kulit', 'palet' => WARNA_KULIT],
+                            'topi' => ['label' => 'Topi', 'palet' => WARNA_TOPI],
+                        ] as $bagian => $info): ?>
+                            <span class="ktp-warna-titik"
+                                  style="background: <?= e($info['palet'][$wKartu[$bagian]]['hex']) ?>"
+                                  title="<?= e($info['label'] . ': ' . $info['palet'][$wKartu[$bagian]]['nama']) ?>"></span>
+                        <?php endforeach; ?>
+                        <span class="ktp-warna-teks">
+                            Baju <?= e(WARNA_BAJU[$wKartu['baju']]['nama']) ?>,
+                            kulit <?= e(strtolower(WARNA_KULIT[$wKartu['kulit']]['nama'])) ?>,
+                            topi <?= e(strtolower(WARNA_TOPI[$wKartu['topi']]['nama'])) ?>
+                        </span>
+                    </dd>
+                </div>
             </dl>
         </div>
         <div class="ktp-kaki">
@@ -89,6 +109,35 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
             Gang Jasa buat layanan, Gang Freelancer buat pekerja lepas, dan Gang Kerajinan
             buat pembuat produk tangan.
         </p>
+
+        <fieldset class="pilih-warna">
+            <legend>Tampilan figurnya di peta</legend>
+            <p class="formulir-catatan">
+                Pilih warna yang paling mirip kamu. Figurmu di peta 3D memakai warna ini,
+                dan bisa diubah kapan saja dengan bikin KTP lagi.
+            </p>
+            <?php foreach ([
+                'baju' => ['label' => 'Warna baju', 'palet' => WARNA_BAJU],
+                'kulit' => ['label' => 'Warna kulit', 'palet' => WARNA_KULIT],
+                'topi' => ['label' => 'Warna topi', 'palet' => WARNA_TOPI],
+            ] as $bagian => $info): ?>
+                <div class="pilih-warna-baris" role="radiogroup" aria-label="<?= e($info['label']) ?>">
+                    <span class="pilih-warna-label"><?= e($info['label']) ?></span>
+                    <span class="pilih-warna-swal">
+                        <?php foreach ($info['palet'] as $kunci => $warna): ?>
+                            <?php $dipilih = ($isian['warna_' . $bagian] ?? WARNA_BAWAAN[$bagian]) === $kunci; ?>
+                            <label class="pilih-warna-satu" title="<?= e($warna['nama']) ?>">
+                                <input type="radio" name="warna_<?= e($bagian) ?>" value="<?= e($kunci) ?>"
+                                    <?= $dipilih ? 'checked' : '' ?>>
+                                <span class="pilih-warna-bulat" style="background: <?= e($warna['hex']) ?>"></span>
+                                <span class="sr-saja"><?= e($warna['nama']) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </fieldset>
+
         <button type="submit" class="tombol tombol-utama besar">Terbitkan KTP Warga</button>
     </form>
 </section>

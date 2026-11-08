@@ -26,9 +26,25 @@ function db(): PDO
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nama TEXT NOT NULL,
             gang TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            warna_baju TEXT,
+            warna_kulit TEXT,
+            warna_topi TEXT
         )"
     );
+
+    // Warga yang mendaftar sebelum pilihan warna ada: tambahkan kolomnya ke
+    // tabel lama tanpa menghapus data. ALTER TABLE ADD COLUMN aman diulang,
+    // jadi cukup periksa daftar kolom dulu.
+    $kolomWarga = [];
+    foreach ($pdo->query('PRAGMA table_info(warga)') as $kolom) {
+        $kolomWarga[$kolom['name']] = true;
+    }
+    foreach (['warna_baju', 'warna_kulit', 'warna_topi'] as $kolomBaru) {
+        if (!isset($kolomWarga[$kolomBaru])) {
+            $pdo->exec('ALTER TABLE warga ADD COLUMN ' . $kolomBaru . ' TEXT');
+        }
+    }
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS bangunan (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -171,6 +187,56 @@ function cari_warga(PDO $pdo, int $id): ?array
 // Hasil diurutkan: cocok persis nama dulu, lalu yang namanya diawali kata
 // kunci, lalu sisanya. Di dalam kelompok yang sama, pendaftar terlama dulu.
 // Batas $batas menjaga query tetap ringan walau warga desa nanti ribuan.
+// ---------------------------------------------------------------------------
+// Warna warga
+//
+// Warga memilih baju, kulit, dan topi saat bikin KTP. Yang disimpan adalah
+// KUNCINYA ('biru', 'sawo'), bukan kode warna, supaya palet bisa diperbaiki
+// tanpa mengubah data warga. Kolom lama yang kosong atau berisi kunci yang
+// tidak dikenal jatuh ke warna bawaan.
+// ---------------------------------------------------------------------------
+
+// Kunci yang sah untuk satu bagian, atau null bila tidak dikenal.
+function warna_sah(string $bagian, $nilai): ?string
+{
+    $palet = ['baju' => WARNA_BAJU, 'kulit' => WARNA_KULIT, 'topi' => WARNA_TOPI][$bagian] ?? [];
+    return is_string($nilai) && isset($palet[$nilai]) ? $nilai : null;
+}
+
+// Kunci warna yang akhirnya dipakai untuk seorang warga (selalu sah).
+function warna_warga(array $warga): array
+{
+    $hasil = [];
+    foreach (['baju', 'kulit', 'topi'] as $bagian) {
+        $tersimpan = $warga['warna_' . $bagian] ?? null;
+        $hasil[$bagian] = warna_sah($bagian, $tersimpan) ?: WARNA_BAWAAN[$bagian];
+    }
+    return $hasil;
+}
+
+// Kode hex untuk satu bagian warna warga.
+function hex_warna(array $warga, string $bagian): string
+{
+    $palet = ['baju' => WARNA_BAJU, 'kulit' => WARNA_KULIT, 'topi' => WARNA_TOPI][$bagian] ?? [];
+    $kunci = warna_warga($warga)[$bagian];
+    return $palet[$kunci]['hex'] ?? '#64748b';
+}
+
+// Acak tiga warna yang berbeda-beda gaya, untuk data contoh. Memakai
+// generator acak yang bisa diulang supaya tampilan uji tetap sama.
+function warna_acak(callable $acak): array
+{
+    $pilih = static function (array $palet) use ($acak): string {
+        $kunci = array_keys($palet);
+        return $kunci[(int) floor($acak() * count($kunci)) % count($kunci)];
+    };
+    return [
+        'baju' => $pilih(WARNA_BAJU),
+        'kulit' => $pilih(WARNA_KULIT),
+        'topi' => $pilih(WARNA_TOPI),
+    ];
+}
+
 function cari_warga_berdasarkan(PDO $pdo, string $kunci, int $batas = 40): array
 {
     $kunci = trim($kunci);

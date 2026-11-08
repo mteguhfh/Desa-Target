@@ -553,7 +553,7 @@
              bawahnya. Disembunyikan stylesheet saat peta layar penuh. -->
         <button type="button" class="peta-gulir-bawah" id="tombolGulirBawah" aria-label="Lihat ke bawah">&#9660;</button>
     </div>
-    <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Pencet tombol Keliling Desa buat jalan-jalan keliling desa dan masuk Balai Desa. Atap bangunan dan baju warga berwarna mengikuti gang-nya.</p>
+    <p class="peta-petunjuk">Seret peta buat keliling desa, pakai tombol plus dan minus buat zoom. Pencet tombol Keliling Desa buat jalan-jalan keliling desa dan masuk Balai Desa. Atap bangunan mengikuti gang-nya, sedangkan warna baju, kulit, dan topi warga dipilih sendiri saat bikin KTP.</p>
 
 <script>
 (function () {

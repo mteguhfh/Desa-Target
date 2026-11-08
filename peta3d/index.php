@@ -266,18 +266,79 @@ try {
         display: flex; align-items: center; justify-content: center;
     }
     .interior-3d[hidden] { display: none; }
-    .interior-3d-bingkai {
-        position: relative;
-        width: min(1200px, 100vw);
-        aspect-ratio: 1200 / 750;
-        max-height: 100dvh;
-        overflow: hidden;
-        border-radius: 0;
+    /* Kanvas ruangan 3D mengisi seluruh lapisan. */
+    .interior-3d-kanvas { position: absolute; inset: 0; }
+    .interior-3d-kanvas > canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    .interior-3d-kanvas > canvas.menyeret { cursor: grabbing; }
+
+    /* Tombol titik interaktif (Loket, Papan, Arsip, Bang Uju). Posisinya
+       dihitung dari proyeksi kamera 3D tiap bingkai, jadi lapisannya hanya
+       wadah: isi tombol yang mengatur dirinya sendiri. */
+    .interior-3d-titik { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+    .interior-titik {
+        position: absolute; top: 0; left: 0;
+        pointer-events: auto;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+        padding: 6px 12px 7px;
+        border: none; cursor: pointer; text-decoration: none;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.96);
+        color: #1e3a8a;
+        font: 700 13px system-ui, sans-serif;
+        box-shadow: 0 5px 16px rgba(30,58,138,0.28);
+        white-space: nowrap;
+        transition: opacity 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
-    .interior-3d-bingkai .interior-svg { display: block; width: 100%; height: 100%; }
+    .interior-titik::after {
+        /* Penunjuk ke objek 3D di bawahnya. */
+        content: ''; position: absolute; left: 50%; bottom: -7px;
+        width: 12px; height: 12px; margin-left: -6px;
+        background: inherit; transform: rotate(45deg);
+        border-radius: 2px;
+    }
+    .interior-titik-lencana {
+        font: 800 10.5px system-ui, sans-serif; letter-spacing: 1px;
+        text-transform: uppercase; color: #2563eb;
+    }
+    .interior-titik-nama { font-size: 13px; }
+    .interior-titik.dekat {
+        background: #2563eb; color: #fff;
+        box-shadow: 0 8px 22px rgba(37,99,235,0.45);
+    }
+    .interior-titik.dekat .interior-titik-lencana { color: #dbeafe; }
+    .interior-titik.tersembunyi {
+        opacity: 0; pointer-events: none; visibility: hidden;
+    }
+    .interior-titik:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; }
+
+    /* Petunjuk & tombol arah di dalam ruangan. */
+    .interior-3d-petunjuk {
+        position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+        z-index: 4; margin: 0;
+        background: rgba(17,24,39,0.82); color: #f9fafb;
+        border-radius: 999px; padding: 9px 16px;
+        font: 600 13px system-ui, sans-serif; white-space: nowrap;
+    }
+    .interior-3d-dpad {
+        position: absolute; left: 14px; bottom: 18px; z-index: 4;
+        display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px);
+        gap: 5px; touch-action: none;
+    }
+    .interior-3d-dpad button {
+        border: none; border-radius: 13px; background: rgba(255,255,255,0.94);
+        box-shadow: 0 4px 14px rgba(30,58,138,0.22); font-size: 18px; color: #1e3a8a;
+        cursor: pointer; user-select: none; -webkit-user-select: none;
+    }
+    .interior-3d-dpad button.tertekan { background: #bfdbfe; }
+    .interior-3d-dpad .atas { grid-area: 1 / 2; } .interior-3d-dpad .kiri { grid-area: 2 / 1; }
+    .interior-3d-dpad .kanan { grid-area: 2 / 3; } .interior-3d-dpad .bawah { grid-area: 3 / 2; }
+    @media (max-width: 700px) {
+        .interior-3d-petunjuk { display: none; }
+        .interior-3d-dpad { bottom: 14px; }
+    }
     .interior-3d-keluar {
         position: absolute; top: 14px; left: 14px;
-        z-index: 2;
+        z-index: 5;
         border: none; cursor: pointer;
         border-radius: 999px; padding: 11px 18px;
         background: #ffffff; color: #1e3a8a;
@@ -437,6 +498,7 @@ require __DIR__ . '/../includes/tab-bar.php';
 </div>
 
 <?php require __DIR__ . '/interior-balai.php'; ?>
+<?php require __DIR__ . '/interior-balai3d.js.php'; ?>
 
 <div id="stats"></div>
 <div class="muat" id="layarMuat">Membangun desa 3D...</div>
@@ -862,16 +924,50 @@ let bendera = null, geoBenderaAsli = null;
     tiang.position.set(tiangPos.x, 125, tiangPos.z);
     tiang.castShadow = true;
     dunia.add(tiang);
-    const c = document.createElement('canvas'); c.width = 128; c.height = 80;
+    // Bendera memakai lambang resmi Kejar Target (logo di kejartarget.id),
+    // disimpan di assets/img supaya tetap tampil tanpa internet. Teksturnya
+    // baru terpasang setelah gambar selesai dimuat; sebelum itu benderanya
+    // polos biru supaya tidak berkedip putih.
+    const c = document.createElement('canvas'); c.width = 256; c.height = 144;
     const g = c.getContext('2d');
-    g.fillStyle = '#2563eb'; g.fillRect(0, 0, 128, 80);
-    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(44, 40, 17, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#facc15'; g.font = '30px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('★', 44, 42);
-    const texBendera = new THREE.CanvasTexture(c); texBendera.colorSpace = THREE.SRGBColorSpace;
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+    const texBendera = new THREE.CanvasTexture(c);
+    texBendera.colorSpace = THREE.SRGBColorSpace;
+    texBendera.anisotropy = 4;
+    const gambar = new Image();
+    gambar.onload = () => {
+        // Latar bendera PUTIH, bukan biru. Lambang Kejar Target berwarna biru
+        // cerah; di atas bendera biru logo jadi menyatu dan terlihat gelap.
+        // Dengan latar putih, logonya terbaca jelas dari jauh.
+        const tinggiLambang = c.height * 0.78;
+        const lebarLambang = tinggiLambang * (gambar.width / gambar.height);
+        g.clearRect(0, 0, c.width, c.height);
+        g.fillStyle = '#ffffff';
+        g.fillRect(0, 0, c.width, c.height);
+        // Pita biru tipis di tepi atas dan bawah sebagai penegas warna desa.
+        g.fillStyle = '#2563eb';
+        g.fillRect(0, 0, c.width, Math.round(c.height * 0.06));
+        g.fillRect(0, c.height - Math.round(c.height * 0.06), c.width, Math.round(c.height * 0.06));
+        g.drawImage(gambar, (c.width - lebarLambang) / 2, (c.height - tinggiLambang) / 2, lebarLambang, tinggiLambang);
+        texBendera.needsUpdate = true;
+    };
+    gambar.src = '<?= $awalan ?>assets/img/logo-kejar-target.png';
     const geoB = new THREE.PlaneGeometry(82, 46, 10, 2);
     geoB.translate(41, 0, 0);
-    bendera = new THREE.Mesh(geoB, new THREE.MeshStandardMaterial({ map: texBendera, side: THREE.DoubleSide, roughness: 0.9 }));
+    // Bendera memakai material yang tidak menerima bayangan dan sedikit
+    // memancarkan warnanya sendiri. Material standar biasa membuat logo biru
+    // terlihat hampir hitam saat sisi yang membelakangi matahari.
+    bendera = new THREE.Mesh(geoB, new THREE.MeshStandardMaterial({
+        map: texBendera,
+        side: THREE.DoubleSide,
+        roughness: 0.75,
+        metalness: 0,
+        emissive: 0xffffff,
+        emissiveMap: texBendera,
+        emissiveIntensity: 0.55,
+    }));
+    bendera.castShadow = false;
+    bendera.receiveShadow = false;
     bendera.position.set(tiangPos.x + 3, 222, tiangPos.z);
     dunia.add(bendera);
     geoBenderaAsli = geoB.attributes.position.array.slice();
@@ -1125,7 +1221,7 @@ function jauhDariSemua(hasil, jarak) {
 // ---------------------------------------------------------------------------
 // Manusia: warga berwarna gang, Bang Uju (sprite), dan pengunjung "Kamu"
 // ---------------------------------------------------------------------------
-function buatFigur(warnaBadan, { topi = null } = {}) {
+function buatFigur(warnaBadan, { topi = null, kulit = 0xfcd9b8 } = {}) {
     const grup = new THREE.Group();
     const dalam = new THREE.Group();
     grup.add(dalam);
@@ -1133,7 +1229,7 @@ function buatFigur(warnaBadan, { topi = null } = {}) {
     const badan = new THREE.Mesh(new THREE.CylinderGeometry(10.5, 13.5, 37, 10), bahan);
     badan.position.y = 32; badan.castShadow = true;
     dalam.add(badan);
-    const kepala = new THREE.Mesh(new THREE.SphereGeometry(11.5, 10, 8), matStandar(0xfcd9b8));
+    const kepala = new THREE.Mesh(new THREE.SphereGeometry(11.5, 10, 8), matStandar(kulit));
     kepala.position.y = 60; kepala.castShadow = true;
     dalam.add(kepala);
     if (topi) {
@@ -1171,7 +1267,12 @@ function bangunWarga(daftar) {
         const gridY = (t2[1] + 82 + Math.floor(idx / 5) * 34) * SKALA;
         const diDalam = gridX >= rect.x && gridX <= rect.x + rect.w && gridY >= rect.y && gridY <= rect.y + rect.h;
         const rumah = diDalam ? { x: gridX, y: gridY } : { x: rect.x + rect.w * (0.25 + 0.5 * acak()), y: rect.y + rect.h * (0.25 + 0.5 * acak()) };
-        const figur = buatFigur(z.warna);
+        // Warna pilihan warga sendiri (dari KTP). Bila data belum membawa
+        // warna -- mis. server lama -- pakai warna gang seperti dulu.
+        const warnaFigur = w.baju ? new THREE.Color(w.baju).getHex() : z.warna;
+        const warnaKulit = w.kulit ? new THREE.Color(w.kulit).getHex() : 0xfcd9b8;
+        const warnaTopi = w.topi ? new THREE.Color(w.topi).getHex() : null;
+        const figur = buatFigur(warnaFigur, { kulit: warnaKulit, topi: warnaTopi });
         figur.position.copy(KE3(rumah.x, rumah.y));
         const label = labelNama(w.nama, 0.82);
         label.position.y = 92;
@@ -1238,6 +1339,101 @@ const kamu = { x: FOKUS.x, y: FOKUS.y + 200, arah: Math.PI, figur: null };
 }
 
 // ---------------------------------------------------------------------------
+// Pantulan saat sesuatu diketuk.
+//
+// Setiap objek yang diketuk "melompat" sekali lalu mendarat lagi, seperti
+// balon yang dipencet: cepat naik, melambat di puncak, jatuh lebih cepat,
+// lalu memantul kecil. Tujuannya memberi balasan seketika bahwa ketukan
+// benar-benar mengenai sesuatu -- penting di peta 3D karena popover baru
+// muncul di pojok dan mudah terlewat.
+//
+// Diatur lewat satu peta (objek -> waktu mulai) yang diperiksa sekali per
+// bingkai, bukan setTimeout per objek. Dengan begitu animasinya tidak pernah
+// saling menimpa posisi: begitu peta 3D hanya 3 fps, animasi berbasis CSS
+// atau tween terpisah akan tertinggal.
+// ---------------------------------------------------------------------------
+const bounce = {
+    aktif: [],          // [{ simpul, mulai, durasi, tinggi, dasar }]
+    // 760 ms, bukan 400-500: di ponsel kelas menengah peta ini hanya 20-30
+    // fps, dan di perangkat tanpa GPU 3 fps. Lompatan 0,5 detik bisa habis
+    // di antara dua bingkai sehingga tidak terlihat sama sekali.
+    lebar: 760,
+    tinggi: 34,         // cm lompatan; disesuaikan ukuran objek
+};
+
+function tentukanTinggi(simpul) {
+    // Warga & Bang Uju kecil (tinggi ~75), bangunan besar (ratusan).
+    const kotak = new THREE.Box3().setFromObject(simpul);
+    // Warga setinggi ~75: lompatan 26 terlihat jelas dari jarak orbit.
+    // Bangunan ratusan: 12% cukup untuk "mengangguk" tanpa pindah tempat.
+    const tinggi = Math.max(1, kotak.max.y - kotak.min.y);
+    return Math.min(210, Math.max(26, tinggi * 0.12));
+}
+
+// Ketuk simpul apa pun: lompat sekali. Bila sedang melompat, mulai lagi
+// dari titik dasar (bukan dari posisi tengah udara) supaya tidak melayang.
+function lompat(simpul) {
+    if (!simpul) return;
+    // Bangunan adalah grup yang posisinya juga dipakai sorot; aman karena
+    // kita hanya menambah-di-atas dan mengembalikannya ke dasar semula.
+    let catatan = bounce.aktif.find(b => b.simpul === simpul);
+    if (!catatan) {
+        catatan = { simpul, dasar: simpul.position.y, mulai: 0, durasi: 0, tinggi: 0 };
+        bounce.aktif.push(catatan);
+    }
+    // Konversi posisi.y sekarang ke dasar memakai fase terakhir.
+    catatan.dasar = simpul.position.y - (catatan.offsetSebelumnya || 0);
+    catatan.mulai = performance.now();
+    catatan.durasi = bounce.lebar;
+    catatan.tinggi = catatan.tinggi || tentukanTinggi(simpul);
+    catatan.offsetSebelumnya = 0;
+}
+
+// Kurva lompat: naik cepat, tahan sebentar di puncak, mendarat, memantul
+// kecil dua kali. Nilainya 0..1 (0 = di tanah).
+function kurvaLompat(t) {
+    if (t >= 1) return 0;
+    if (t < 0.36) {
+        // Naik: diperlambat (ease-out) supaya puncaknya terasa ringan.
+        const k = t / 0.36;
+        return k * k * (3 - 2 * k);
+    }
+    if (t < 0.62) {
+        // Jatuh: dipercepat (ease-in), berat seperti benda sungguhan.
+        const k = (t - 0.36) / 0.26;
+        return 1 - k * k;
+    }
+    // Pantulan kecil setelah mendarat.
+    const k = (t - 0.62) / 0.38;
+    return Math.abs(Math.sin(k * Math.PI * 2)) * 0.13 * (1 - k);
+}
+
+// Offset lompatan yang sedang berlaku untuk sebuah simpul (0 bila diam).
+function offsetLompat(simpul) {
+    for (const b of bounce.aktif) {
+        if (b.simpul === simpul) return b.offsetSebelumnya || 0;
+    }
+    return 0;
+}
+
+function perbaruiBounce(sekarang) {
+    if (!bounce.aktif.length) return;
+    for (let i = bounce.aktif.length - 1; i >= 0; i--) {
+        const b = bounce.aktif[i];
+        const t = (sekarang - b.mulai) / b.durasi;
+        // Lepas objek yang sudah selesai atau disembunyikan pemiliknya.
+        if (t >= 1 || !b.simpul.parent) {
+            if (b.simpul.parent) b.simpul.position.y = b.dasar;
+            bounce.aktif.splice(i, 1);
+            continue;
+        }
+        const naik = kurvaLompat(t) * b.tinggi;
+        b.offsetSebelumnya = naik;
+        b.simpul.position.y = b.dasar + naik;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Mesin wara-wiri (aturan sama seperti versi 4.3)
 // ---------------------------------------------------------------------------
 function dalamRintangan(x, y) {
@@ -1285,7 +1481,9 @@ function gerakkanAgen(agen, dt, patroli = false) {
 }
 function terapkanAgen(agen, waktu) {
     const pos = KE3(agen.x, agen.y);
-    agen.figur.position.set(pos.x, 0, pos.z);
+    // Offset lompatan (bila figur baru saja diketuk) ditambahkan di atas
+    // posisi dasar, karena posisi y ditulis ulang di sini tiap bingkai.
+    agen.figur.position.set(pos.x, offsetLompat(agen.figur), pos.z);
     if (agen.arahTarget !== undefined) {
         let beda = agen.arahTarget - (agen.figur.rotation.y || 0);
         while (beda > Math.PI) beda -= Math.PI * 2;
@@ -1480,15 +1678,31 @@ let interiorTerbuka3d = false;
 function bukaInterior3d() {
     if (!interior3d) return;
     interiorTerbuka3d = true;
+    // Mode jalan luar dimatikan supaya dua set tombol arah tidak berebut
+    // tombol yang sama. Ruangan punya mesin gerak dan kanvasnya sendiri.
     aturModeJalan(false);
     tutupPopover();
     interior3d.hidden = false;
+    // Ruangan dibangun di latar belakang setelah halaman dimuat; kalau
+    // pengunjung masuk sangat cepat, beri waktu sebentar lalu coba lagi.
+    let trial = 0;
+    (function cobaBuka() {
+        const mesin = window.__interior3d;
+        if (mesin && mesin.buka()) return;
+        if (trial++ < 40) { requestAnimationFrame(cobaBuka); return; }
+        // Mesin ruangan tidak bisa dimuat (WebGL habis / Three.js gagal).
+        // Jangan biarkan pengunjung menatap lapisan kosong: tampilkan
+        // petunjuk dan sediakan jalan keluar.
+        const petunjuk = document.getElementById('interior3dPetunjuk');
+        if (petunjuk) petunjuk.textContent = 'Ruangan 3D belum bisa dibuka di perangkat ini. Tekan Keluar untuk kembali ke peta.';
+    })();
     const keluar = document.getElementById('tombolKeluarInterior3d');
-    if (keluar) keluar.focus();
+    if (keluar) setTimeout(() => keluar.focus(), 30);
 }
 function tutupInterior3d() {
     if (!interior3d) return;
     interiorTerbuka3d = false;
+    if (window.__interior3d) window.__interior3d.tutup();
     interior3d.hidden = true;
     // Fokus kembali ke tombol yang membuka ruangan.
     if (chipMasuk) chipMasuk.focus();
@@ -1606,7 +1820,16 @@ renderer.domElement.addEventListener('pointerup', (e) => {
     if (!potong.length) { tutupPopover(); return; }
     let obj = potong[0].object;
     while (obj && !obj.userData.popover) obj = obj.parent;
-    if (obj) bukaPopover(obj.userData.popover, obj === spriteUju ? spriteUju : obj, e.clientX, e.clientY);
+    if (obj) {
+        // Balasan seketika: yang diketuk melompat sekali. Bangunan adalah
+        // grup besar, warga adalah figur kecil; tinggi lompatannya mengikuti
+        // ukuran objeknya.
+        // Bang Uju berupa sprite yang posisinya ditulis ulang tiap bingkai;
+        // lompat() tetap aman karena putaran utama menambahkan
+        // offsetLompat() sesudahnya.
+        lompat(obj);
+        bukaPopover(obj.userData.popover, obj === spriteUju ? spriteUju : obj, e.clientX, e.clientY);
+    }
 });
 
 // Papan peringkat gang dibangun server (includes/panel-bersayap.php), jadi
@@ -1704,6 +1927,10 @@ function sorotKavling(kavling) {
     const posTujuan = sasaran.clone().add(arah.multiplyScalar(jarak));
     posTujuan.y = Math.max(posTujuan.y, sasaran.y + 330);
 
+    // Bangunan yang diminta dari daftar juga melompat supaya terlihat mana
+    // yang sedang disorot, bukan cuma cincinnya.
+    lompat(model);
+
     if (animasiSorot) cancelAnimationFrame(animasiSorot);
     const t0 = performance.now();
     const posAwal = camera.position.clone();
@@ -1781,6 +2008,7 @@ perbaruiSuasana();
 // Kait untuk pengujian otomatis dan tangkapan layar.
 window.__desa = {
     renderer, scene, camera, controls, aturModeJalan, kamu, agenWarga, agenUju,
+    lompat, bounce,
     sumberData: DATA_DESA ? 'langsung' : 'cadangan',
     posisiKavling: POSISI_KAVLING,
     zonaGang: ZONA_GANG,
@@ -2051,6 +2279,10 @@ function putaran() {
     const dtKecil = Math.min(dt, 0.05);
     const t = jam.elapsedTime;
 
+    // Lompatan dihitung lebih dulu supaya posisi objek yang ditulis ulang
+    // tiap bingkai (warga, Bang Uju) sudah memuat offset terbaru.
+    perbaruiBounce(performance.now());
+
     if (modeJalan) {
         perbaruiKamu(dt);
         // Chip pintu tetap dievaluasi walau pemain diam.
@@ -2075,7 +2307,9 @@ function putaran() {
         }
         gerakkanAgen(agenUju, dtKecil, true);
         const posU = KE3(agenUju.x, agenUju.y);
-        spriteUju.position.set(posU.x, 84 + Math.sin(t * 2.2) * 2.5, posU.z);
+        // Bang Uju melayang naik-turun sendiri; lompatan klik ditambahkan
+        // di atasnya supaya keduanya tidak saling hapus.
+        spriteUju.position.set(posU.x, 84 + Math.sin(t * 2.2) * 2.5 + offsetLompat(spriteUju), posU.z);
         if (labelUju) labelUju.position.set(posU.x, 196 + Math.sin(t * 2.2) * 2.5, posU.z);
         // Gelombang bendera dan kerlip air kolam.
         if (bendera && geoBenderaAsli) {
@@ -2097,7 +2331,14 @@ function putaran() {
 
     perbaruiLingkungan();
     perbaruiLabelWarga();
-    renderer.render(scene, camera);
+    // Selama ruangan Balai Desa terbuka, dunia luar tertutup sepenuhnya dan
+    // kanvas ruangan yang menyala. Tetap merender dua kanvas WebGL sekaligus
+    // membuat keduanya berebut GPU: di perangkat tanpa kartu grafis khusus,
+    // ruangan turun ke bawah 1 bingkai/detik dan tombol jalan terasa mati.
+    // Peta luar sudah "dibekukan" oleh lapisan ruangan, jadi aman dilewati.
+    if (!interiorTerbuka3d) {
+        renderer.render(scene, camera);
+    }
 
     if (!muatSembunyi) {
         muatSembunyi = true;

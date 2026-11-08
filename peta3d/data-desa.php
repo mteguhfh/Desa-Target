@@ -40,11 +40,22 @@ try {
     $pdo = db();
 
     $warga = [];
-    foreach ($pdo->query('SELECT id, nama, gang FROM warga ORDER BY id ASC') as $baris) {
+    foreach ($pdo->query('SELECT * FROM warga ORDER BY id ASC') as $baris) {
+        $warna = warna_warga($baris);
         $warga[] = [
             'nomor' => nomor_warga((int) $baris['id']),
             'nama' => $baris['nama'],
             'gang' => $baris['gang'],
+            // Warna sudah dalam kode hex supaya klien tidak perlu tahu palet.
+            'baju' => hex_warna($baris, 'baju'),
+            'kulit' => hex_warna($baris, 'kulit'),
+            'topi' => hex_warna($baris, 'topi'),
+            // Nama warna untuk keterangan di kartu popover.
+            'warnaNama' => [
+                'baju' => WARNA_BAJU[$warna['baju']]['nama'],
+                'kulit' => WARNA_KULIT[$warna['kulit']]['nama'],
+                'topi' => WARNA_TOPI[$warna['topi']]['nama'],
+            ],
         ];
     }
 

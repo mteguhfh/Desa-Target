@@ -131,17 +131,24 @@ Alat ini hanya berjalan dari terminal (CLI). Kalau dibuka dari web, akses ditola
 
 ## Deployment
 
-Situs production berjalan di VPS Plesk (`<panel-hosting>`, `<ip-server>`) sebagai subdomain `desa.kejartarget.id` di dalam subscription `kejartarget.id`.
+Situs production berjalan di hosting Plesk sebagai subdomain `desa.kejartarget.id`
+(subscription `kejartarget.id`).
 
-- Docroot: `<docroot>` (user sistem `kejartarget`)
-- PHP: 8.3 FPM (`<php-fpm>`), ekstensi `pdo_sqlite` tersedia
-- SSL: sertifikat Let's Encrypt `kejartarget.id` yang sudah mencakup `*.kejartarget.id`
-- DNS: tercakup wildcard proxied `*.kejartarget.id` di Cloudflare, tidak perlu record baru
+- PHP: 8.3 FPM, ekstensi `pdo_sqlite` tersedia
+- SSL: sertifikat Let's Encrypt yang sudah mencakup `*.kejartarget.id`
+- DNS: tercakup wildcard proxied di Cloudflare, tidak perlu record baru
 - Redirect HTTP ke HTTPS dan HSTS diatur di `.htaccess`
 
-Catatan keamanan: `.htaccess` di root menolak akses web langsung ke `config.php` dan `db.php`, dan `data/.htaccess` menolak seluruh folder `data/` supaya file SQLite tidak bisa diunduh.
+Nilai yang spesifik satu server (alamat, docroot, user sistem, lokasi biner PHP)
+sengaja TIDAK ditulis di README karena repo ini publik. Simpan di berkas lokal
+yang tidak di-commit, mis. `DEPLOY.local.md` (sudah masuk `.gitignore`).
 
-Deploy ulang (tar + scp, tanpa `.git` dan tanpa database lokal):
+Catatan keamanan: `.htaccess` di root menolak akses web langsung ke `config.php`
+dan `db.php`, dan `data/.htaccess` menolak seluruh folder `data/` supaya file
+SQLite tidak bisa diunduh.
+
+Deploy ulang (tar + scp, tanpa `.git` dan tanpa database lokal). `<ssh-anda>`,
+`<docroot>` dan `<user-sistem>` diisi dari `DEPLOY.local.md`:
 
 ```bash
 tar czf /tmp/desa-deploy.tar.gz --exclude=.git --exclude='data/*.sqlite' .
@@ -149,7 +156,8 @@ scp /tmp/desa-deploy.tar.gz <ssh-anda>:/tmp/
 ssh <ssh-anda> 'cd <docroot> && tar xzf /tmp/desa-deploy.tar.gz && chown -R <user-sistem>:psacln .'
 ```
 
-Database production bisa dibuat ulang/di-seed dengan menjalankan alat baris perintah sebagai user `kejartarget`:
+Database production bisa dibuat ulang/di-seed dengan menjalankan alat baris
+perintah sebagai user aplikasi di server (detail di `DEPLOY.local.md`):
 
 ```bash
 ssh <ssh-anda> 'cd <docroot> && sudo -u <user-sistem> <php-cli> tools/tambah-bangunan.php "Nama" "Gang" "Peminta" "Komentar"'
