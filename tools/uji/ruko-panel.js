@@ -4,7 +4,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
     const page = await halaman(null, true, width);
     await page.goto(BASE + '/', { waitUntil: 'networkidle' });
     const kotak = await page.locator('#tabBar .tab-item').evaluateAll(es => es.map(e => { const r=e.getBoundingClientRect(); return {w:r.width,h:r.height,y:r.y}; }));
-    cek(`lima tab setara dan sejajar ${width}px`, kotak.length === 5 && kotak.every(r => Math.abs(r.w-kotak[0].w)<1 && r.h===kotak[0].h && r.y===kotak[0].y));
+    cek(`tujuh tab setara dan sejajar ${width}px`, kotak.length === 7 && kotak.every(r => Math.abs(r.w-kotak[0].w)<1 && r.h===kotak[0].h && r.y===kotak[0].y));
     await page.locator('#tabBar [data-panel="ruko"]').click();
     await page.locator('#rukoPanelTamu').waitFor({ state: 'visible' });
     cek(`Ruko membuka panel tanpa navigasi ${width}px`, new URL(page.url()).pathname === '/');

@@ -56,9 +56,9 @@ function tumpang(a, b) {
       const galat = [];
       page.on('pageerror', (e) => galat.push(String(e).slice(0, 120)));
 
-      // Ruko kini tab kelima yang setara, bukan pil kecil terpisah.
+      // Bangunan, Warga, Gang, Aku, Ruko, Pasar, Belajar: tujuh tab setara.
       const jumlahTab = await page.locator('#tabBar .tab-item').count();
-      catat(label + ': 6 tab tampil', jumlahTab === 6, String(jumlahTab));
+      catat(label + ': 7 tab tampil', jumlahTab === 7, String(jumlahTab));
       catat(label + ': tidak ada pil Ruko terpisah',
         await page.locator('#tabBar .tab-pil').count() === 0);
       catat(label + ': tab Ruko membuka panel di peta',

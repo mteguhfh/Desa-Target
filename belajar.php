@@ -154,6 +154,8 @@ try {
         if (($_GET['format'] ?? '') === 'json') {
             belajar_json(['ok' => false, 'galat' => 'kelas', 'pesan' => 'Kelasnya tidak ditemukan.'], 404);
         }
+        http_response_code(404);
+        $kelasHilang = true;
         require __DIR__ . '/belajar-markup.php';
         exit;
     }

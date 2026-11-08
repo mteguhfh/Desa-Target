@@ -1,5 +1,5 @@
 <?php
-// Tab bar bawah: Desa · Warga · Gang · Aku.
+// Tab bar bawah: Bangunan/Desa · Warga · Gang · Aku · Ruko · Pasar · Belajar.
 //
 // Di halaman peta, tab "Desa" diganti tombol "Bangunan" yang membuka daftar
 // bangunan di panel: mengetuk salah satunya menyorot bangunan itu di dunia.
@@ -7,16 +7,20 @@
 // lewat $tabDesaPanel.
 //
 // Penanda tab aktif dibaca dari $tabAktif yang diatur halaman pemanggil.
-// Bila tidak diatur, tidak ada tab yang disorot. Tab "Desa" adalah tautan
-// biasa (beranda); "Warga", "Gang", "Aku", dan "Ruko" membuka panel di
-// halaman ini lewat data-panel, supaya dunia 3D tidak hilang saat diketuk.
-// KTP dibuat langsung di panel Aku (ADR-0007).
+// Bila tidak diatur, tidak ada tab yang disorot. Hanya tab "Desa" yang tautan
+// biasa (beranda); sisanya membuka panel di halaman ini lewat data-panel,
+// supaya dunia 3D tidak hilang saat diketuk. KTP dibuat langsung di panel Aku
+// (ADR-0007).
 // Pencarian warga lebih berguna daripada daftar misi yang belum ada, jadi
 // slot Misi dipakai untuk Warga. Misi tetap ada sebagai isi panel tersembunyi
 // sampai fiturnya dibuat (lihat replica/rencana-kerja.md Tahap 3).
 //
+// Jumlah tab tidak lagi ditulis di CSS: .tab-bar memakai flex, jadi
+// menambah tab tidak memaksa tab terakhir turun ke baris kedua.
+//
 // Variabel yang dipakai:
-//   $tabAktif   id tab yang disorot: desa | misi | gang | aku | ruko
+//   $tabAktif   id tab yang disorot: desa | bangunan | warga | gang | aku |
+//               ruko | pasar | belajar
 //   $tabAwalan  awalan URL untuk tautan, '' dari akar situs, '../' dari peta3d/
 //
 // Markup saja. Perilakunya di tab-bar-skrip.php, gayanya di assets/style.css.
@@ -45,11 +49,10 @@ $daftarTab = [
     // membuka panel Ruko di dalam peta, bukan halaman baru (ADR-0006).
     ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'panel' => 'ruko'],
     ['id' => 'pasar', 'ikon' => '&#128717;', 'teks' => 'Pasar', 'panel' => 'pasar'],
-    // Belajar (Fitur 5) adalah tautan halaman, bukan panel: kurikulumnya
-    // panjang dan butuh ruang baca penuh. Panel data-isi="belajar" tetap
-    // tersedia dari chip Belajar di bilah atas peta 3D dan bangunan
-    // Pusat Pembelajaran.
-    ['id' => 'belajar', 'ikon' => '&#128218;', 'teks' => 'Belajar', 'href' => $tabAwalan . 'belajar.php'],
+    // Belajar (Fitur 5) membuka panel Pusat Pembelajaran di dalam peta, sama
+    // seperti Pasar: dunia 3D tidak hilang saat diketuk. Panelnya menyediakan
+    // tautan ke halaman penuh untuk kurikulum yang panjang.
+    ['id' => 'belajar', 'ikon' => '&#128218;', 'teks' => 'Belajar', 'panel' => 'belajar'],
 ];
 ?>
 <nav class="tab-bar" id="tabBar" aria-label="Navigasi utama desa">

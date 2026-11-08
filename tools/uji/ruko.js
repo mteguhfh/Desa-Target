@@ -269,7 +269,7 @@ async function klaimLewatHalaman(page, isian) {
       });
     });
     catat('tab Ruko selebar dan setinggi tab lain',
-      ukuran.length === 5 && ukuran.every((u) => u.w === ukuran[0].w && u.h === ukuran[0].h && u.top === ukuran[0].top),
+      ukuran.length === 7 && ukuran.every((u) => Math.abs(u.w - ukuran[0].w) <= 1 && u.h === ukuran[0].h && u.top === ukuran[0].top),
       JSON.stringify(ukuran));
     await pjalan.evaluate(() => document.querySelector('#tabBar [data-panel="ruko"]').click());
     await pjalan.waitForTimeout(500);

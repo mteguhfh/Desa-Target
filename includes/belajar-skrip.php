@@ -1,5 +1,11 @@
+<?php
+// Alamat endpoint mengikuti awalan halaman pemanggil: '' dari akar situs,
+// '../' dari peta3d/. Tanpa awalan, peta 3D meminta peta3d/belajar.php (404).
+$belajarAwalan = $tabAwalan ?? '';
+?>
 <script>
 (() => {
+    const endpoint = <?= json_encode($belajarAwalan . 'belajar.php') ?>;
     const akar = document.querySelector('[data-isi="belajar"]');
     if (!akar || akar.dataset.terpasang) return;
     akar.dataset.terpasang = '1';
@@ -28,7 +34,7 @@
         const id = identitas();
         const p = new URLSearchParams({ format: 'json', kelas: slug });
         if (id) { p.set('nomor', id.nomor); p.set('kunci', id.kunci); }
-        return 'belajar.php?' + p.toString();
+        return endpoint + '?' + p.toString();
     };
     async function muatKelas() {
         status.textContent = 'Memuat kelas...';
@@ -37,7 +43,7 @@
             const id = identitas();
             const p = new URLSearchParams({ format: 'json' });
             if (id) { p.set('nomor', id.nomor); p.set('kunci', id.kunci); }
-            const data = await ambil('belajar.php?' + p.toString());
+            const data = await ambil(endpoint + '?' + p.toString());
             if (!data.ok) throw new Error('gagal');
             status.textContent = data.pengunjung
                 ? 'Kamu melihat sebagai pengunjung. Bikin KTP atau masuk dari panel Aku supaya progres dan poin tersimpan.'
@@ -62,7 +68,7 @@
         if (!id) { status.textContent = 'Masuk dulu dari panel Aku supaya penyelesaianmu tercatat.'; return null; }
         const body = new URLSearchParams({ nomor: id.nomor, kunci: id.kunci, materi: String(materiId), ...ekstra });
         try {
-            const data = await ambil('belajar.php', { method: 'POST', body });
+            const data = await ambil(endpoint, { method: 'POST', body });
             status.textContent = data.pesan || 'Selesai.';
             return data;
         } catch (_) {
@@ -109,7 +115,7 @@
                 if (m.terbuka && !m.selesai && m.tipe === 'kuis' && Array.isArray(m.soal)) {
                     const form = buat('form', '');
                     m.soal.forEach((s, i) => {
-                        const fs = buat('fieldset', 'kolom');
+                        const fs = buat('fieldset', '');
                         fs.append(buat('legend', '', (i + 1) + '. ' + s.tanya));
                         (s.pilihan || []).forEach((pil, j) => {
                             const labelEl = buat('label', 'radio-baris');

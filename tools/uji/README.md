@@ -36,16 +36,16 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | `paritas-katalog.js` | kategori dan harga, filter, fallback, interior Pasar/ruko, keyboard dan D-pad pada 360/1440px |
 | `paritas-bentuk.js` | empat pratinjau kepala, penyimpanan, kartu dan fallback nilai asing |
 | `pemulihan-kartu.js` | hash kode, galat seragam, token wajib, pemulihan di peramban baru, kunci lama dicabut, kode sekali pakai dan pembuatan ulang |
-| `beranda-peta.js` | beranda 200, kanvas 3D, lima tab, vendor lokal, Tentang dan tautan sambutan |
+| `beranda-peta.js` | beranda 200, kanvas 3D, tujuh tab, vendor lokal, Tentang dan tautan sambutan |
 | `sambutan.js` | muncul pertama kali, diingat, buka ulang, Escape, sapaan warga, aksi Misi |
 | `aku-panel.js` | validasi nama, terbit KTP dari panel, nomor dan kunci tersimpan serta dikenali setelah muat ulang |
-| `ruko-panel.js` | lima tab sejajar di desktop dan ponsel, keadaan tamu, tanpa ruko, pemilik, dan katalog |
+| `ruko-panel.js` | tujuh tab sejajar di desktop dan ponsel, keadaan tamu, tanpa ruko, pemilik, dan katalog |
 | `gambar-usaha.js` | pilih, ganti, hapus gambar lokal, sinkronisasi peta dan panel, URL bebas ditolak |
 | `peta-3d-sakelar.js` | 3D jadi default, sakelar pindah mode, pilihan diingat, jalan di ponsel |
 | `tata-letak-sakelar.js` | sakelar tidak menimpa tombol atau chip di 3 ukuran layar |
 | `bilah-atas.js` | chip bilah atas peta 3D (merek, Chat, Poin, Siang, suasana) sama tinggi dan sejajar di 5 ukuran layar, tidak keluar layar, maksimal dua baris |
 | `adr0004-satu-sumber-data.js` | koordinat 3D berasal dari `peta-posisi.php`, bukan salinan; cadangan tetap jalan bila endpoint mati |
-| `tab-bar-panel.js` | tab bar lima tab dan panel bersayap di 4 ukuran layar × peta 3D/2D: panel tidak menimpa tab atau sakelar, tab aktif benar-benar bisa diketuk, dunia peta tetap terlihat |
+| `tab-bar-panel.js` | tab bar tujuh tab dan panel bersayap di 4 ukuran layar × peta 3D/2D: panel tidak menimpa tab atau sakelar, tab aktif benar-benar bisa diketuk, dunia peta tetap terlihat |
 | `tahap2-cari-sorot-interior.js` | pencarian warga (termasuk uji injeksi SQL dan wildcard), sorot bangunan dari daftar di 3D dan 2D, interior Balai Desa tanpa pindah halaman |
 | `dompet-poin.js` | Fitur 1: kartu menerbitkan nomor + kunci, klaim harian sekali sehari (409 pada klaim kedua), poin misi sekali per warga per hari, isolasi saldo dua warga, kunci wajib, injeksi nomor/kunci/kode, panel Misi dan chip saldo di 3D dan 2D |
 | `chat.js` | Chat publik, identitas dari kartu, autentikasi, kanal gang, batas laju, injeksi, dan polling panel |

@@ -207,9 +207,9 @@ async function buatWarga(browser, nama, gang) {
     });
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     const tombolChat = halaman === 'peta.php' ? '#tombolChat' : '#tombolChat2d';
-    // Ruko kini tab kelima yang setara, bukan pil terpisah.
-    catat(halaman + ': tab bar memuat enam menu',
-      await tamu.locator('#tabBar .tab-item').count() === 6);
+    // Bangunan, Warga, Gang, Aku, Ruko, Pasar, Belajar: tujuh tab setara.
+    catat(halaman + ': tab bar memuat tujuh menu',
+      await tamu.locator('#tabBar .tab-item').count() === 7);
     catat(halaman + ': tombol Chat ada di bilah atas', await tamu.locator(tombolChat).isVisible());
     await tamu.locator(tombolChat).click();
     await tamu.waitForTimeout(500);

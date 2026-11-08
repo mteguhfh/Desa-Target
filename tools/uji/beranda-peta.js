@@ -7,7 +7,7 @@ jalankan(async ({ halaman, cek, BASE }) => {
   cek('beranda membalas 200', response.status() === 200);
   await page.waitForSelector('#panggung canvas');
   cek('beranda menampilkan kanvas 3D', await page.locator('#panggung canvas').isVisible());
-  cek('beranda punya lima tab', await page.locator('#tabBar .tab-item').count() === 5);
+  cek('beranda punya tujuh tab', await page.locator('#tabBar .tab-item').count() === 7);
   const vendor = await page.locator('script[type="importmap"]').textContent();
   cek('Three.js berasal dari vendor lokal', vendor.includes('vendor/') && !/https?:/.test(vendor));
   cek('beranda tanpa galat JavaScript', galat.length === 0);
