@@ -9,6 +9,8 @@ define('APP_BASE_URL', rtrim(getenv('DESA_TARGET_BASE_URL') ?: 'https://desa.kej
 
 define('APP_NAME', 'Desa Target');
 define('APP_INSTAGRAM', 'https://www.instagram.com/desatarget');
+// Tanggal berdiri yang menjadi titik awal hitungan usia desa.
+define('DESA_DIBUKA', '2026-01-01');
 
 date_default_timezone_set('Asia/Jakarta');
 

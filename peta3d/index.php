@@ -175,6 +175,7 @@ try {
         padding: 0 14px; font-size: 13.5px; font-weight: 700; color: #374151;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);
     }
+    .chip-hari { display: inline-flex; align-items: center; height: 38px; padding: 0 12px; border: 1px solid rgba(255,255,255,.28); border-radius: 6px; background: rgba(15,23,42,.7); color: #f8fafc; font-size: 13px; font-weight: 700; white-space: nowrap; }
     .chip-waktu.malam { background: rgba(30,41,59,0.92); color: #e2e8f0; }
     /* Suasana desa: ramai atau sepi, dihitung dari warga yang berdiri. */
     .chip-suasana {
@@ -216,7 +217,7 @@ try {
     @media (max-width: 560px) { .pil-nav.sembunyi-kecil { display: none; } }
     @media (max-width: 420px) {
         .lencana-merek { height: 34px; font-size: 15px; }
-        .pil-nav, .chip-waktu, .chip-suasana, .chip-poin { height: 34px; font-size: 12.5px; padding: 0 12px; }
+        .pil-nav, .chip-hari, .chip-waktu, .chip-suasana, .chip-poin { height: 34px; font-size: 12.5px; padding: 0 12px; }
     }
 
     /* --- Kartu pengantar --- */
@@ -549,6 +550,7 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
+    <span class="chip-hari" id="chipHari">Hari <?= max(1, (int) ((new DateTimeImmutable('today'))->diff(new DateTimeImmutable(DESA_DIBUKA))->days + 1)) ?></span>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
     <?php // Chat antar gang (Fitur 2). Dibuka sebagai isi panel bersayap, jadi
           // tab bar tetap empat dan dunia 3D di belakangnya tidak hilang. ?>

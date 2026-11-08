@@ -204,9 +204,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.5 Hitungan Hari ke-N dan suasana hari
 
-- [ ] Bilah atas menampilkan "Hari ke-N Desa Target" sejak tanggal berdirinya
+- [x] Bilah atas menampilkan "Hari ke-N Desa Target" sejak tanggal berdirinya
   desa, di samping jumlah warga dan bangunan.
-- [ ] Bila hari ini ada acara Pasar Malam atau CFD, bilah atas menyebut acara
+- [x] Bila hari ini ada acara Pasar Malam atau CFD, bilah atas menyebut acara
   itu, bukan hanya "Pagi" atau "Malam".
 - Berkas: `peta3d/index.php`, `includes/peta-markup.php`, `config.php`,
   `assets/style.css`.
