@@ -329,6 +329,11 @@ try {
         display: inline-block; font-size: 11.5px; font-weight: 700; color: #fff;
         border-radius: 999px; padding: 2px 9px; margin-bottom: 6px;
     }
+    .popover .lencana[hidden], .popover .pop-pesan[hidden] { display: none; }
+    .popover .pop-pesan { display: block; width: 100%; min-height: 44px; margin-top: 12px; padding: 10px 14px; border: 1px solid #172b46; border-radius: 9px; background: #f8ce46; color: #172b46; font: inherit; font-weight: 700; cursor: pointer; }
+    .popover .pop-pesan:hover { background: #f2bf27; }
+    .popover .pop-pesan:active { transform: translateY(1px); }
+    .popover .pop-pesan:focus-visible { outline: 3px solid #172b46; outline-offset: 3px; }
 
     /* --- Mode Keliling Desa --- */
     .dpad {
@@ -638,6 +643,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
     <span class="lencana" id="popLencana" hidden></span>
     <p class="kutipan" id="popKutipan" hidden></p>
     <p id="popIsi"></p>
+    <button type="button" class="pop-pesan" id="popPesan" hidden>Kirim pesan pribadi</button>
     <a class="pop-kunjungi" id="popKunjungi" href="#" target="_blank" rel="noopener noreferrer" hidden>Kunjungi usaha</a>
 </div>
 
@@ -1589,7 +1595,8 @@ function bangunWarga(daftar) {
     agenWarga.length = 0;
     const perGang = {};
     daftar.slice(0, BATAS_WARGA).forEach((w, i) => {
-        const z = ZONA_GANG[w.gang];
+        const zona = ZONA_GANG[w.gang];
+        const z = zona ? { ...zona, ...(WARNA_GANG[w.gang] || { warna: 0x64748b, css: '#64748b' }) } : null;
         if (!z) return;
         const rect = rectWara(z);
         perGang[w.gang] = perGang[w.gang] || 0;
@@ -2221,6 +2228,13 @@ function bukaPopover(data, objek, clientX, clientY) {
     const kutipan = document.getElementById('popKutipan');
     if (data.kutipan) { kutipan.hidden = false; kutipan.textContent = data.kutipan; } else kutipan.hidden = true;
     document.getElementById('popIsi').textContent = data.isi;
+    const tombolPesan = document.getElementById('popPesan');
+    tombolPesan.hidden = !data.nomor || data.nomor === localStorage.getItem('dt_nomor');
+    tombolPesan.onclick = () => {
+        tutupPopover();
+        aturModeJalan(false);
+        window.__bicaraWarga?.(data.nomor, data.judul);
+    };
     if (tombolKunjungi) {
         const tautan = tautanAman(data.tautan);
         if (tautan) {
@@ -2232,9 +2246,11 @@ function bukaPopover(data, objek, clientX, clientY) {
             tombolKunjungi.hidden = true;
         }
     }
-    popoverEl.style.left = Math.min(clientX + 14, window.innerWidth - 316) + 'px';
-    popoverEl.style.top = Math.min(clientY + 14, window.innerHeight - 190) + 'px';
     popoverEl.classList.add('tampil');
+    const ukuran = popoverEl.getBoundingClientRect();
+    popoverEl.style.left = Math.max(12, Math.min(clientX + 14, innerWidth - ukuran.width - 12)) + 'px';
+    const batasBawah = Math.min(innerHeight - 12, document.getElementById('tabBar')?.getBoundingClientRect().top || innerHeight - 12);
+    popoverEl.style.top = Math.max(12, Math.min(clientY + 14, batasBawah - ukuran.height - 12)) + 'px';
     if (agenJeda) agenJeda.jedaPopover = false;
     agenJeda = agenDariObjek(objek);
     if (agenJeda) agenJeda.jedaPopover = true;
