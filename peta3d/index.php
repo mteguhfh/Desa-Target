@@ -1790,6 +1790,7 @@ function terapkanAgen(agen, waktu) {
 // Mode Keliling Desa: jalan sebagai "Kamu"
 // ---------------------------------------------------------------------------
 let modeJalan = false;
+let tujuanJalan = null;
 const tombolJalan = document.getElementById('tombolJalan');
 const dpad = document.getElementById('dpad');
 const chipMasuk = document.getElementById('chipMasuk');
@@ -1824,6 +1825,7 @@ function titikJalanAman(x, y) {
 }
 function aturModeJalan(nyala) {
     modeJalan = nyala;
+    if (!nyala) tujuanJalan = null;
     tombolJalan.textContent = nyala ? 'Berhenti' : 'Keliling Desa';
     tombolJalan.classList.toggle('aktif', nyala);
     dpad.classList.toggle('tampil', nyala);
@@ -1944,8 +1946,13 @@ function sudutJalan(maju, samping) {
 }
 
 function perbaruiKamu(dt) {
-    const maju = (kunciDitekan['w'] || kunciDitekan['arrowup'] || tombolDitekan['maju'] ? 1 : 0) - (kunciDitekan['s'] || kunciDitekan['arrowdown'] || tombolDitekan['mundur'] ? 1 : 0);
-    const samping = (kunciDitekan['d'] || kunciDitekan['arrowright'] || tombolDitekan['kanan'] ? 1 : 0) - (kunciDitekan['a'] || kunciDitekan['arrowleft'] || tombolDitekan['kiri'] ? 1 : 0);
+    let maju = (kunciDitekan['w'] || kunciDitekan['arrowup'] || tombolDitekan['maju'] ? 1 : 0) - (kunciDitekan['s'] || kunciDitekan['arrowdown'] || tombolDitekan['mundur'] ? 1 : 0);
+    let samping = (kunciDitekan['d'] || kunciDitekan['arrowright'] || tombolDitekan['kanan'] ? 1 : 0) - (kunciDitekan['a'] || kunciDitekan['arrowleft'] || tombolDitekan['kiri'] ? 1 : 0);
+    if (tujuanJalan && !maju && !samping) {
+        const dx = tujuanJalan.x - kamu.x, dy = tujuanJalan.y - kamu.y;
+        if (Math.hypot(dx, dy) < 18) { tujuanJalan = null; chipJalan.textContent = 'Sudah sampai tujuan.'; }
+        else { const sudut = Math.atan2(dx, dy); maju = 1; samping = 0; sudutJalan.kunci = '1:0'; sudutJalan.sudut = sudut; sudutJalan.lepas = false; }
+    }
     if (maju || samping) {
         // Koordinat dunia: x = kamu.x, z = kamu.y.
         const sudut = sudutJalan(maju, samping);
@@ -2315,11 +2322,32 @@ function antarTujuan(kode) {
     };
     tutupPopover();
 }
+function tujuanDariKavling(kavling) {
+    const p = POSISI_KAVLING[Number(kavling)];
+    return p ? { x: p[0], y: p[1] + 75 } : null;
+}
+function tujuanDariKode(kode) {
+    return {
+        balai: { x: FOKUS.x, y: FOKUS.y + 42 },
+        pasar: { x: 1510, y: 850 },
+        gerbang: { x: 1000, y: 1260 },
+    }[kode] || null;
+}
+function ikutiTujuan(tujuan) {
+    if (!tujuan) return;
+    tujuanJalan = tujuan;
+    if (!modeJalan) aturModeJalan(true);
+    chipJalan.textContent = 'Mengikuti tujuan. Tekan Berhenti atau Esc untuk membatalkan.';
+}
 document.addEventListener('click', function (e) {
     const tombol = e.target.closest ? e.target.closest('[data-antar]') : null;
-    if (tombol) antarTujuan(tombol.getAttribute('data-antar'));
+    if (tombol) { e.stopPropagation(); antarTujuan(tombol.getAttribute('data-antar')); }
     const kavling = e.target.closest ? e.target.closest('[data-antar-kavling]') : null;
     if (kavling) sorotKavling(Number(kavling.getAttribute('data-antar-kavling')));
+    const ikuti = e.target.closest ? e.target.closest('[data-ikuti-kavling]') : null;
+    if (ikuti) ikutiTujuan(tujuanDariKavling(ikuti.getAttribute('data-ikuti-kavling')));
+    const ikutiKode = e.target.closest ? e.target.closest('[data-ikuti]') : null;
+    if (ikutiKode) { e.stopPropagation(); ikutiTujuan(tujuanDariKode(ikutiKode.getAttribute('data-ikuti'))); }
 });
 
 document.addEventListener('click', (e) => {

@@ -1469,11 +1469,15 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .daftar-tujuan { margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
 .panel-subjudul { margin: 0 0 8px; font-weight: 800; color: #1e293b; }
 .tujuan-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.tujuan-kartu { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 9px 5px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1e3a8a; font-size: 12px; text-align: center; }
+.tujuan-kartu > span { display: flex; gap: 4px; }
 .tujuan-tombol, .tujuan-antar-kecil { border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1e3a8a; cursor: pointer; font: inherit; }
 .tujuan-tombol { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 5px; font-size: 19px; }
 .tujuan-tombol span { font-size: 11px; font-weight: 700; }
+.tujuan-tombol small { color: #64748b; font-size: 10px; }
 .tujuan-tombol:hover, .tujuan-antar-kecil:hover { border-color: #2563eb; background: #eff6ff; }
 .tujuan-antar-kecil { align-self: center; padding: 5px 8px; font-size: 11px; font-weight: 800; }
+.tujuan-aksi { display: flex; gap: 4px; align-self: center; }
 @media (max-width: 420px) { .tujuan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .aku-koleksi h3 { margin: 0 0 9px; font-size: 15px; }
 .aku-lencana { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }

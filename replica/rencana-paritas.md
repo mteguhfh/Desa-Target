@@ -275,7 +275,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 2.1b Pergi ke tujuan: Ikuti
 
-- [ ] Aksi Ikuti membuat avatar berjalan sendiri menuju tujuan, mengikuti
+- [x] Aksi Ikuti membuat avatar berjalan sendiri menuju tujuan, mengikuti
   panah, dan berhenti saat sampai.
 - Berkas: `includes/pergi-ke-skrip.php`, `peta3d/index.php`,
   `assets/style.css`.

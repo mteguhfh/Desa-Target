@@ -123,9 +123,9 @@ foreach ($panelPapanGang as $barisPapan) {
             <div class="daftar-tujuan">
                 <p class="panel-subjudul">Pergi ke tujuan</p>
                 <div class="tujuan-grid">
-                    <button type="button" class="tujuan-tombol" data-antar="balai">🏛️ <span>Balai Desa</span></button>
-                    <button type="button" class="tujuan-tombol" data-antar="pasar">🛍️ <span>Pasar Desa</span></button>
-                    <button type="button" class="tujuan-tombol" data-antar="gerbang">🚪 <span>Gerbang Desa</span></button>
+                    <?php foreach ([['balai', '🏛️', 'Balai Desa'], ['pasar', '🛍️', 'Pasar Desa'], ['gerbang', '🚪', 'Gerbang Desa']] as [$kodeTujuan, $ikonTujuan, $namaTujuan]): ?>
+                        <div class="tujuan-kartu"><strong><?= $ikonTujuan ?> <?= e($namaTujuan) ?></strong><span><button type="button" class="tujuan-antar-kecil" data-antar="<?= e($kodeTujuan) ?>">Antar</button><button type="button" class="tujuan-antar-kecil" data-ikuti="<?= e($kodeTujuan) ?>">Ikuti</button></span></div>
+                    <?php endforeach; ?>
                 </div>
             </div>
             <?php if ($panelBangunan === []): ?>
@@ -159,7 +159,7 @@ foreach ($panelPapanGang as $barisPapan) {
                                 <?php endif; ?>
                             </button>
                             <?php if ($kavling !== null): ?>
-                                <button type="button" class="tujuan-antar-kecil" data-antar-kavling="<?= (int) $kavling ?>">Antar</button>
+                                <span class="tujuan-aksi"><button type="button" class="tujuan-antar-kecil" data-antar-kavling="<?= (int) $kavling ?>">Antar</button><button type="button" class="tujuan-antar-kecil" data-ikuti-kavling="<?= (int) $kavling ?>">Ikuti</button></span>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
