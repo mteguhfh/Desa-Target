@@ -202,6 +202,18 @@ function db(): PDO
         )"
     );
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_lapak_acara ON lapak (acara, tanggal, id)');
+    // Gambar usaha untuk lapak (fitur gambar jualan). Ruko memakai kolom
+    // bangunan.gambar; lapak tanpa ruko menyimpan gambarnya sendiri.
+    $kolomLapak = kolom_tabel($pdo, 'lapak');
+    if (!isset($kolomLapak['gambar'])) {
+        $pdo->exec("ALTER TABLE lapak ADD COLUMN gambar TEXT NOT NULL DEFAULT ''");
+    }
+    // Gambar usaha untuk ruko: jalur relatif di assets/img/, hanya berkas
+    // yang sudah ada. Lihat gambar_usaha_sah().
+    $kolomBangunan = kolom_tabel($pdo, 'bangunan');
+    if (!isset($kolomBangunan['gambar'])) {
+        $pdo->exec("ALTER TABLE bangunan ADD COLUMN gambar TEXT NOT NULL DEFAULT ''");
+    }
 
     $daftarMisi = [
         ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
@@ -850,7 +862,7 @@ function ruko_milik(PDO $pdo, string $nomor): ?array
 // Mengembalikan:
 //   ['ok' => true, 'ruko' => baris bangunan, 'saldo' => n]
 //   ['galat' => 'warga' | 'nama' | 'cerita' | 'gang' | 'tautan' | 'punya' | 'penuh' | 'poin']
-function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, $tautan, string $gang, ?int $totalKavling = null): array
+function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, $tautan, string $gang, ?int $totalKavling = null, $gambar = null): array
 {
     $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
     if ($warga === null) {
@@ -885,12 +897,21 @@ function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita,
     if (RUKO_BIAYA_POIN > 0 && saldo_poin($pdo, $nomorWarga) < RUKO_BIAYA_POIN) {
         return ['galat' => 'poin'];
     }
+    // Gambar usaha opsional, tapi kalau diisi wajib salah satu dari
+    // daftar_gambar_usaha(): tidak ada URL bebas yang masuk ke src gambar.
+    $gambarSah = '';
+    if (is_string($gambar) && trim($gambar) !== '') {
+        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        if ($gambarSah === '') {
+            return ['galat' => 'gambar'];
+        }
+    }
 
     $pdo->beginTransaction();
     try {
         $pdo->prepare(
-            "INSERT INTO bangunan (nama, gang, diminta_oleh, komentar, tanggal, jenis, nomor, tautan, aktif)
-             VALUES (?, ?, ?, ?, ?, 'ruko', ?, ?, 1)"
+            "INSERT INTO bangunan (nama, gang, diminta_oleh, komentar, tanggal, jenis, nomor, tautan, gambar, aktif)
+             VALUES (?, ?, ?, ?, ?, 'ruko', ?, ?, ?, 1)"
         )->execute([
             $namaUsaha,
             $gang,
@@ -899,6 +920,7 @@ function klaim_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita,
             date('Y-m-d'),
             $nomorWarga,
             $tautanSah,
+            $gambarSah,
         ]);
         $idRuko = (int) $pdo->lastInsertId();
         $pdo->prepare('INSERT INTO ruko_klaim (nomor, bangunan_id) VALUES (?, ?)')
@@ -933,6 +955,90 @@ function lepas_ruko(PDO $pdo, $nomor, $kunci): array
     }
     $pdo->prepare("UPDATE bangunan SET aktif = 0 WHERE id = ?")->execute([(int) $ruko['id']]);
     return ['ok' => true];
+}
+
+// Ubah ruko milik warga: nama usaha, cerita, tautan, dan gambar. Aturan
+// validasinya sama persis dengan klaim_ruko(), jadi tidak ada jalan pintas
+// untuk menyimpan nama panjang atau tautan http://.
+// Mengembalikan ['ok' => true, 'ruko' => baris] atau ['galat' => ...].
+function ubah_ruko(PDO $pdo, $nomor, $kunci, string $namaUsaha, string $cerita, $tautan, $gambar): array
+{
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) {
+        return ['galat' => 'warga'];
+    }
+    $ruko = ruko_milik($pdo, nomor_warga((int) $warga['id']));
+    if ($ruko === null) {
+        return ['galat' => 'tidak-ada'];
+    }
+    $namaUsaha = trim($namaUsaha);
+    $panjang = function_exists('mb_strlen') ? mb_strlen($namaUsaha) : strlen($namaUsaha);
+    if ($panjang < 3 || $panjang > 60 || preg_match('/[\x00-\x1F\x7F]/u', $namaUsaha) === 1) {
+        return ['galat' => 'nama'];
+    }
+    $cerita = trim($cerita);
+    $panjangCerita = function_exists('mb_strlen') ? mb_strlen($cerita) : strlen($cerita);
+    if ($panjangCerita > RUKO_CERITA_MAKS) {
+        return ['galat' => 'cerita'];
+    }
+    $tautanSah = tautan_usaha_sah($tautan);
+    if ($tautanSah === null) {
+        return ['galat' => 'tautan'];
+    }
+    // Kosong berarti menghapus gambar. Selain kosong wajib gambar yang sah.
+    $gambarSah = '';
+    if (is_string($gambar) && trim($gambar) !== '') {
+        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        if ($gambarSah === '') {
+            return ['galat' => 'gambar'];
+        }
+    }
+    $pdo->prepare('UPDATE bangunan SET nama = ?, komentar = ?, tautan = ?, gambar = ? WHERE id = ?')
+        ->execute([$namaUsaha, $cerita, $tautanSah, $gambarSah, (int) $ruko['id']]);
+    $stmt = $pdo->prepare('SELECT * FROM bangunan WHERE id = ?');
+    $stmt->execute([(int) $ruko['id']]);
+    return ['ok' => true, 'ruko' => $stmt->fetch()];
+}
+
+// Kunci rahasia warga sebagai teks, dibaca langsung dari basis data. Dipakai
+// saat kunci baru saja terbit (mis. KTP dibuat lewat panel peta) sebelum
+// barisnya dibaca ulang. Mengembalikan '' bila warga tidak ada.
+function kunci_warga(PDO $pdo, int $id): string
+{
+    $stmt = $pdo->prepare('SELECT kunci FROM warga WHERE id = ?');
+    $stmt->execute([$id]);
+    $nilai = $stmt->fetchColumn();
+    return $nilai === false ? '' : (string) $nilai;
+}
+
+// Gambar usaha yang boleh dipakai ruko dan lapak: hanya berkas yang benar-
+// benar ada di assets/img/ dengan nama aman. Nilainya jalur relatif
+// "assets/img/nama.png", bukan URL bebas, supaya tidak ada yang bisa
+// menyisipkan alamat luar atau skrip ke dalam src gambar.
+function daftar_gambar_usaha(): array
+{
+    $wadah = __DIR__ . '/assets/img';
+    if (!is_dir($wadah)) {
+        return [];
+    }
+    $hasil = [];
+    foreach (scandir($wadah) ?: [] as $berkas) {
+        // Gambar contoh untuk pemilih gambar usaha; logo, maskot, dan berkas
+        // lain di assets/img/ bukan pilihan gambar jualan.
+        if (preg_match('/^contoh-[a-z0-9-]{2,50}\.(?:png|jpg|jpeg|webp)$/', $berkas) === 1) {
+            $hasil[] = 'assets/img/' . $berkas;
+        }
+    }
+    sort($hasil);
+    return $hasil;
+}
+
+function gambar_usaha_sah($gambar): ?string
+{
+    if (!is_string($gambar) || $gambar === '') {
+        return null;
+    }
+    return in_array($gambar, daftar_gambar_usaha(), true) ? $gambar : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1009,7 +1115,7 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
         return [];
     }
     $stmt = $pdo->prepare(
-        'SELECT id, acara, tanggal, nomor, nama_usaha, tautan, kavling, dibuat_pada
+        'SELECT id, acara, tanggal, nomor, nama_usaha, tautan, kavling, gambar, dibuat_pada
          FROM lapak WHERE acara = ? AND tanggal = ? ORDER BY id ASC'
     );
     $stmt->execute([$acara, $tanggal]);
@@ -1022,6 +1128,7 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
             'nomor' => $baris['nomor'],
             'namaUsaha' => $baris['nama_usaha'],
             'tautan' => $baris['tautan'],
+            'gambar' => (string) ($baris['gambar'] ?? ''),
             'kavling' => $i,
         ];
     }
@@ -1032,7 +1139,7 @@ function daftar_lapak(PDO $pdo, string $acara, string $tanggal): array
 // Mengembalikan:
 //   ['ok' => true, 'lapak' => [...], 'sudah' => bool]
 //   ['galat' => 'warga' | 'acara' | 'tutup' | 'tautan' | 'nama' | 'penuh' | 'sudah']
-function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null, ?string $namaUsaha = null, ?string $tautan = null): array
+function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null, ?string $namaUsaha = null, ?string $tautan = null, $gambar = null): array
 {
     $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
     if ($warga === null) {
@@ -1074,6 +1181,20 @@ function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null,
         return ['galat' => 'sudah'];
     }
 
+    // Gambar lapak: dari ruko bila pemilik punya ruko, selain itu dari
+    // isian panel. Kalau ruko tidak punya gambar, lapak boleh memakai gambar
+    // pilihan sendiri.
+    $gambarSah = '';
+    $gambarRuko = $ruko !== null ? (string) ($ruko['gambar'] ?? '') : '';
+    if ($gambarRuko !== '') {
+        $gambarSah = $gambarRuko;
+    } elseif (is_string($gambar) && trim($gambar) !== '') {
+        $gambarSah = gambar_usaha_sah(trim($gambar)) ?? '';
+        if ($gambarSah === '') {
+            return ['galat' => 'gambar'];
+        }
+    }
+
     $lapak = daftar_lapak($pdo, $kode, $tanggal);
     $batas = (int) (ACARA_LAPAK[$kode]['batas'] ?? 12);
     if (count($lapak) >= $batas) {
@@ -1081,8 +1202,8 @@ function klaim_lapak(PDO $pdo, $nomor, $kunci, $acara, ?string $sekarang = null,
     }
 
     $pdo->prepare(
-        'INSERT INTO lapak (acara, tanggal, nomor, nama_usaha, tautan, kavling) VALUES (?, ?, ?, ?, ?, ?)'
-    )->execute([$kode, $tanggal, $nomorWarga, $namaUsaha, $tautanSah, count($lapak)]);
+        'INSERT INTO lapak (acara, tanggal, nomor, nama_usaha, tautan, gambar, kavling) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    )->execute([$kode, $tanggal, $nomorWarga, $namaUsaha, $tautanSah, $gambarSah, count($lapak)]);
 
     return ['ok' => true, 'lapak' => daftar_lapak($pdo, $kode, $tanggal)];
 }

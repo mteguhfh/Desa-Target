@@ -77,14 +77,22 @@ $berikut = $pasarData['berikutnya'];
         <?php if ($daftarTampil === []): ?>
             <p class="seksi-deskripsi"><?= e($judulKosong) ?></p>
         <?php else: ?>
-            <ul class="daftar-ruko" id="pasarDaftarHalaman">
+            <ul class="lapak-grid" id="pasarDaftarHalaman">
                 <?php foreach ($daftarTampil as $i => $l): ?>
-                    <li class="daftar-ruko-baris">
-                        <span class="daftar-ruko-nama"><?= e((string) $l['namaUsaha']) ?></span>
-                        <span class="daftar-ruko-meta">Tenda <?= $i + 1 ?> &middot; <?= e((string) $l['nomor']) ?></span>
-                        <?php if (str_starts_with((string) $l['tautan'], 'https://')): ?>
-                            <a class="daftar-ruko-tautan" href="<?= e((string) $l['tautan']) ?>" target="_blank" rel="noopener noreferrer">Kunjungi lapak</a>
+                    <li class="lapak-kartu">
+                        <?php if (!empty($l['gambar'])): ?>
+                            <img class="gambar-usaha lapak-kartu-gambar" src="<?= e((string) $l['gambar']) ?>"
+                                 alt="Lapak <?= e((string) $l['namaUsaha']) ?>" loading="lazy" width="640" height="480">
+                        <?php else: ?>
+                            <span class="gambar-usaha-kosong">Belum ada foto lapak</span>
                         <?php endif; ?>
+                        <div class="lapak-kartu-isi">
+                            <h3 class="lapak-kartu-nama"><?= e((string) $l['namaUsaha']) ?></h3>
+                            <p class="lapak-kartu-meta">Tenda <?= $i + 1 ?> &middot; <?= e((string) $l['nomor']) ?></p>
+                            <?php if (str_starts_with((string) $l['tautan'], 'https://')): ?>
+                                <a class="tombol tombol-biasa lapak-kartu-tombol" href="<?= e((string) $l['tautan']) ?>" target="_blank" rel="noopener noreferrer">Kunjungi lapak</a>
+                            <?php endif; ?>
+                        </div>
                     </li>
                 <?php endforeach; ?>
             </ul>

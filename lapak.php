@@ -79,7 +79,8 @@ try {
         $acara,
         null,
         isset($isi['nama_usaha']) ? (string) $isi['nama_usaha'] : null,
-        isset($isi['tautan']) ? (string) $isi['tautan'] : null
+        isset($isi['tautan']) ? (string) $isi['tautan'] : null,
+        isset($isi['gambar']) ? (string) $isi['gambar'] : null
     );
 
     switch ($hasil['galat'] ?? null) {
@@ -109,6 +110,10 @@ try {
         case 'tautan':
             http_response_code(422);
             echo json_encode(['galat' => 'Tautan jualan harus diawali https:// dan berisi alamat situs yang benar.']);
+            exit;
+        case 'gambar':
+            http_response_code(422);
+            echo json_encode(['galat' => 'Gambar itu tidak tersedia. Pilih salah satu gambar di daftar.']);
             exit;
         default:
             http_response_code(403);

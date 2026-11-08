@@ -174,7 +174,10 @@ async function klaimLewatHalaman(page, isian) {
   // cerita maksimal 280 karakter
   const ceritaPanjang = 'x'.repeat(281);
   const tolakCerita = JSON.parse(php(
-    'require "db.php"; echo json_encode(klaim_ruko(db(), $argv[1], $argv[2], "Toko Uji Cerita", $argv[3], $argv[4], "Gang Jasa", 12));',
+    // Batas kavling dibuat longgar: basis data uji bisa sudah berisi data
+    // contoh ruko dan pasar, jadi angka 12 yang tetap membuat uji gagal
+    // karena "penuh" padahal yang diuji adalah cerita.
+    'require "db.php"; echo json_encode(klaim_ruko(db(), $argv[1], $argv[2], "Toko Uji Cerita", $argv[3], $argv[4], "Gang Jasa", 999));',
     warga2.nomor, warga2.kunci, ceritaPanjang, tautanBaik
   ));
   catat('cerita lebih dari 280 karakter ditolak', tolakCerita.galat === 'cerita');
@@ -182,7 +185,7 @@ async function klaimLewatHalaman(page, isian) {
   // Cerita berisi HTML harus disimpan sebagai teks, bukan dieksekusi.
   const ceritaHtml = '<img src=x onerror=alert(1)>Buka setiap hari';
   const klaimHtml = JSON.parse(php(
-    'require "db.php"; echo json_encode(klaim_ruko(db(), $argv[1], $argv[2], "Toko Uji Html", $argv[3], $argv[4], "Gang Jasa", 12));',
+    'require "db.php"; echo json_encode(klaim_ruko(db(), $argv[1], $argv[2], "Toko Uji Html", $argv[3], $argv[4], "Gang Jasa", 999));',
     warga2.nomor, warga2.kunci, ceritaHtml, tautanBaik
   ));
   catat('cerita berisi HTML diterima sebagai teks', klaimHtml.ok === true, JSON.stringify(klaimHtml.galat || ''));
@@ -245,26 +248,65 @@ async function klaimLewatHalaman(page, isian) {
   await p3.close();
 
   // ---------------------------------------------------------------------------
-  // 6b. Jalan masuk dari peta: pil Ruko di tab bar, tombol di kontrol 3D,
-  //     dan tautan di panel Bangunan
+  // 6b. Jalan masuk dari peta (ADR-0006): tab Ruko digambar sama seperti tab
+  //     lain dan membuka panel Ruko, bukan halaman baru. Tombol ruko di
+  //     kontrol 3D juga membuka panel yang sama.
   // ---------------------------------------------------------------------------
   {
     const pjalan = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await pjalan.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
-    catat('peta 3D: pil Ruko ada di tab bar',
-      await pjalan.locator('#tabBar a.tab-pil[href$="ruko.php"]').count() === 1);
-    catat('peta 3D: tombol Ruko ada di tumpukan kontrol',
-      await pjalan.locator('.kontrol a[href$="ruko.php"]').count() === 1);
-    await pjalan.evaluate(() => window.__tabBar && window.__tabBar.buka('bangunan', null));
-    await pjalan.waitForTimeout(400);
-    catat('peta 3D: panel Bangunan menautkan halaman Ruko',
-      await pjalan.locator('[data-isi="bangunan"] a[href$="ruko.php"]').count() === 1);
+    await pjalan.evaluate(() => localStorage.setItem('dt_sambutan', '1'));
+    const tabRuko = pjalan.locator('#tabBar [data-panel="ruko"]');
+    catat('peta 3D: Ruko jadi tab kelima di tab bar', await tabRuko.count() === 1);
+    catat('peta 3D: Ruko bukan pil terpisah lagi',
+      await pjalan.locator('#tabBar .tab-pil').count() === 0);
+    const ukuran = await pjalan.evaluate(() => {
+      const tab = Array.from(document.querySelectorAll('#tabBar .tab-item'));
+      return tab.map((t) => {
+        const r = t.getBoundingClientRect();
+        return { teks: t.innerText.trim(), w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top) };
+      });
+    });
+    catat('tab Ruko selebar dan setinggi tab lain',
+      ukuran.length === 5 && ukuran.every((u) => u.w === ukuran[0].w && u.h === ukuran[0].h && u.top === ukuran[0].top),
+      JSON.stringify(ukuran));
+    await pjalan.evaluate(() => document.querySelector('#tabBar [data-panel="ruko"]').click());
+    await pjalan.waitForTimeout(500);
+    catat('Ruko membuka panel di dalam peta, bukan halaman baru',
+      pjalan.url().includes('peta.php') && await pjalan.locator('#panelBersayap [data-isi="ruko"]').isVisible(),
+      pjalan.url());
+    catat('panel Ruko berjudul "Ruko Wargamu"',
+      (await pjalan.locator('#panelBersayapJudul').innerText()) === 'Ruko Wargamu');
+    await pjalan.evaluate(() => window.__tabBar.tutup(false));
+    await pjalan.waitForTimeout(300);
+    await pjalan.evaluate(() => document.getElementById('tombolRuko3d').click());
+    await pjalan.waitForTimeout(500);
+    catat('tombol ruko di kontrol 3D membuka panel Ruko yang sama',
+      await pjalan.locator('#panelBersayap [data-isi="ruko"]').isVisible());
+    catat('tombol ruko di kontrol 3D bukan tautan ke halaman lain',
+      await pjalan.locator('.kontrol a[href$="ruko.php"]').count() === 0);
     await pjalan.close();
+
+    // Pemilik ruko: panel menampilkan rukonya sendiri lewat ruko.php?json=1
+    const pmilik = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await pmilik.addInitScript((id) => {
+      localStorage.setItem('dt_nomor', id.nomor);
+      localStorage.setItem('dt_kunci', id.kunci);
+      localStorage.setItem('dt_sambutan', '1');
+    }, warga);
+    await pmilik.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+    await pmilik.evaluate(() => document.querySelector('#tabBar [data-panel="ruko"]').click());
+    await pmilik.waitForSelector('#rukoPanelMilik:not([hidden])', { timeout: 8000 }).catch(() => {});
+    const isiPanel = await pmilik.locator('#rukoPanelMilik').innerText().catch(() => '');
+    catat('panel Ruko pemilik menampilkan nama usahanya', isiPanel.includes(namaUsaha), isiPanel.slice(0, 80));
+    catat('panel Ruko pemilik menyediakan tombol Kunjungi tempat jualan',
+      await pmilik.locator('#rukoPanelKunjungi').isVisible());
+    await pmilik.close();
 
     const p2d = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await p2d.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
-    catat('peta 2D: pil Ruko ada di tab bar',
-      await p2d.locator('#tabBar a.tab-pil[href$="ruko.php"]').count() === 1);
+    catat('peta 2D: Ruko juga tab kelima',
+      await p2d.locator('#tabBar [data-panel="ruko"]').count() === 1);
     await p2d.close();
   }
 

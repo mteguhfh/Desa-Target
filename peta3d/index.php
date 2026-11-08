@@ -1,17 +1,41 @@
 <?php
 // Peta Desa 3D.
 //
-// Berkas ini bisa dijalankan dari dua tempat:
+// Berkas ini bisa dijalankan dari tiga tempat:
 //   - /peta3d/          langsung, untuk meninjau peta 3D sendiri
-//   - /peta.php         sebagai pintu masuk peta (mode default, ADR-0001),
-//                       lewat require di peta.php dengan $dariAkar = true
+//   - /peta.php         pintu masuk peta (ADR-0001), lewat require di peta.php
+//   - /index.php        beranda (ADR-0005), lewat require di index.php
+// Dua yang terakhir mengisi $dariAkar = true supaya alamatnya tetap pendek.
 //
 // Dua variabel di bawah menyesuaikan alamat aset dan tautan menurut tempat
 // berkas ini dijalankan: $awalan untuk tautan ke halaman situs, $folder3d
 // untuk tautan ke berkas di dalam peta3d/.
 $dariAkar = $dariAkar ?? false;
+// Beranda (ADR-0005) mengisi ini supaya peta membuka dari pandangan lebar
+// dalam versi 2D juga; peta.php dan peta3d/ membiarkannya kosong.
+$dariBeranda = $dariBeranda ?? false;
 $awalan = $dariAkar ? '' : '../';
 $folder3d = $dariAkar ? 'peta3d/' : './';
+
+// Konfigurasi situs dan e() untuk judul, meta, dan teks cadangan di bawah.
+// Dimuat di sini supaya peta3d/ bisa dibuka langsung tanpa kepala situs.
+require_once __DIR__ . '/../config.php';
+if (!function_exists('e')) {
+    function e(?string $teks): string
+    {
+        return htmlspecialchars($teks ?? '', ENT_QUOTES, 'UTF-8');
+    }
+}
+
+// Judul, deskripsi, OG, dan teks cadangan untuk mesin pencari serta peramban
+// yang tidak menjalankan JavaScript. Halaman pemanggil (index.php) boleh
+// mengisi $metaBeranda dengan judul, deskripsi, dan kanonis sendiri. Tanpa
+// itu, alamat kanonis jatuh ke APP_BASE_URL + /peta.php.
+$meta = $metaBeranda ?? [
+    'judul' => 'Peta Desa Target 3D',
+    'deskripsi' => 'Jelajahi Desa Target dalam tiga dimensi. Bangunan di sini lahir dari komentar warga Instagram @desatarget.',
+    'kanonis' => APP_BASE_URL . '/peta.php',
+];
 
 // Berkas ini sengaja PHP, bukan HTML statis, supaya penanda versi modul
 // bangunan3d.js dihitung dari waktu ubah berkasnya (filemtime). Setiap
@@ -28,11 +52,24 @@ $folder3dUrl = $dariAkar ? './peta3d/' : './';
 // Isi panel bersayap (tab Papan Gang dan bangunan). Dibaca dari basis data
 // supaya panel dan dunia 3D di belakangnya tidak mungkin berbeda angka.
 // Kegagalan basis data tidak boleh mematikan peta 3D: panel cukup kosong.
+// Token formulir KTP untuk panel Aku (ADR-0007). Dibuat di sesi yang sama
+// dengan ktp.php dan ktp-json.php, jadi formulir di panel bisa dikirim tanpa
+// membuka halaman KTP dulu.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+if (empty($_SESSION['token_ktp'])) {
+    $_SESSION['token_ktp'] = bin2hex(random_bytes(16));
+}
+$tokenKtpPanel = (string) $_SESSION['token_ktp'];
+
 $PAPAN_GANG_SERVER = [];
 $BANGUNAN_SERVER = [];
 $TOTAL_WARGA_SERVER = 0;
 $MISI_SERVER = [];
 $KAVLING_BANGUNAN = [];
+$TERBARU_SERVER = null;
+$JUMLAH_GANG_SERVER = 0;
 try {
     require_once __DIR__ . '/../db.php';
     $pdoPanel = db();
@@ -40,6 +77,8 @@ try {
     $BANGUNAN_SERVER = semua_bangunan_aktif($pdoPanel);
     $TOTAL_WARGA_SERVER = hitung_warga($pdoPanel);
     $MISI_SERVER = daftar_misi($pdoPanel);
+    $TERBARU_SERVER = bangunan_terbaru($pdoPanel);
+    $JUMLAH_GANG_SERVER = count(GANG_WARGA);
     // Kavling mengikuti urutan id, sama seperti yang dipakai dunia 3D.
     foreach ($BANGUNAN_SERVER as $i => $b) {
         $KAVLING_BANGUNAN[(int) $b['id']] = $i;
@@ -53,7 +92,17 @@ try {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Peta Desa Target 3D (Prototipe v5)</title>
+<title><?= e($meta['judul']) ?> | Desa Target</title>
+<meta name="description" content="<?= e($meta['deskripsi']) ?>">
+<link rel="canonical" href="<?= e($meta['kanonis']) ?>">
+<meta property="og:site_name" content="Desa Target">
+<meta property="og:title" content="<?= e($meta['judul']) ?>">
+<meta property="og:description" content="<?= e($meta['deskripsi']) ?>">
+<meta property="og:type" content="website">
+<meta property="og:url" content="<?= e($meta['kanonis']) ?>">
+<meta property="og:image" content="<?= e(APP_BASE_URL) ?>/assets/bang-uju.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="<?= $awalan ?>assets/bang-uju.png">
 <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -181,10 +230,12 @@ try {
         font-size: 20px; display: flex; align-items: center; justify-content: center;
     }
     .kontrol button:hover { filter: brightness(0.96); }
-    /* Pintu masuk Ruko (Fitur 3) berbentuk tautan bundar, sama ukurannya. */
+    /* Pintu masuk sekunder (Ruko, Tentang) berbentuk tautan bundar, sama
+       ukurannya dengan tombol zoom. */
     .kontrol a.bulat {
         background: #ffffff; color: #1f2937; text-decoration: none;
         box-shadow: 0 4px 16px rgba(30, 58, 138, 0.18);
+        font-size: 17px;
     }
     .kontrol a.bulat:hover { filter: brightness(0.96); }
 
@@ -456,13 +507,16 @@ try {
 ?>
 <link rel="stylesheet" href="<?= $awalan ?>assets/style.css?v=<?= $versiStyle ?>">
 </head>
-<body<?= $dariAkar ? ' data-pintu-peta="1"' : '' ?>>
+<body<?= $dariAkar ? ' data-pintu-peta="1"' : '' ?><?= $dariBeranda ? ' data-beranda="1"' : '' ?>>
 <div id="panggung" aria-label="Peta Desa Target tiga dimensi"></div>
 
 <?php
 // Sakelar 3D/2D (ADR-0001). Ditempatkan di dalam bilah atas supaya tetap
 // terlihat dan terjangkau saat dunia 3D memenuhi layar.
 $modePeta = '3d';
+// Di beranda (ADR-0005) dunia 3D memang ada di akar situs, jadi sakelar
+// kembali ke index.php, bukan peta.php.
+$peta3dAkar = $dariAkar;
 require __DIR__ . '/../includes/sakelar-peta.php';
 ?>
 
@@ -497,6 +551,8 @@ $panelKavling = $KAVLING_BANGUNAN;
 $panelPapanGang = $PAPAN_GANG_SERVER;
 $panelTotalWarga = $TOTAL_WARGA_SERVER;
 $panelMisi = $MISI_SERVER;
+$panelTotalBangunan = count($BANGUNAN_SERVER);
+$panelTerbaru = $TERBARU_SERVER;
 require __DIR__ . '/../includes/panel-bersayap.php';
 require __DIR__ . '/../includes/tab-bar.php';
 ?>
@@ -508,15 +564,30 @@ require __DIR__ . '/../includes/tab-bar.php';
     <p class="catatan" id="catatanData">Sedang memuat data desa dari balai desa…</p>
 </div>
 
+<?php
+// Pop-up sambutan beranda (ADR-0005). Muncul sekali setelah kamera selesai
+// terbang; isinya dibedakan tamu dan warga oleh includes/sambutan-skrip.php.
+$sambutanAwalan = $awalan;
+$sambutanWarga = $TOTAL_WARGA_SERVER;
+$sambutanBangunan = count($BANGUNAN_SERVER);
+$sambutanGang = $JUMLAH_GANG_SERVER;
+require __DIR__ . '/../includes/sambutan-markup.php';
+?>
+
 <div class="kontrol">
     <button type="button" class="pil utama" id="tombolJalan">Keliling Desa</button>
     <button type="button" class="bulat" id="tombolZoomIn" aria-label="Zoom masuk">+</button>
     <button type="button" class="bulat" id="tombolZoomOut" aria-label="Zoom keluar">&minus;</button>
     <button type="button" class="bulat" id="tombolReset" aria-label="Lihat seluruh desa" title="Lihat seluruh desa">&#8982;</button>
     <button type="button" class="bulat" id="tombolLayarPenuh" aria-label="Layar penuh">&#9974;</button>
-    <?php // Ruko warga (Fitur 3). Pintu utama ada di tab bar dan panel Bangunan;
-          // tombol ini untuk layar ponsel saat tab bar sedang tertutup panel. ?>
-    <a class="bulat tombol-ruko-kontrol" href="<?= $awalan ?>ruko.php" aria-label="Buka ruko usaha" title="Buka ruko usaha">&#127978;</a>
+    <?php // Ruko warga (Fitur 3) dan Tentang (ADR-0005). Ruko kini membuka
+          // panel Ruko di dalam peta (ADR-0006), sama seperti tab bar, bukan
+          // halaman baru. ?>
+    <button type="button" class="bulat" id="tombolRuko3d" data-panel="ruko"
+            aria-label="Buka ruko usaha" title="Buka ruko usaha">&#127978;</button>
+    <?php if ($dariAkar): ?>
+        <a class="bulat tombol-tentang-kontrol" href="tentang.php" aria-label="Tentang desa" title="Tentang desa">&#8505;&#65039;</a>
+    <?php endif; ?>
 </div>
 
 <div class="popover" id="popover">
@@ -542,9 +613,33 @@ require __DIR__ . '/../includes/tab-bar.php';
     <div class="kotak">
         <h2>Peta 3D tidak bisa dibuka</h2>
         <p>Browser kamu tidak mendukung WebGL, jadi desa tiga dimensinya tidak bisa digambar. Tenang, peta desa versi 2D tetap bisa dipakai seperti biasa.</p>
-        <p><a href="<?= $awalan ?>peta2d.php">Buka Peta Desa 2D</a></p>
+        <p>
+            <a href="<?= $awalan ?>peta2d.php">Buka Peta Desa 2D</a>
+            &middot; <a href="<?= $awalan ?>tentang.php">Baca tentang desa</a>
+        </p>
     </div>
 </div>
+
+<?php
+// Teks cadangan beranda/peta (ADR-0005). Tampil untuk peramban tanpa
+// JavaScript dan dibaca mesin pencari, jadi tautan yang dibagikan ke
+// Instagram atau WhatsApp tetap punya isi yang bisa dijelaskan.
+?>
+<noscript>
+    <div class="cadangan-peta">
+        <h1><?= e($meta['judul']) ?></h1>
+        <p><?= e($meta['deskripsi']) ?></p>
+        <p>
+            <a href="<?= $awalan ?>peta2d.php">Buka peta desa 2D</a>
+            &middot; <a href="<?= $awalan ?>tentang.php">Tentang desa</a>
+            &middot; <a href="<?= $awalan ?>ktp.php">Bikin KTP Warga</a>
+            &middot; <a href="<?= $awalan ?>warga.php">Daftar warga</a>
+            &middot; <a href="<?= $awalan ?>ruko.php">Buka ruko</a>
+            &middot; <a href="<?= $awalan ?>pasar.php">Pasar Desa</a>
+        </p>
+        <p>Warga terdaftar: <?= (int) $TOTAL_WARGA_SERVER ?>. Bangunan berdiri: <?= (int) count($BANGUNAN_SERVER) ?>.</p>
+    </div>
+</noscript>
 
 <?php require __DIR__ . '/interior-balai.php'; ?>
 <?php require __DIR__ . '/interior-balai3d.js.php'; ?>
@@ -559,6 +654,10 @@ require __DIR__ . '/../includes/tab-bar.php';
 <?php $awalanMisi = $awalan; require __DIR__ . '/../includes/misi-skrip.php'; ?>
 <?php $awalanChat = $awalan; require __DIR__ . '/../includes/chat-skrip.php'; ?>
 <?php $awalanPasar = $awalan; require __DIR__ . '/../includes/pasar-skrip.php'; ?>
+<?php $sambutanAwalan = $awalan; require __DIR__ . '/../includes/sambutan-skrip.php'; ?>
+<?php $rukoPanelAwalan = $awalan; require __DIR__ . '/../includes/ruko-skrip.php'; ?>
+<script>window.__tokenKtp = <?= json_encode($tokenKtpPanel) ?>;</script>
+<?php $akuAwalan = $awalan; require __DIR__ . '/../includes/aku-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
@@ -756,9 +855,20 @@ scene.background = new THREE.Color(0xd6f0f7);
 scene.fog = new THREE.Fog(0xd6f0f7, 1500, 3400);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 8000);
+// Kamera terbang sendiri dari ketinggian ke posisi awal, lalu pop-up
+// sambutan boleh muncul (ADR-0005). Terbang dilewati bila pengunjung memilih
+// gerak dikurangi atau alamatnya memuat ?terbang=0.
 const KAMERA_AWAL = new THREE.Vector3(120, 1150, 1460);
 const TARGET_AWAL = KE3(1017, 760);
-camera.position.copy(KAMERA_AWAL);
+const TERBANG_DETIK = 1.8;
+const kurangiGerak = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+const terbangMati = kurangiGerak || /(?:^|[?&])terbang=0(?:&|$)/.test(window.location.search);
+const KAMERA_TERBANG = terbangMati
+    ? KAMERA_AWAL.clone()
+    : TARGET_AWAL.clone().lerp(KAMERA_AWAL, 2.9);
+camera.position.copy(KAMERA_TERBANG);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.copy(TARGET_AWAL);
@@ -1676,6 +1786,8 @@ function aturModeJalan(nyala) {
     if (!nyala) chipMasuk.classList.remove('tampil');
     kamu.figur.visible = nyala;
     controls.enabled = !nyala;
+    // Terbang masuk tidak bisa dilanjutkan bersamaan dengan mode jalan.
+    if (nyala) selesaikanTerbang();
     if (nyala) {
         // Jaga-jaga bila titik lahir (atau posisi terakhir) jatuh di dalam
         // rintangan karena data desa berubah: pindahkan ke titik aman
@@ -2200,6 +2312,9 @@ window.__desa = {
     fokus: FOKUS,
     bangunBangunan, bangunWarga, gambarPapanGang,
     bangunLapak, acara: ACARA_SEKARANG,
+    // Pop-up sambutan (ADR-0005) dipasang oleh includes/sambutan-skrip.php
+    // ke objek ini (bukaSambutan, sambutanDitutup), supaya tautan "Lihat
+    // lagi" di Tentang dan uji otomatis bisa memakainya.
     // Jumlah tenda lapak yang sedang berdiri, untuk uji otomatis.
     jumlahLapak3d: () => {
         const grup = dunia.getObjectByName('grupLapak');
@@ -2459,6 +2574,73 @@ if (tampilStats) statsEl.style.display = 'block';
 let bingkai = 0, akumulasiFps = 0, waktuStats = performance.now();
 let muatSembunyi = false;
 
+// Terbang masuk (ADR-0005): kamera berangkat dari ketinggian lalu mendarat di
+// pandangan awal. Pop-up sambutan maupun uji otomatis boleh menunggu selesainya
+// lewat window.__tungguIntro(fn).
+//
+// Terbang dianggap selesai bila salah satu terjadi:
+//   - kamera tiba (TERBANG_DETIK),
+//   - pengunjung menyeret atau men-zoom peta lebih dulu,
+//   - jaring pengaman 4 detik habis.
+// Pop-up baru dipanggil setelah bingkai pertama tergambar, supaya di perangkat
+// lambat pop-up tidak menutupi kartu "Membangun desa 3D". Bila kanvas 3D sama
+// sekali tidak pernah hidup, DOMContentLoaded yang melepaskan penantinya
+// (tanpa WebGL, pop-up tetap muncul tepat setelah isi halaman siap).
+let terbangSelesai = terbangMati;
+let terbangMulai = terbangMati ? 0 : performance.now();
+let tungguIntro = [];
+let kanvasHidup = false;
+
+function selesaikanTerbang() {
+    if (!terbangSelesai) {
+        terbangSelesai = true;
+        camera.position.copy(KAMERA_AWAL);
+        controls.target.copy(TARGET_AWAL);
+        controls.update();
+    }
+    if (kanvasHidup && !muatSembunyi) return;
+    if (!kanvasHidup) {
+        // Kanvas belum (atau tidak akan) hidup. Tunggu sebentar lagi bila
+        // halaman belum selesai dimuat, supaya isi DOM sudah lengkap.
+        if (document.readyState !== 'complete') {
+            document.addEventListener('DOMContentLoaded', selesaikanTerbang, { once: true });
+            window.setTimeout(selesaikanTerbang, 1200);
+            return;
+        }
+    }
+    const antre = tungguIntro;
+    tungguIntro = [];
+    while (antre.length) antre.shift()();
+}
+window.__tungguIntro = (fn) => {
+    if (terbangSelesai && ((kanvasHidup && muatSembunyi) || !kanvasHidup)) fn();
+    else tungguIntro.push(fn);
+};
+// Terbang masuk dari ketinggian menuju pandangan awal.
+function terbangMasuk(sekarang) {
+    const t = Math.min(1, (sekarang - terbangMulai) / (TERBANG_DETIK * 1000));
+    // Kurva lambat di awal, cepat di tengah, lembut saat mendarat.
+    const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    camera.position.lerpVectors(KAMERA_TERBANG, KAMERA_AWAL, e);
+    controls.target.copy(TARGET_AWAL);
+    controls.update();
+    if (t >= 1) selesaikanTerbang();
+}
+
+// Penanda dari putaran() bahwa kanvas 3D benar-benar menggambar.
+window.__kanvas3dHidup = () => { kanvasHidup = true; };
+window.addEventListener('pointerdown', (e) => {
+    // Menyeret atau men-zoom peta membatalkan terbang masuk; ketukan pada UI
+    // (tab bar, popover) tetap dihitung sebagai "pengunjung sudah melihat
+    // desa", jadi terbang pun dihentikan supaya kamera tidak bergerak
+    // sendiri di belakang panel.
+    selesaikanTerbang();
+}, true);
+window.addEventListener('wheel', selesaikanTerbang, { passive: true, capture: true });
+window.setTimeout(selesaikanTerbang, 4000);
+// Untuk uji otomatis.
+window.__akhirIntro = selesaikanTerbang;
+
 function putaran() {
     requestAnimationFrame(putaran);
     // Batas dt menjaga animasi ambien tetap stabil saat tab kembali dibuka.
@@ -2478,6 +2660,8 @@ function putaran() {
         perbaruiKamu(dt);
         // Chip pintu tetap dievaluasi walau pemain diam.
         perbaruiChipMasuk();
+    } else if (!terbangSelesai && !sorotan) {
+        terbangMasuk(performance.now());
     } else if (sorotan) {
         // Terbang ke bangunan yang disorot, lalu kendali diserahkan ke
         // pengunjung seperti biasa.
@@ -2538,6 +2722,8 @@ function putaran() {
     if (!muatSembunyi) {
         muatSembunyi = true;
         document.getElementById('layarMuat').classList.add('hilang');
+        window.__kanvas3dHidup();
+        selesaikanTerbang();
     }
     if (tampilStats) {
         bingkai++; akumulasiFps += dt;

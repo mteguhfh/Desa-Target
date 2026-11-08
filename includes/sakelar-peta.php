@@ -10,12 +10,15 @@
 //   $modePeta    '3d' | '2d' — mode halaman yang sedang dilihat
 //   $awalanPeta  '' ketika halaman ada di akar situs, '../' ketika di
 //                dalam subfolder seperti peta3d/
+//   $peta3dAkar  true bila 3D ada di akar situs (beranda, ADR-0005). Tanpa
+//                itu, tombol 3D mengarah ke peta.php.
 $modePeta = $modePeta ?? '3d';
 $awalanPeta = $awalanPeta ?? '';
+$peta3dAkar = $peta3dAkar ?? false;
 ?>
 <nav class="sakelar-peta" aria-label="Pilih tampilan peta">
     <a class="sakelar-opsi<?= $modePeta === '3d' ? ' aktif' : '' ?>"
-       href="<?= $awalanPeta ?>peta.php?tetap=1" data-mode="3d"
+       href="<?= $peta3dAkar ? $awalanPeta : $awalanPeta . 'peta.php' ?>?tetap=1" data-mode="3d"
        aria-current="<?= $modePeta === '3d' ? 'true' : 'false' ?>">3D</a>
     <a class="sakelar-opsi<?= $modePeta === '2d' ? ' aktif' : '' ?>"
        href="<?= $awalanPeta ?>peta2d.php" data-mode="2d"

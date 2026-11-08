@@ -1491,6 +1491,15 @@
 
 <?php
 // Tab bar dan panel bersayap (sama seperti di peta 3D).
+// Token formulir KTP untuk panel Aku (ADR-0007), dibuat di sesi yang sama
+// dengan ktp.php dan ktp-json.php.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+if (empty($_SESSION['token_ktp'])) {
+    $_SESSION['token_ktp'] = bin2hex(random_bytes(16));
+}
+$tokenKtpPanel = (string) $_SESSION['token_ktp'];
 $tabAktif = '';
 $tabAwalan = '';
 $tabDesaPanel = true;
@@ -1500,6 +1509,8 @@ foreach ($bangunan as $i => $b) { $panelKavling[(int) $b['id']] = $i; }
 $panelPapanGang = $papanGang;
 $panelTotalWarga = $totalWarga ?? hitung_warga($pdo);
 $panelMisi = daftar_misi($pdo);
+$panelTotalBangunan = count($bangunan);
+$panelTerbaru = bangunan_terbaru($pdo);
 require __DIR__ . '/panel-bersayap.php';
 require __DIR__ . '/tab-bar.php';
 require __DIR__ . '/tab-bar-skrip.php';
@@ -1512,4 +1523,11 @@ $awalanChat = '';
 require __DIR__ . '/chat-skrip.php';
 $awalanPasar = '';
 require __DIR__ . '/pasar-skrip.php';
+?>
+<script>window.__tokenKtp = <?= json_encode($tokenKtpPanel) ?>;</script>
+<?php
+$akuAwalan = '';
+require __DIR__ . '/aku-skrip.php';
+$rukoPanelAwalan = '';
+require __DIR__ . '/ruko-skrip.php';
 ?>

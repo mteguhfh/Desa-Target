@@ -1088,13 +1088,15 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 
 .tab-bar {
     position: fixed;
+    /* Tab bar dan panel bersayap memakai satu ukuran dan satu titik tengah
+       supaya tepinya sejajar di layar mana pun (ADR-0007). */
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
     z-index: 60;
     display: grid;
-    /* Empat tab utama, ditambah pil kecil Ruko di ujung kanan (Fitur 3). */
-    grid-template-columns: repeat(4, minmax(56px, 1fr)) auto;
+    /* Lima tab sama lebar: Bangunan, Warga, Gang, Aku, Ruko. */
+    grid-template-columns: repeat(5, minmax(56px, 1fr));
     width: min(520px, 100vw);
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
     background: rgba(255, 255, 255, 0.97);
@@ -1122,21 +1124,6 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     transition: background 160ms ease, color 160ms ease;
 }
 .tab-item:hover { background: var(--biru-pucat); color: var(--biru-gelap); }
-/* Pil kecil untuk pintu masuk sekunder (Ruko). Ukurannya lebih ringkas
-   supaya empat tab utama tetap paling menonjol, tapi tingginya tetap
-   minimal 44px agar nyaman diketuk. */
-.tab-item.tab-pil {
-    align-self: center;
-    min-height: 44px;
-    margin-left: 2px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: var(--biru-pucat);
-    color: var(--biru-gelap);
-}
-.tab-item.tab-pil .tab-ikon { font-size: 17px; }
-.tab-item.tab-pil .tab-teks { font-size: 11px; }
-.tab-item.tab-pil:hover { background: var(--biru-muda); }
 .tab-item.aktif { color: var(--biru); }
 .tab-item.aktif .tab-ikon { transform: translateY(-1px) scale(1.08); }
 .tab-item:focus-visible { outline: 3px solid var(--biru-gelap); outline-offset: -2px; }
@@ -1151,22 +1138,26 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
    peta tetap terlihat, itulah alasan panel ini ada. */
 .panel-bersayap {
     position: fixed;
-    /* Geseran horizontal dipisah dari pergerakan naik-turun: --panel-x hanya
-       mengurus pemusatan, transform mengurus buka-tutup. Kalau digabung,
-       media query yang mengubah --panel-x akan ikut membatalkan animasi. */
-    --panel-x: 50%;
-    left: var(--panel-x);
+    /* Geseran horizontal dipisah dari pergerakan naik-turun: left mengurus
+       pemusatan, transform mengurus buka-tutup. Kalau digabung, perubahan
+       titik tengah akan ikut membatalkan animasi. */
+    left: 50%;
+    right: auto;
+    /* Sempitkan panel sedikit dari tab bar supaya tidak terlihat menempel
+       ke tepi. Titik tengahnya tetap sama, jadi kiri dan kanannya simetris. */
+    --panel-lebar: min(calc(520px - 16px), calc(100vw - 16px));
     /* Berhenti tepat di atas tab bar, jadi tab yang aktif tetap terlihat
        dan bisa diketuk lagi untuk menutup panel.
        72px = tinggi tab bar (52px item + 12px padding + 6px atas) + 2px
        celah supaya keduanya tidak saling menimpa. */
     bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%) translateY(calc(100% + 78px));
+    box-sizing: border-box;
     /* translate3d memaksa lapisan GPU sendiri. Tanpa ini, panel ikut dihitung
        ulang bersama kanvas 3D di perangkat kelas bawah dan animasinya tersendat. */
     will-change: transform;
     z-index: 58;
-    width: min(520px, 100vw);
+    width: var(--panel-lebar);
     /* Sisakan minimal 190px dunia 3D di atas panel. Pakai dvh supaya
        bilah alamat ponsel yang menyusut tidak memotong panel. */
     max-height: max(240px, calc(100dvh - 72px - 180px - env(safe-area-inset-bottom, 0px)));
@@ -1182,11 +1173,10 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     transition: transform 180ms ease-out, visibility 0s linear 180ms;
     visibility: hidden;
 }
-/* Sudut kiri bawah dipakai sakelar 3D/2D, jadi di layar lebar panel diberi
-   jarak supaya sakelar tidak tertutup. */
-@media (min-width: 701px) {
-    .panel-bersayap { --panel-x: calc(50% + 34px); }
-}
+/* Panel dan tab bar berbagi titik tengah yang sama. Sebelumnya panel digeser
+   34px ke kanan supaya sakelar 3D/2D di kiri bawah tidak tertutup, tetapi
+   hasilnya tepi kanan panel melampaui tepi tab bar. Sakelar sekarang cukup
+   di atas panel: panel paling tinggi berhenti 180px di atas tab bar. */
 .panel-bersayap.terbuka {
     transform: translateX(-50%) translateY(0);
     visibility: visible;
@@ -1239,6 +1229,18 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     text-decoration: none;
 }
 .tombol-panel-utama:hover { background: var(--biru-gelap); }
+/* Tombol sekunder di panel: aksi yang tersedia tapi bukan ajakan utama. */
+.tombol-panel-biasa {
+    display: inline-block;
+    padding: 11px 18px;
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    background: var(--putih);
+    color: var(--teks);
+    font-weight: 700;
+    text-decoration: none;
+}
+.tombol-panel-biasa:hover { background: var(--biru-pucat); color: var(--teks); }
 
 .kartu-misi {
     padding: 14px 16px;
@@ -1612,14 +1614,17 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .pasar-baris {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: baseline;
+    /* Tiga baris: gambar (bila ada) membentang dua baris di kiri, nama dan
+       meta di kanannya. Tanpa gambar, kolom pertama runtuh ke 0. */
+    grid-template-rows: auto auto auto;
+    align-items: start;
     gap: 2px 10px;
     padding: 10px 0;
     border-bottom: 1px solid #f1f5f9;
 }
 .pasar-baris-nama { font-weight: 700; font-size: 14.5px; color: var(--teks); }
 .pasar-baris-meta { font-size: 12px; color: var(--teks-lembut); }
-.pasar-baris-tautan { grid-column: 1; font-size: 12.5px; font-weight: 700; color: var(--biru); }
+.pasar-baris-tautan { grid-column: 1 / -1; font-size: 12.5px; font-weight: 700; color: var(--biru); }
 .pasar-kosong { padding: 10px 0; font-size: 13.5px; color: var(--teks-lembut); }
 
 .pasar-klaim[hidden], .pasar-form[hidden], .pasar-tamu[hidden], .pasar-kabar[hidden] { display: none; }
@@ -1659,3 +1664,428 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .pasar-jadwal-baris { display: grid; gap: 2px; }
 .pasar-jadwal dt { font-weight: 800; font-size: 14px; color: var(--teks); }
 .pasar-jadwal dd { margin: 0; font-size: 13px; color: var(--teks-lembut); }
+
+/* --- Pop-up sambutan beranda (ADR-0005) --------------------------------- */
+/* Kartu tengah dengan latar gelap tipis. Susunannya mengikuti pembanding:
+   logo bulat, sapaan kecil, judul, penjelasan, tiga langkah, lalu tombol.
+   Tombol utama berwarna amber supaya terbaca sebagai ajakan, bukan peringatan. */
+.sambutan {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(3px);
+    overflow-y: auto;
+}
+.sambutan[hidden] { display: none; }
+.sambutan-kartu {
+    position: relative;
+    width: min(440px, 100%);
+    margin: auto;
+    background: var(--putih);
+    border-radius: 22px;
+    padding: 26px 24px 18px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.34);
+    animation: sambutan-masuk 0.3s ease-out both;
+}
+@keyframes sambutan-masuk {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sambutan-kartu { animation: none; }
+}
+.sambutan-tutup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+.sambutan-tutup:hover { background: var(--garis); }
+.sambutan-logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 10px;
+    display: block;
+    box-shadow: 0 0 0 3px var(--biru-muda);
+}
+.sambutan-kicker {
+    margin: 0 0 4px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--teks-lembut);
+}
+.sambutan-kartu h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--teks);
+}
+.sambutan-isi {
+    margin: 0 0 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--teks-lembut);
+}
+.sambutan-isi[hidden] { display: none; }
+.sambutan-warga #sambutanNama { font-weight: 800; color: var(--teks); }
+.sambutan-langkah {
+    list-style: none;
+    counter-reset: langkah;
+    margin: 0 0 16px;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    text-align: left;
+}
+.sambutan-langkah[hidden] { display: none; }
+.sambutan-langkah li {
+    counter-increment: langkah;
+    display: block;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--teks-lembut);
+}
+.sambutan-langkah li::before {
+    content: counter(langkah);
+    flex: 0 0 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--amber);
+    color: var(--putih);
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.sambutan-langkah strong { color: var(--teks); }
+/* Satu paragraf di dalam butir, bukan dua kolom: dengan flex, teks biasa dan
+   <strong> jadi dua anak flex dan bertumpuk. */
+.sambutan-langkah li > span { flex: 1 1 auto; min-width: 0; }
+.sambutan-aksi { display: grid; gap: 8px; margin: 0 0 10px; }
+.sambutan-aksi[hidden] { display: none; }
+.sambutan-tombol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 16px;
+    border: 1px solid var(--garis);
+    border-radius: 12px;
+    background: var(--putih);
+    color: var(--biru-gelap);
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.sambutan-tombol:hover { background: var(--biru-pucat); color: var(--biru-gelap); }
+.sambutan-tombol.utama {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #422006;
+}
+.sambutan-tombol.utama:hover { background: #fbbf24; color: #422006; }
+.sambutan-tombol:focus-visible,
+.sambutan-tutup:focus-visible { outline: 3px solid var(--biru); outline-offset: 2px; }
+.sambutan-tombol[disabled] { opacity: 0.6; cursor: default; }
+.sambutan-kabar {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--amber-pucat);
+    color: #92400e;
+    font-size: 13px;
+    text-align: left;
+}
+.sambutan-kabar[hidden] { display: none; }
+.sambutan-stat {
+    margin: 4px 0 6px;
+    font-size: 12.5px;
+    color: var(--teks-lembut);
+}
+.sambutan-kaki {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--teks-lembut);
+}
+.sambutan-kaki a { color: var(--teks-lembut); text-decoration: underline; }
+.sambutan-kaki a:hover { color: var(--biru); }
+/* Papan tombol HP tidak ikut menyorot kanvas di belakang pop-up. */
+body.sambutan-terbuka #panggung { pointer-events: none; }
+@media (max-height: 620px) {
+    .sambutan { align-items: flex-start; }
+    .sambutan-logo { width: 44px; height: 44px; margin-bottom: 6px; }
+    .sambutan-langkah li { padding: 7px 10px; }
+}
+
+/* --- Panel Aku: bikin KTP langsung di peta (ADR-0007) ------------------- */
+.aku-tamu .panel-statistik,
+.aku-punya .panel-statistik { margin: 0 0 10px; font-size: 14px; }
+.aku-form {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+.aku-form input,
+.aku-form select {
+    min-height: 44px;
+    padding: 9px 12px;
+    border: 1px solid var(--garis);
+    border-radius: 10px;
+    background: var(--putih);
+    font: inherit;
+    font-size: 14px;
+    color: var(--teks);
+}
+.aku-form input:focus,
+.aku-form select:focus { outline: 2px solid var(--biru); outline-offset: 1px; }
+.aku-tamu .tombol-panel-utama { min-height: 44px; }
+.aku-kabar { margin: 6px 0 8px; font-size: 13px; color: var(--teks-lembut); }
+.aku-kabar[hidden] { display: none; }
+.aku-nama { margin: 2px 0 0; font-size: 18px; font-weight: 800; color: var(--teks); }
+.aku-meta { margin: 0 0 8px; font-size: 13px; color: var(--teks-lembut); }
+.aku-poin { margin: 0 0 12px; font-size: 14px; color: var(--teks-lembut); }
+.aku-poin strong { font-size: 22px; color: var(--biru-gelap); }
+.aku-aksi { display: grid; gap: 8px; }
+.aku-aksi .tombol-panel-utama,
+.aku-aksi .tombol-panel-biasa { min-height: 44px; text-align: center; }
+.aku-muat[hidden],
+.aku-tamu[hidden],
+.aku-punya[hidden] { display: none; }
+
+/* --- Panel Ruko (ADR-0006) --------------------------------------------- */
+.ruko-panel-label { margin: 0 0 2px; }
+.ruko-panel-nama { margin: 0 0 2px; font-size: 19px; color: var(--teks); }
+.ruko-panel-gang { margin: 0 0 8px; font-size: 13px; color: var(--teks-lembut); }
+.ruko-panel-cerita { margin: 0 0 10px; font-size: 14px; color: var(--teks); font-style: italic; }
+.ruko-panel-cerita[hidden] { display: none; }
+.ruko-panel-milik[hidden],
+.ruko-panel-kosong[hidden],
+.ruko-panel-muat[hidden],
+.ruko-panel-tamu[hidden] { display: none; }
+.ruko-panel-aksi { display: grid; gap: 8px; }
+.ruko-panel-aksi .tombol-panel-utama,
+.ruko-panel-aksi .tombol-panel-biasa { min-height: 44px; text-align: center; }
+.ruko-panel-aksi a[hidden] { display: none; }
+
+/* --- Gambar usaha: ruko, lapak, dan daftar (fitur gambar jualan) ------- */
+/* Satu kelas untuk semua gambar usaha. Rasio 4:3 selalu sama supaya kartu
+   ruko dan kartu lapak tidak berubah tinggi saat tanpa gambar. */
+.gambar-usaha {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 12px;
+    background: var(--biru-pucat);
+}
+.gambar-usaha-kosong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    background: repeating-linear-gradient(135deg, #f1f5f9 0 10px, #e2e8f0 10px 20px);
+    color: var(--teks-lembut);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px;
+}
+/* Di panel bersayap gambarnya lebih ringkas. */
+.panel-isi .gambar-usaha,
+.panel-isi .gambar-usaha-kosong { aspect-ratio: 16 / 9; margin-bottom: 10px; }
+
+/* --- Katalog lapak Pasar Desa: kartu bergambar ------------------------- */
+.lapak-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+.lapak-kartu {
+    display: flex;
+    flex-direction: column;
+    background: var(--putih);
+    border: 1px solid var(--garis);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.06);
+}
+/* Gambar kartu selalu berbentuk pita (aspect-ratio dari .gambar-usaha), jadi
+   kartu dengan dan tanpa gambar tingginya sama dan tetap sejajar. */
+.lapak-kartu-gambar,
+.lapak-kartu .gambar-usaha-kosong { border-radius: 0; flex: none; }
+.lapak-kartu-isi { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
+.lapak-kartu-nama { margin: 0; font-size: 16px; color: var(--teks); }
+.lapak-kartu-meta { margin: 0 0 6px; font-size: 12.5px; color: var(--teks-lembut); }
+.lapak-kartu-tombol { margin-top: auto; text-align: center; font-size: 13.5px; padding: 8px 14px; }
+
+/* Baris lapak di panel bersayap, dengan gambar kecil di kiri. */
+.pasar-baris-gambar {
+    width: 56px;
+    height: 56px;
+    aspect-ratio: auto;
+    border-radius: 10px;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+}
+/* Saat ada gambar, nama dan meta bergeser ke kolom kedua. */
+.pasar-baris-gambar ~ .pasar-baris-nama,
+.pasar-baris-gambar ~ .pasar-baris-meta { grid-column: 2; }
+
+/* --- Pemilih gambar usaha ---------------------------------------------- */
+.pilih-gambar {
+    border: 1px solid var(--garis);
+    border-radius: 14px;
+    padding: 12px 14px 14px;
+    margin: 0 0 14px;
+}
+.pilih-gambar legend { font-weight: 700; padding: 0 6px; }
+.pilih-gambar-kartu {
+    position: relative;
+    display: block;
+    /* Isi kartu mengikuti lebar kartu, bukan lebar kotak grid, supaya
+       gambar tidak meluber ke kartu sebelah. */
+    min-width: 0;
+    cursor: pointer;
+    border-radius: 12px;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 120ms ease;
+}
+.pilih-gambar-kartu input { position: absolute; opacity: 0; pointer-events: none; }
+.pilih-gambar-kartu.terpilih { outline-color: var(--biru); }
+.pilih-gambar-kartu .gambar-usaha,
+.pilih-gambar-kartu .gambar-usaha-kosong {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+}
+.pilih-gambar-kartu .gambar-usaha-kosong { font-size: 11px; }
+/* Kartu "Tanpa gambar" setinggi kartu gambar (4:3), supaya deretannya
+   rata dan pilihan kosong tidak tampak seperti kotak rusak. */
+.pilih-gambar-kosong .gambar-usaha-kosong { aspect-ratio: 4 / 3; }
+.pilih-gambar { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.pilih-gambar legend,
+.pilih-gambar > p,
+.pilih-gambar-hapus { grid-column: 1 / -1; }
+.pilih-gambar-hapus { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--teks-lembut); }
+.pilih-gambar-hapus input { width: auto; }
+
+/* Daftar ruko bergambar: gambar di atas, teks di bawah. */
+.daftar-ruko-baris.ada-gambar { display: block; }
+.daftar-ruko-gambar { margin-bottom: 8px; }
+
+/* --- Pemilih gambar lapak di panel Pasar ------------------------------- */
+.pasar-gambar { margin: 0 0 10px; }
+.pasar-gambar[hidden] { display: none; }
+.pasar-gambar-pilih {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 6px;
+}
+.pasar-gambar-kartu {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    border-radius: 10px;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+}
+.pasar-gambar-kartu input { position: absolute; opacity: 0; pointer-events: none; }
+.pasar-gambar-kartu img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; }
+.pasar-gambar-kartu:has(input:checked) { outline-color: var(--biru); }
+.pasar-gambar-kartu input:focus-visible + img { outline: 3px solid var(--amber); }
+
+/* --- Katalog ruko di panel bersayap: 2 kolom bergambar ------------------ */
+.ruko-panel-daftar { margin-top: 14px; }
+.ruko-panel-daftar[hidden] { display: none; }
+.ruko-panel-judul-daftar { margin: 0 0 8px; font-size: 15px; color: var(--teks); }
+.ruko-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.ruko-kartu {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--putih);
+    border: 1px solid var(--garis);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.05);
+}
+.ruko-kartu.punyaku { border-color: var(--biru); box-shadow: 0 0 0 2px var(--biru-muda); }
+.ruko-kartu-gambar,
+.ruko-kartu .gambar-usaha-kosong {
+    border-radius: 0;
+    flex: none;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    height: auto;
+}
+.ruko-kartu .gambar-usaha-kosong { font-size: 11px; }
+.ruko-kartu-nama {
+    padding: 8px 10px 0;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--teks);
+    line-height: 1.3;
+    /* Dua baris tetap, supaya kartu bersebelahan rata bawahnya walau nama
+       usahanya pendek atau panjang. */
+    min-height: calc(2 * 1.3em);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* Ruang di antara teks dan tautan memakai margin-top otomatis pada tautan,
+   bukan pada meta: kalau meta yang punya margin-top auto, teks nama dan
+   gang terdorong ke bawah kartu. */
+.ruko-kartu-meta { padding: 1px 10px 0; font-size: 11px; color: var(--teks-lembut); line-height: 1.35; }
+.ruko-kartu-tautan {
+    padding: 6px 10px 0;
+    margin: 0 0 10px;
+    margin-top: auto;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--biru);
+}
+/* Di layar lebar, panel boleh memuat 3 kolom kartu ruko yang lebih besar. */
+@media (min-width: 640px) and (max-height: 900px) {
+    .panel-bersayap { max-height: calc(100dvh - 72px - 120px); }
+}

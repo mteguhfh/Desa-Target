@@ -7,7 +7,7 @@
 //   $kunciAktif   kunci rahasia warga aktif
 //   $rukoSaya     baris bangunan ruko aktif milik warga, atau null
 //   $daftarRuko   semua ruko aktif di desa
-//   $isianRuko    isian formulir terakhir (nama_usaha, cerita, tautan)
+//   $isianRuko    isian formulir terakhir (nama_usaha, cerita, tautan, gambar)
 //   $galat        daftar pesan galat validasi
 //   $pesan        pesan sekali tampil dari proses sebelumnya
 //   $tokenRuko    token formulir
@@ -19,6 +19,9 @@ if (!function_exists('e')) {
 }
 
 $tokenRuko = (string) ($_SESSION['token_ruko'] ?? '');
+// Gambar usaha yang boleh dipilih (lihat daftar_gambar_usaha() di db.php).
+$pilihanGambar = daftar_gambar_usaha();
+$gambarSaya = (string) ($rukoSaya['gambar'] ?? '');
 $isianRuko = $isianRuko ?? ['nama_usaha' => '', 'cerita' => '', 'tautan' => ''];
 $galat = $galat ?? [];
 $pesan = $pesan ?? null;
@@ -61,6 +64,11 @@ $kunciAktif = $kunciAktif ?? '';
             <p class="seksi-deskripsi">Ruko dibuka oleh warga yang punya kartu. Membuka ruko gratis.</p>
         <?php elseif ($rukoSaya !== null): ?>
             <h2 class="ruko-subjudul">Rukomu sudah berdiri</h2>
+            <?php if ($gambarSaya !== ''): ?>
+                <img class="gambar-usaha ruko-gambar-saya" src="<?= e($gambarSaya) ?>" alt="Gambar <?= e((string) $rukoSaya['nama']) ?>">
+            <?php else: ?>
+                <p class="gambar-usaha-kosong">Belum ada gambar usaha. Tambahkan di bawah supaya rukomu lebih hidup.</p>
+            <?php endif; ?>
             <dl class="ruko-kartu">
                 <div>
                     <dt>Nama usaha</dt>
@@ -90,6 +98,29 @@ $kunciAktif = $kunciAktif ?? '';
                 <button type="submit" class="tombol tombol-halus">Lepas ruko</button>
             </form>
             <p class="catatan">Melepas ruko tidak menghapus ceritamu; bangunanmu hanya tidak tampil lagi di peta.</p>
+
+            <h3 class="ruko-subjudul">Ubah rukomu</h3>
+            <form class="formulir" method="post" action="ruko.php" id="formUbahRuko">
+                <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
+                <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
+                <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
+                <input type="hidden" name="aksi" value="ubah">
+
+                <label for="ubahNamaUsaha">Nama usaha</label>
+                <input type="text" id="ubahNamaUsaha" name="nama_usaha" required minlength="3" maxlength="60"
+                       value="<?= e((string) $rukoSaya['nama']) ?>">
+
+                <label for="ubahCeritaUsaha">Cerita singkat usaha</label>
+                <textarea id="ubahCeritaUsaha" name="cerita" rows="4" maxlength="<?= (int) RUKO_CERITA_MAKS ?>"><?= e((string) ($rukoSaya['komentar'] ?? '')) ?></textarea>
+
+                <label for="ubahTautanUsaha">Tautan jualan</label>
+                <input type="url" id="ubahTautanUsaha" name="tautan" required maxlength="300"
+                       pattern="https://.+" value="<?= e((string) $rukoSaya['tautan']) ?>">
+
+                <?php require __DIR__ . '/includes/pilih-gambar.php'; ?>
+
+                <button type="submit" class="tombol tombol-utama">Simpan perubahan</button>
+            </form>
         <?php else: ?>
             <h2 class="ruko-subjudul">Klaim satu ruko</h2>
             <p class="seksi-deskripsi">
@@ -117,6 +148,8 @@ $kunciAktif = $kunciAktif ?? '';
                        value="<?= e($isianRuko['tautan']) ?>" placeholder="https://wa.me/62812...">
                 <p class="formulir-catatan">Alamat WhatsApp, marketplace, atau Instagram tokomu. Wajib diawali https://.</p>
 
+                <?php $gambarSaya = ''; require __DIR__ . '/includes/pilih-gambar.php'; ?>
+
                 <button type="submit" class="tombol tombol-utama">Klaim ruko</button>
             </form>
         <?php endif; ?>
@@ -129,7 +162,11 @@ $kunciAktif = $kunciAktif ?? '';
         <?php else: ?>
             <ul class="daftar-ruko">
                 <?php foreach ($daftarRuko as $r): ?>
-                    <li class="daftar-ruko-baris">
+                    <li class="daftar-ruko-baris<?= !empty($r['gambar']) ? ' ada-gambar' : '' ?>">
+                        <?php if (!empty($r['gambar'])): ?>
+                            <img class="gambar-usaha daftar-ruko-gambar" src="<?= e((string) $r['gambar']) ?>"
+                                 alt="Gambar <?= e((string) $r['nama']) ?>" loading="lazy" width="640" height="480">
+                        <?php endif; ?>
                         <span class="daftar-ruko-nama"><?= e((string) $r['nama']) ?></span>
                         <span class="daftar-ruko-meta"><?= e((string) $r['diminta_oleh']) ?> &middot; <?= e((string) $r['gang']) ?></span>
                         <?php if (!empty($r['komentar'])): ?>

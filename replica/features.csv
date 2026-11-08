@@ -1,5 +1,6 @@
 feature,area,priority,original,status,evidence,notes
-Peta 3D sebagai layar default yang memenuhi viewport,3d map,must,yes,selesai,peta.php -> peta3d/index.php,ADR-0001
+Peta 3D sebagai layar default yang memenuhi viewport,3d map,must,yes,selesai,peta.php -> peta3d/index.php,ADR-0001; beranda / kini peta 3D (ADR-0005)
+Pop-up sambutan sekali per peramban,onboarding,should,no,selesai,includes/sambutan-markup.php + sambutan-skrip.php,Diingat lewat localStorage dt_sambutan; bisa dibuka paksa dengan ?sambutan=1; halaman Tentang menjelaskan desa
 Tombol switch antara peta 3D dan peta 2D,3d map,must,no,selesai,includes/sakelar-peta.php,Melampaui pembanding: mereka tidak punya switch
 Kamera orbit: geser dan zoom di sekitar desa,3d map,must,yes,selesai,OrbitControls di peta3d/index.php,
 Mode jalan keliling desa (avatar sendiri terlihat),3d map,must,yes,selesai,aturModeJalan() baris 1230,
@@ -9,10 +10,10 @@ Tap bangunan membuka detail bangunan,3d map,must,yes,selesai,popover + bisaDikli
 Masuk ke dalam bangunan (interior),3d map,should,yes,selesai,peta3d/interior-balai.php + chipMasuk,Interior Balai Desa tampil di atas kanvas 3D tanpa pindah halaman
 Kontrol zoom tombol plus dan minus,shell,should,yes,selesai,tombolZoomIn/Out baris 1385,
 Bilah atas: nama desa statistik dan suasana,shell,must,yes,selesai,chipWaktu + chipSuasana di peta3d/index.php,Suasana ramai/sepi dihitung dari warga yang berdiri dan jumlah bangunan
-Tab bar bawah: Desa/Misi/Papan Gang/Aku,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; Desa/Aku tautan, Misi/Papan Gang membuka panel; pil Ruko ditambah Fitur 3
+Tab bar bawah: Bangunan/Warga/Gang/Aku/Ruko,shell,must,yes,selesai,includes/tab-bar.php + tab-bar-skrip.php,Ada di peta 3D dan 2D; kelimanya membuka panel di dalam dunia; pil Ruko terpisah sudah dihapus (ADR-0006)
 Panel bersayap yang terbuka di atas dunia 3D,shell,must,yes,selesai,includes/panel-bersayap.php,Membuka di atas tab bar; dunia peta tetap terlihat; diuji 4 ukuran layar
-Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,selesai,tab Aku -> ktp.php,Tertaut dari panel Aku; halaman KTP kembali ke peta setelah kartu jadi
-Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,selesai,ktp.php,
+Buat kartu warga dari dalam dunia 3D,onboarding,must,yes,selesai,tab Aku -> formulir panel -> ktp-json.php,Panel Aku membuat KTP tanpa pindah halaman; halaman ktp.php tetap ada untuk tautan langsung dan kartu (ADR-0007)
+Kartu identitas warga (KTP) dengan nomor sendiri,onboarding,must,yes,selesai,ktp.php + ktp-markup.php,Kunci rahasia hanya tercetak untuk kartu yang baru dibuat di sesi itu; kartu publik tidak memuat kunci
 Cari warga berdasarkan nama atau nomor,community,should,yes,selesai,cari_warga_berdasarkan() + cari-warga.php + warga.php,Panel pencarian di peta (tanpa muat ulang) + halaman daftar warga
 Daftar semua bangunan beserta gangnya,community,should,yes,selesai,tab Bangunan di includes/panel-bersayap.php,Ketuk baris menyorot bangunan di 3D (kamera terbang + cincin) dan 2D
 Papan peringkat gang,community,should,yes,selesai,includes/papan-gang.php + papan di peta 2D,
@@ -22,7 +23,7 @@ Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru vi
 Misi harian untuk menggerakkan komentar,gamification,could,yes,selesai,daftar_misi()/tandai_misi() + misi.php + panel Misi,Per warga sejak Fitur 1: status dan poin tidak tercampur antar warga
 Dompet poin warga (klaim harian + poin misi),gamification,must,no,selesai,poin.php + klaim.php + tambah_poin()/klaim_harian() di db.php,Identitas nomor KTP + kunci rahasia dari kartu; fondasi ruko dan lapak
 Chat antar gang publik dengan frase preset (tanpa DM),community,must,no,selesai,chat.php + kirim_chat()/pesan_chat() di db.php + includes/chat-skrip.php,Hanya frase preset dari CHAT_FRASE; nama+gang dari kartu; menulis wajib nomor+kunci; jeda 5 detik per warga; kanal gang lain hanya dibaca
-Ruko komersil untuk usaha warga (satu warga satu ruko),commerce,must,no,selesai,ruko.php + klaim_ruko()/lepas_ruko() di db.php,Migrasi bangunan.jenis/nomor/tautan/aktif dan tabel ruko_klaim; tautan https saja; tampil di peta 2D dan 3D serta daftar bangunan
+Ruko komersil untuk usaha warga (satu warga satu ruko),commerce,must,no,selesai,ruko.php + klaim_ruko()/lepas_ruko() di db.php,Panel Ruko di dalam peta (tab kelima, ADR-0006); gambar usaha dipilih dari assets/img; tautan https saja; tampil di peta 2D dan 3D serta daftar bangunan
 Pasar Malam dan CFD dengan lapak gratis (klaim hanya saat acara),commerce,must,no,selesai,pasar.php + lapak.php + klaim_lapak() di db.php,Tabel lapak; jadwal ACARA_LAPAK; tenda di peta 3D hanya saat acara; chip suasana membuka panel Pasar
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding
 Koperasi afiliasi TikTok Shop,commerce,skip,yes,tidak dikerjakan,-,Perjanjian komersial mereka bukan fitur produk

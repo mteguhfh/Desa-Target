@@ -13,6 +13,36 @@
 // yang sama dengan peta 2D dan peta 3D (tidak ada logika kavling kedua).
 require_once __DIR__ . '/db.php';
 
+// Panel Ruko di peta (ADR-0006) membaca data lewat jalur yang sama:
+//   GET ruko.php?json=1&nomor=DT-0001&kunci=...
+//   -> 200 { ruko: { namaUsaha, cerita, tautan, gang } | null }
+//   -> 403 { galat }   nomor dan kunci tidak cocok (jawaban sama dengan
+//                      nomor tidak dikenal, seperti endpoint lain)
+// Hanya membaca: klaim dan lepas ruko tetap lewat POST di halaman ini.
+if (isset($_GET['json'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $wargaJson = warga_dari_nomor_dan_kunci(db(), $_GET['nomor'] ?? '', $_GET['kunci'] ?? '');
+    if ($wargaJson === null) {
+        http_response_code(403);
+        echo json_encode(['galat' => 'Nomor atau kunci warga tidak cocok.']);
+        exit;
+    }
+    $rukoJson = ruko_milik(db(), nomor_warga((int) $wargaJson['id']));
+    echo json_encode(
+        ['ruko' => $rukoJson === null ? null : [
+            'namaUsaha' => (string) $rukoJson['nama'],
+            'cerita' => (string) ($rukoJson['komentar'] ?? ''),
+            'tautan' => (string) ($rukoJson['tautan'] ?? ''),
+            'gang' => (string) ($rukoJson['gang'] ?? ''),
+            'gambar' => (string) ($rukoJson['gambar'] ?? ''),
+        ]],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+    );
+    exit;
+}
+
+
 // Cookie sesi ditulis setelah kepala halaman dicetak, jadi peramban baru
 // memilikinya pada kunjungan berikutnya. Sama dengan ktp.php: formulir
 // memakai token sesi, dan kunjungan pertama memang hanya membangun sesi.
@@ -74,6 +104,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($aksi === 'ubah') {
+        // Hapus gambar hanya bila dicentang; selain itu pilihan radio yang
+        // dipakai, jadi tidak ada cara tidak sengaja menghapus gambar.
+        $gambarPilih = !empty($_POST['hapus_gambar']) ? '' : ($_POST['gambar'] ?? '');
+        $hasilUbah = ubah_ruko(
+            $pdo,
+            $nomorKirim,
+            $kunciKirim,
+            (string) ($_POST['nama_usaha'] ?? ''),
+            (string) ($_POST['cerita'] ?? ''),
+            $_POST['tautan'] ?? '',
+            $gambarPilih
+        );
+        if (($hasilUbah['galat'] ?? null) === null) {
+            $_SESSION['pesan_ruko'] = 'Rukomu sudah diperbarui.';
+            header('Location: ruko.php');
+            exit;
+        }
+        $_SESSION['isian_ruko'] = [
+            'nama_usaha' => (string) ($_POST['nama_usaha'] ?? ''),
+            'cerita' => (string) ($_POST['cerita'] ?? ''),
+            'tautan' => (string) ($_POST['tautan'] ?? ''),
+            'gambar' => (string) ($_POST['gambar'] ?? ''),
+        ];
+        $_SESSION['galat_ruko'] = match ($hasilUbah['galat']) {
+            'nama' => ['Nama usaha diisi 3 sampai 60 karakter.'],
+            'cerita' => ['Cerita usaha paling panjang ' . RUKO_CERITA_MAKS . ' karakter.'],
+            'tautan' => ['Tautan jualan harus diawali https:// dan berisi alamat situs yang benar.'],
+            'gambar' => ['Gambar itu tidak tersedia. Pilih salah satu gambar yang ada di daftar.'],
+            default => ['Rukomu belum bisa diubah. Buka lagi kartu wargamu.'],
+        };
+        header('Location: ruko.php');
+        exit;
+    }
+
     $hasil = klaim_ruko(
         $pdo,
         $nomorKirim,
@@ -82,7 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         (string) ($_POST['cerita'] ?? ''),
         $_POST['tautan'] ?? '',
         (string) $wargaKirim['gang'],
-        $totalKavling
+        $totalKavling,
+        $_POST['gambar'] ?? ''
     );
 
     if (($hasil['galat'] ?? null) === null) {
@@ -98,12 +164,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'punya' => ['Kamu sudah punya satu ruko. Satu warga satu ruko, ya.'],
         'penuh' => ['Semua kavling desa sudah terisi. Tunggu kavling baru dibuka.'],
         'poin' => ['Poinmu belum cukup untuk membuka ruko.'],
+        'gambar' => ['Gambar itu tidak tersedia. Pilih salah satu gambar yang ada di daftar.'],
         default => ['Kartu wargamu tidak dikenali. Buka lagi kartu wargamu.'],
     };
     $_SESSION['isian_ruko'] = [
         'nama_usaha' => (string) ($_POST['nama_usaha'] ?? ''),
         'cerita' => (string) ($_POST['cerita'] ?? ''),
         'tautan' => (string) ($_POST['tautan'] ?? ''),
+        'gambar' => (string) ($_POST['gambar'] ?? ''),
+        'hapus_gambar' => !empty($_POST['hapus_gambar']),
     ];
     $_SESSION['galat_ruko'] = $galat;
     header('Location: ruko.php');

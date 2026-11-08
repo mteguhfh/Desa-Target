@@ -201,11 +201,14 @@ async function buatWarga(browser, nama, gang) {
   for (const halaman of ['peta.php', 'peta2d.php']) {
     // Pengunjung tanpa kartu: bisa membaca, tidak bisa menulis.
     const tamu = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await tamu.addInitScript(() => {
+      try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
+    });
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     const tombolChat = halaman === 'peta.php' ? '#tombolChat' : '#tombolChat2d';
-    // Fitur 3 menambah pil Ruko, sehingga tab utama tetap empat.
-    catat(halaman + ': tab bar tetap empat tab utama',
-      await tamu.locator('#tabBar .tab-item:not(.tab-pil)').count() === 4);
+    // Ruko kini tab kelima yang setara, bukan pil terpisah.
+    catat(halaman + ': tab bar tetap lima tab utama',
+      await tamu.locator('#tabBar .tab-item').count() === 5);
     catat(halaman + ': tombol Chat ada di bilah atas', await tamu.locator(tombolChat).isVisible());
     await tamu.locator(tombolChat).click();
     await tamu.waitForTimeout(500);
@@ -227,6 +230,7 @@ async function buatWarga(browser, nama, gang) {
     await page.addInitScript(([nomor, kunci]) => {
       localStorage.setItem('dt_nomor', nomor);
       localStorage.setItem('dt_kunci', kunci);
+      localStorage.setItem('dt_sambutan', '1');
     }, [wargaA.nomor, wargaA.kunci]);
     await page.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     // Peta 3D menggambar terus di GPU lunak, jadi tombolnya bisa tertahan

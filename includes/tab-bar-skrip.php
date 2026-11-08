@@ -31,6 +31,7 @@
         'bangunan': 'Bangunan Desa',
         'chat': 'Chat Desa',
         'pasar': 'Pasar Desa',
+        'ruko': 'Ruko Wargamu',
         'aku': 'Aku'
     };
 
@@ -126,6 +127,9 @@
     pasangPintasan('tombolChat2d', 'chat');
     // Chip suasana di peta 3D juga membuka panel Pasar (Fitur 4).
     pasangPintasan('chipSuasana', 'pasar');
+    // Tombol ruko bundar di kontrol 3D membuka panel Ruko yang sama
+    // (ADR-0006), jadi pengunjung tidak meninggalkan dunia 3D.
+    pasangPintasan('tombolRuko3d', 'ruko');
 
     // Pintasan untuk peta 3D: tombol "Papan Gang" lama kini membuka panel
     // yang sama, bukan panel terpisah. Dijalankan setelah halaman siap.

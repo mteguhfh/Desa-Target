@@ -116,7 +116,7 @@ function bersihkanLapak() {
   // Tanggal sekarang dari server: acara yang aktif hari ini ditentukan jam
   // server, jadi uji API memakai acara_aktif() hari ini.
   const sekarang = php('require "db.php"; echo date("Y-m-d H:i");').trim();
-  const aktifSekarang = acara(sekarang).replace(/"/g, '') || null;
+  const aktifSekarang = JSON.parse(acara(sekarang));
 
   if (aktifSekarang === null) {
     const tutup = await kirim(dasar);
@@ -133,21 +133,31 @@ function bersihkanLapak() {
     kunciSalah.data.galat === nomorAsing.data.galat, kunciSalah.status + ' / ' + nomorAsing.status);
 
   catat('acara tidak dikenal ditolak 400', (await kirim({ ...dasarAktif, acara: 'nonton-bola' })).status === 400);
-  const tautanBuruk = await kirim({ ...dasarAktif, tautan: 'javascript:alert(1)' });
-  catat('tautan javascript: ditolak 422', tautanBuruk.status === 422 && /https/.test(tautanBuruk.data.galat || ''), tautanBuruk.status + '');
-  catat('nama usaha sependek 2 huruf ditolak 422', (await kirim({ ...dasarAktif, nama_usaha: 'ab' })).status === 422);
 
-  if (aktifSekarang !== null) {
-    const klaim = await kirim({ ...dasarAktif, nama_usaha: '<img src=x onerror=alert(1)>' });
-    catat('klaim saat acara berlangsung diterima 201', klaim.status === 201, klaim.status + '');
-    const hasilKlaim = klaim.data.lapak || [];
-    catat('lapak tersimpan dengan nama usaha sebagai teks', hasilKlaim.some((l) => l.namaUsaha === '<img src=x onerror=alert(1)>'));
-    catat('lapak pertama dapat tenda 1', hasilKlaim[0] && hasilKlaim[0].kavling === 0);
-    const ganda = await kirim(dasarAktif);
-    catat('klaim ganda di acara sama ditolak 409', ganda.status === 409 && /sudah punya lapak/.test(ganda.data.galat || ''), ganda.status + '');
-    const poinAkhir = Number(php('require "db.php"; echo saldo_poin(db(), $argv[1]);', warga.nomor));
-    catat('lapak gratis: poin warga tidak berkurang', poinAkhir === poinAwal, poinAwal + ' -> ' + poinAkhir);
-  }
+  // Validasi nama/tautan dan klaim diuji langsung di fungsi inti dengan jam
+  // acara tetap (Sabtu 19.00). Dengan begitu hasil uji tidak berubah hanya
+  // karena uji dijalankan di luar jam Pasar Malam atau CFD.
+  const klaimLangsung = (namaUsaha, tautan) => JSON.parse(php(
+    'require "db.php"; echo json_encode(klaim_lapak(db(), $argv[1], $argv[2], "pasar-malam", "2026-11-07 19:00", $argv[3], $argv[4]));',
+    warga.nomor, warga.kunci, namaUsaha, tautan
+  ));
+
+  bersihkanLapak();
+  const tautanBuruk = klaimLangsung('Lapak Uji ' + cap, 'javascript:alert(1)');
+  catat('tautan javascript: ditolak', tautanBuruk.galat === 'tautan', String(tautanBuruk.galat));
+  const namaPendek = klaimLangsung('ab', 'https://wa.me/6281200000000');
+  catat('nama usaha sependek 2 huruf ditolak', namaPendek.galat === 'nama', String(namaPendek.galat));
+
+  const klaim = klaimLangsung('<img src=x onerror=alert(1)>', 'https://wa.me/6281200000000');
+  catat('klaim saat acara berlangsung diterima', klaim.ok === true, String(klaim.galat));
+  const hasilKlaim = klaim.lapak || [];
+  catat('lapak tersimpan dengan nama usaha sebagai teks',
+    hasilKlaim.some((l) => l.namaUsaha === '<img src=x onerror=alert(1)>'), JSON.stringify(hasilKlaim));
+  catat('lapak pertama dapat tenda 1', hasilKlaim[0] && hasilKlaim[0].kavling === 0, JSON.stringify(hasilKlaim[0] || null));
+  const ganda = klaimLangsung('<img src=x onerror=alert(1)>', 'https://wa.me/6281200000000');
+  catat('klaim ganda di acara sama ditolak', ganda.galat === 'sudah', String(ganda.galat));
+  const poinAkhir = Number(php('require "db.php"; echo saldo_poin(db(), $argv[1]);', warga.nomor));
+  catat('lapak gratis: poin warga tidak berkurang', poinAkhir === poinAwal, poinAwal + ' -> ' + poinAkhir);
 
   // Batas 12 lapak diuji langsung di fungsi inti untuk jam acara.
   bersihkanLapak();
@@ -170,12 +180,17 @@ function bersihkanLapak() {
   // 4. Tenda di peta 3D hanya saat acara berlangsung
   // ---------------------------------------------------------------------------
   bersihkanLapak();
+  const jamSebelum = JSON.parse(acara(php('require "db.php"; echo date("Y-m-d H:i");').trim()));
   const dataDesa = await (await api.request.get(BASE + '/peta3d/data-desa.php')).json();
-  if (aktifSekarang === null) {
+  const jamSesudah = JSON.parse(acara(php('require "db.php"; echo date("Y-m-d H:i");').trim()));
+  if (jamSebelum !== jamSesudah) {
+    // Uji sempat melewati batas jam acara; status acara tidak bisa dinilai.
+    catat('data-desa: batas jam acara terlewati, status dilewati', true);
+  } else if (jamSebelum === null) {
     catat('data-desa: acara null di luar jam acara', dataDesa.acara === null, String(dataDesa.acara));
     catat('data-desa: lapak kosong di luar jam acara', Array.isArray(dataDesa.lapak) && dataDesa.lapak.length === 0);
   } else {
-    catat('data-desa: acara terisi saat acara berlangsung', dataDesa.acara === aktifSekarang, String(dataDesa.acara));
+    catat('data-desa: acara terisi saat acara berlangsung', dataDesa.acara === jamSebelum, String(dataDesa.acara));
   }
   catat('data-desa: acara berikutnya dikirim', dataDesa.acaraBerikutnya !== null && !!dataDesa.acaraBerikutnya.tanggal);
 

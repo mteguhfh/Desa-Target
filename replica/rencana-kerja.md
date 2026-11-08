@@ -1,5 +1,9 @@
 # Rencana kerja Desa Target
 
+> Catatan 2026-11-08: untuk gelombang paritas melawan Sekolah Bebaz, lihat
+> `replica/rencana-paritas.md`. Berkas ini tetap menjadi rencana dasar fitur
+> desa.
+
 Disusun dari `replica/features.csv` setelah dicocokkan satu per satu dengan kode
 yang berjalan (lihat kolom `evidence`). Bukan daftar impian, melainkan sisa
 pekerjaan yang benar-benar belum ada.
@@ -8,10 +12,12 @@ Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
 **Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1, Fitur 2,
-Fitur 3, dan Fitur 4 dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin
-warga, chat antar gang, ruko warga, lalu Pasar Malam dan CFD). Sekarang
-24 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan. Yang tersisa di tabel Tahap 3: suara latar desa
-dan pembagian warga per huruf awal.
+Fitur 3, Fitur 4, dan Fitur 5 dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md`
+(dompet poin warga, chat antar gang, ruko warga, Pasar Malam dan CFD, lalu
+beranda peta 3D dengan panel Aku dan panel Ruko). Sekarang 25 selesai,
+0 sebagian, 2 belum, 5 sengaja tidak dikerjakan. Yang tersisa di tabel Tahap 3:
+suara latar desa dan pembagian warga per huruf awal. Rencana paritas melawan
+Sekolah Bebaz ada di `replica/rencana-paritas.md`.
 
 Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
 masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah

@@ -12,6 +12,8 @@
 //   $panelKavling       peta id bangunan -> indeks kavling, supaya ketukan
 //                       pada daftar bisa menyorot bangunan yang tepat
 //   $panelMisi          hasil daftar_misi(), tampil di tab Misi
+//   $panelTotalBangunan jumlah bangunan aktif (diisi halaman peta)
+//   $panelTerbaru       bangunan terbaru (dari bangunan_terbaru()), boleh null
 //
 // Semua isi berasal dari data yang sudah dibaca halaman. Tidak ada permintaan
 // jaringan tambahan, jadi panel tidak bisa menampilkan angka yang berbeda
@@ -29,6 +31,8 @@ $panelPapanGang = $panelPapanGang ?? [];
 $panelTotalWarga = $panelTotalWarga ?? 0;
 $panelKavling = $panelKavling ?? []; // id bangunan -> indeks kavling
 $panelMisi = $panelMisi ?? [];
+$panelTotalBangunan = $panelTotalBangunan ?? count($panelBangunan);
+$panelTerbaru = $panelTerbaru ?? null;
 
 $jumlahTerbanyak = 0;
 foreach ($panelPapanGang as $barisPapan) {
@@ -113,7 +117,20 @@ foreach ($panelPapanGang as $barisPapan) {
             <?php if ($panelBangunan === []): ?>
                 <p class="panel-deskripsi">Belum ada bangunan berdiri. Usulkan usaha impianmu lewat komentar Instagram.</p>
             <?php else: ?>
-                <p class="panel-deskripsi"><?= count($panelBangunan) ?> bangunan berdiri di desa, urut dari yang paling baru.</p>
+                <p class="panel-deskripsi">
+                    <strong><?= (int) $panelTotalWarga ?></strong> warga terdaftar,
+                    <strong><?= (int) $panelTotalBangunan ?></strong> bangunan berdiri,
+                    <strong><?= count(GANG_WARGA) ?></strong> gang profesi.
+                    Urut dari yang paling baru.
+                </p>
+                <?php // "Pembangunan Hari Ini" dari beranda lama (ADR-0005):
+                      // bangunan terbaru sudah ada di puncak daftar, jadi yang
+                      // ditambahkan cukup kalimat pengantarnya. ?>
+                <?php if ($panelTerbaru !== null): ?>
+                    <p class="panel-catatan panel-catatan-atas">
+                        Pembangunan hari ini: <strong><?= e($panelTerbaru['nama']) ?></strong><?php if (!empty($panelTerbaru['diminta_oleh'])): ?>, diminta oleh <?= e($panelTerbaru['diminta_oleh']) ?><?php endif; ?>.
+                    </p>
+                <?php endif; ?>
                 <p class="panel-catatan panel-catatan-atas">Di peta, ketuk nama bangunan untuk menyorotnya di dunia.</p>
                 <ul class="daftar-bangunan">
                     <?php foreach (array_reverse($panelBangunan) as $b): ?>
@@ -146,6 +163,20 @@ foreach ($panelPapanGang as $barisPapan) {
 
             <ul class="pasar-lapak" id="pasarLapak"></ul>
 
+            <?php // Pemilih gambar ringkas untuk warga tanpa ruko. Hanya
+                  // dipakai saat formulir lapak terbuka. ?>
+            <div class="pasar-gambar" id="pasarGambar" hidden>
+                <p class="pasar-form-judul">Pilih gambar lapak</p>
+                <div class="pasar-gambar-pilih" role="radiogroup" aria-label="Pilih gambar lapak">
+                    <?php foreach (daftar_gambar_usaha() as $gambarPasar): ?>
+                        <label class="pasar-gambar-kartu">
+                            <input type="radio" name="gambar_lapak" value="<?= e($gambarPasar) ?>">
+                            <img src="<?= e($gambarPasar) ?>" alt="" loading="lazy" width="640" height="480">
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <div class="pasar-klaim" id="pasarKlaim" hidden>
                 <button type="button" class="tombol-panel-utama" id="tombolKlaimLapak">Ambil lapak gratis</button>
             </div>
@@ -169,14 +200,98 @@ foreach ($panelPapanGang as $barisPapan) {
             <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>pasar.php">Lihat halaman Pasar Desa</a> atau <a href="<?= e($tabAwalan) ?>ruko.php">buka ruko usahamu</a>.</p>
         </div>
 
+        <?php // KTP Warga dibuat langsung di panel ini (ADR-0007), supaya
+              // pengunjung tidak meninggalkan peta. Formulir kirim ke
+              // ktp-json.php; halaman ktp.php tetap ada untuk kartu penuh. ?>
         <div class="panel-isi" data-isi="aku" hidden>
             <p class="panel-deskripsi">Kartu warga adalah identitasmu di desa. Dibuat sekali, gratis, nomornya milikmu sendiri.</p>
-            <p class="panel-statistik"><strong><?= (int) $panelTotalWarga ?></strong> warga sudah tercatat di balai desa.</p>
-            <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin atau lihat KTP Warga</a>
-            <p class="panel-catatan">Setelah kartumu jadi, tekan tombol kembali di halaman KTP. Kamu akan mendarat lagi di peta, dan namamu sudah berdiri sebagai warga baru di depan balai desa.</p>
+
+            <div class="aku-muat" id="akuMuat">
+                <p class="panel-deskripsi">Memeriksa kartu warga di peramban ini…</p>
+            </div>
+
+            <div class="aku-tamu" id="akuTamu" hidden>
+                <p class="panel-statistik"><strong><?= (int) $panelTotalWarga ?></strong> warga sudah tercatat di balai desa.</p>
+                <form class="aku-form" id="akuFormKtp" novalidate>
+                    <label class="sr-saja" for="akuNama">Nama lengkap</label>
+                    <input id="akuNama" name="nama" type="text" maxlength="50" placeholder="Nama lengkap"
+                           autocomplete="name" enterkeyhint="done">
+                    <label class="sr-saja" for="akuGang">Gang profesi</label>
+                    <select id="akuGang" name="gang">
+                        <option value="">Pilih gang profesimu</option>
+                        <?php foreach (GANG_WARGA as $gangPilihan): ?>
+                            <option value="<?= e($gangPilihan) ?>"><?= e($gangPilihan) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="tombol-panel-utama">Bikin KTP Warga, Gratis</button>
+                </form>
+                <p class="aku-kabar" id="akuKabar" role="status" hidden></p>
+                <p class="panel-catatan">Kartumu tersimpan di peramban ini. Buka <a href="<?= e($tabAwalan) ?>ktp.php">halaman KTP Warga</a> kalau mau melihat kartu lengkapnya.</p>
+            </div>
+
+            <div class="aku-punya" id="akuPunya" hidden>
+                <p class="label-kecil">KARTU WARGAMU</p>
+                <p class="aku-nama" id="akuName">Warga</p>
+                <p class="aku-meta" id="akuMeta"></p>
+                <p class="aku-poin"><strong id="akuPoinAngka">0</strong> poin</p>
+                <p class="aku-kabar" id="akuKabarPunya" role="status" hidden></p>
+                <p class="aku-aksi">
+                    <button type="button" class="tombol-panel-utama" id="akuKlaim">Klaim poin harian</button>
+                    <a class="tombol-panel-biasa" href="<?= e($tabAwalan) ?>ktp.php">Lihat kartu lengkap</a>
+                </p>
+                <p class="panel-catatan">Poin bisa dipakai untuk usaha di desa. Misi dan riwayatnya ada di panel Misi.</p>
+            </div>
         </div>
 
-        <?php // Chat antar gang (Fitur 2). Tidak ada tab kelima: isi ini dibuka
+        <?php // Ruko warga (Fitur 3), dibuka langsung dari tab Ruko (ADR-0006).
+              // Isinya dua keadaan yang dibedakan includes/ruko-skrip.php:
+              // tamu (ajakan bikin KTP) dan pemilik ruko (data rukunya).
+              // Formulir klaim dan lepas ruko memakai ruko.php yang sama. ?>
+        <div class="panel-isi" data-isi="ruko" hidden>
+            <div class="ruko-panel-tamu" id="rukoPanelTamu" hidden>
+                <p class="panel-deskripsi">Buka ruko usahamu di desa: nama usaha, cerita singkat, dan satu tautan jualan. Gratis, dan pembeli diarahkan langsung ke tempat jualanmu sendiri.</p>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga dulu</a>
+                <p class="panel-catatan">Sudah punya kartu? Buka <a href="<?= e($tabAwalan) ?>ktp.php">KTP Warga</a> sekali, lalu kembali ke sini.</p>
+            </div>
+
+            <div class="ruko-panel-muat" id="rukoPanelMuat">
+                <p class="panel-deskripsi">Memuat data rukomu…</p>
+            </div>
+
+            <div class="ruko-panel-milik" id="rukoPanelMilik" hidden>
+                <img class="gambar-usaha ruko-panel-gambar" id="rukoPanelGambar" alt="" width="640" height="480" hidden>
+                <p class="label-kecil ruko-panel-label">RUKO PUNYAMU</p>
+                <h3 class="ruko-panel-nama" id="rukoPanelNama">Ruko</h3>
+                <p class="ruko-panel-gang" id="rukoPanelGang"></p>
+                <p class="ruko-panel-cerita" id="rukoPanelCerita"></p>
+                <p class="ruko-panel-kabar" id="rukoPanelKabar" role="status" hidden></p>
+                <p class="ruko-panel-aksi">
+                    <a class="tombol-panel-utama" id="rukoPanelKunjungi" href="#" target="_blank" rel="noopener noreferrer" hidden>Kunjungi tempat jualan</a>
+                    <a class="tombol-panel-biasa" id="rukoPanelUbah" href="<?= e($tabAwalan) ?>ruko.php">Ubah ruko</a>
+                </p>
+                <p class="panel-catatan">Pesanan tetap berjalan di tempat jualanmu sendiri. Desa tidak memproses pembayaran apa pun.</p>
+            </div>
+
+            <div class="ruko-panel-kosong" id="rukoPanelKosong" hidden>
+                <p class="panel-deskripsi">Kamu belum punya ruko di desa. Ruko tampil di peta dengan namamu, dan bisa dipakai berjualan di Pasar Malam atau CFD.</p>
+                <a class="tombol-panel-utama" id="rukoPanelBuka" href="<?= e($tabAwalan) ?>ruko.php">Buka ruko usahamu</a>
+            </div>
+
+            <?php // Ruko warga lain: 2 kolom bergambar seperti katalog, supaya
+                  // tab Ruko tidak cuma berisi ruko sendiri. ?>
+            <div class="ruko-panel-daftar" id="rukoPanelDaftar" hidden>
+                <h3 class="ruko-panel-judul-daftar">Ruko warga desa</h3>
+                <ul class="ruko-grid" id="rukoPanelGrid"></ul>
+            </div>
+
+            <p class="panel-catatan">
+                <a href="<?= e($tabAwalan) ?>ruko.php">Halaman ruko warga</a>
+                &middot; <a href="<?= e($tabAwalan) ?>pasar.php">Pasar Desa</a>
+            </p>
+        </div>
+
+        <?php // Chat antar gang (Fitur 2). Tidak ada tab kelima (sekarang lima
+              // tab sudah terpakai): isi ini dibuka
               // dari tombol Chat di bilah atas. Hanya frase preset, tanpa kolom
               // teks bebas, dan semua pesan publik. ?>
         <div class="panel-isi" data-isi="chat" hidden>

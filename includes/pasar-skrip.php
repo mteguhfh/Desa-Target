@@ -154,6 +154,16 @@
             meta.textContent = 'Tenda ' + ((Number(l.kavling) || 0) + 1);
             li.appendChild(nama);
             li.appendChild(meta);
+            if (typeof l.gambar === 'string' && l.gambar.indexOf('assets/img/') === 0) {
+                var img = document.createElement('img');
+                img.className = 'gambar-usaha pasar-baris-gambar';
+                img.src = l.gambar;
+                img.alt = 'Gambar ' + potong(l.namaUsaha, 60);
+                img.loading = 'lazy';
+                img.width = 640;
+                img.height = 480;
+                li.appendChild(img);
+            }
             if (typeof l.tautan === 'string' && /^https:\/\//i.test(l.tautan)) {
                 var a = document.createElement('a');
                 a.className = 'pasar-baris-tautan';
@@ -181,6 +191,8 @@
         // Formulir ringkas tertutup selama lapak sudah ada atau acara belum
         // berlangsung; kalau server minta nama usaha, formulir dibuka lagi.
         if (elForm && (punyaku || !aktif)) elForm.hidden = true;
+        var elGambar = document.getElementById('pasarGambar');
+        if (elGambar) elGambar.hidden = !elForm || elForm.hidden;
     }
 
     function muat() {
@@ -214,6 +226,8 @@
             '&kunci=' + encodeURIComponent(kunci);
         if (namaUsaha) body += '&nama_usaha=' + encodeURIComponent(namaUsaha);
         if (tautan) body += '&tautan=' + encodeURIComponent(tautan);
+        var pilihanGambar = document.querySelector('#pasarGambar input[name="gambar_lapak"]:checked');
+        if (pilihanGambar && pilihanGambar.value) body += '&gambar=' + encodeURIComponent(pilihanGambar.value);
         if (tombolKlaim) tombolKlaim.disabled = true;
         if (tombolKirim) tombolKirim.disabled = true;
         return fetch(endpoint, {
@@ -232,6 +246,8 @@
                 // Server menolak nama usaha atau tautan: warga tanpa ruko
                 // perlu mengisi formulir ringkas.
                 if (elForm) elForm.hidden = false;
+                var elGambarBuka = document.getElementById('pasarGambar');
+                if (elGambarBuka) elGambarBuka.hidden = false;
                 tampilKabar(hasil.data.galat || 'Isi nama usaha dan tautan jualan dulu.', true);
             } else {
                 tampilKabar(hasil.data.galat || 'Lapak belum bisa diambil.', true);

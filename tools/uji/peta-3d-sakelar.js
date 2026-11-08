@@ -16,6 +16,11 @@ const catat = (nama, lulus, detail = '') => {
 
   // ============ DESKTOP ============
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  // Pop-up sambutan menutupi sakelar pada kunjungan pertama. Uji ini menguji
+  // peta, bukan sambutan, jadi tandai sudah pernah tampil sebelum halaman dibuka.
+  await ctx.addInitScript(() => {
+    try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
+  });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e).slice(0, 160)));
@@ -81,6 +86,9 @@ const catat = (nama, lulus, detail = '') => {
 
   // ============ PONSEL ============
   const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await ctx2.addInitScript(() => {
+    try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
+  });
   const hp = await ctx2.newPage();
   await hp.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
   await hp.waitForTimeout(3500);

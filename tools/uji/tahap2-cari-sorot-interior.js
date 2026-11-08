@@ -14,6 +14,11 @@ const catat = (nama, lulus, detail = '') => {
 
 async function buka(browser, url, vp = { width: 1440, height: 900 }) {
   const page = await browser.newPage({ viewport: vp });
+  // Uji ini tidak menguji pop-up sambutan; tandai sudah tampil agar lapisannya
+  // tidak menghalangi ketukan pertama.
+  await page.addInitScript(() => {
+    try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
+  });
   await page.goto(BASE + '/' + url, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => {
     const m = document.getElementById('layarMuat');
@@ -130,7 +135,13 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     }));
     // Ketuk baris terakhir (bangunan tertua, bukan yang terdekat kamera).
     await page.locator('.daftar-bangunan-tombol').last().click();
-    await page.waitForTimeout(1800);
+    // Di mesin tanpa GPU, putaran gambar bisa sangat lambat. Tunggu sampai
+    // kamera benar-benar bergerak, bukan menebak lewat waktu tunggu tetap.
+    await page.waitForFunction((awal) => {
+      const c = window.__desa.camera.position;
+      return Math.abs(c.x - awal.x) > 50 || Math.abs(c.z - awal.z) > 50;
+    }, kameraAwal, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(300);
     const sesudah = await page.evaluate(() => ({
       x: Math.round(window.__desa.camera.position.x),
       z: Math.round(window.__desa.camera.position.z),

@@ -7,15 +7,16 @@
 // lewat $tabDesaPanel.
 //
 // Penanda tab aktif dibaca dari $tabAktif yang diatur halaman pemanggil.
-// Bila tidak diatur, tidak ada tab yang disorot. Tab "Desa" dan "Aku" adalah
-// tautan biasa (beranda dan KTP); "Warga" dan "Gang" membuka panel di
+// Bila tidak diatur, tidak ada tab yang disorot. Tab "Desa" adalah tautan
+// biasa (beranda); "Warga", "Gang", "Aku", dan "Ruko" membuka panel di
 // halaman ini lewat data-panel, supaya dunia 3D tidak hilang saat diketuk.
+// KTP dibuat langsung di panel Aku (ADR-0007).
 // Pencarian warga lebih berguna daripada daftar misi yang belum ada, jadi
 // slot Misi dipakai untuk Warga. Misi tetap ada sebagai isi panel tersembunyi
 // sampai fiturnya dibuat (lihat replica/rencana-kerja.md Tahap 3).
 //
 // Variabel yang dipakai:
-//   $tabAktif   id tab yang disorot: desa | misi | gang | aku
+//   $tabAktif   id tab yang disorot: desa | misi | gang | aku | ruko
 //   $tabAwalan  awalan URL untuk tautan, '' dari akar situs, '../' dari peta3d/
 //
 // Markup saja. Perilakunya di tab-bar-skrip.php, gayanya di assets/style.css.
@@ -37,10 +38,12 @@ $daftarTab = [
         : ['id' => 'desa', 'ikon' => '&#127968;', 'teks' => 'Desa', 'href' => $tabAwalan . 'index.php'],
     ['id' => 'warga', 'ikon' => '&#128269;', 'teks' => 'Warga', 'panel' => 'warga'],
     ['id' => 'gang', 'ikon' => '&#128200;', 'teks' => 'Gang', 'panel' => 'papan-gang'],
-    ['id' => 'aku', 'ikon' => '&#129470;', 'teks' => 'Aku', 'href' => $tabAwalan . 'ktp.php'],
-    // Ruko warga (Fitur 3) butuh jalan masuk dari dalam peta; bentuknya pil
-    // kecil supaya empat tab utama tetap yang paling menonjol.
-    ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'href' => $tabAwalan . 'ruko.php'],
+    // Aku sekarang membuka panel: formulir KTP ada di dalamnya (ADR-0007).
+    ['id' => 'aku', 'ikon' => '&#129470;', 'teks' => 'Aku', 'panel' => 'aku'],
+    // Ruko warga (Fitur 3) butuh jalan masuk dari dalam peta. Digambar sama
+    // seperti empat tab utama (bukan pil kecil) supaya barisnya rata, lalu
+    // membuka panel Ruko di dalam peta, bukan halaman baru (ADR-0006).
+    ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'panel' => 'ruko'],
 ];
 ?>
 <nav class="tab-bar" id="tabBar" aria-label="Navigasi utama desa">
@@ -56,7 +59,7 @@ $daftarTab = [
                 <span class="tab-teks"><?= e($tab['teks']) ?></span>
             </button>
         <?php else: ?>
-            <a class="tab-item<?= ($tab['id'] ?? '') === 'ruko' ? ' tab-pil' : '' ?><?= $aktif ? ' aktif' : '' ?>" href="<?= e($tab['href']) ?>"<?= $aktif ? ' aria-current="page"' : '' ?>>
+            <a class="tab-item<?= $aktif ? ' aktif' : '' ?>" href="<?= e($tab['href']) ?>"<?= $aktif ? ' aria-current="page"' : '' ?>>
                 <span class="tab-ikon" aria-hidden="true"><?= $tab['ikon'] ?></span>
                 <span class="tab-teks"><?= e($tab['teks']) ?></span>
             </a>

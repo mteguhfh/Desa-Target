@@ -4,8 +4,8 @@
 //
 // Cara kerja: setiap sakelar membawa data-mode ("3d" atau "2d"). Saat salah
 // satu diklik, kunci "modePeta" di localStorage diisi nilai itu. Ketika
-// pengunjung membuka peta lagi lewat menu "Peta Desa" (peta.php), skrip
-// memeriksa kunci itu dan mengarahkan ke mode yang terakhir dipilih.
+// pengunjung membuka peta lagi lewat menu Beranda (index.php atau peta.php),
+// skrip memeriksa kunci itu dan mengarahkan ke mode yang terakhir dipilih.
 //
 // Yang diingat adalah NAMA MODE, bukan alamat halaman, supaya perpindahan
 // tetap benar walau alamatnya berubah kelak.
@@ -21,8 +21,9 @@
             });
         });
 
-        // 2. Kalau halaman ini dibuka sebagai pintu masuk peta (peta.php tanpa
-        //    penanda), dan pengunjung terakhir memilih 2D, arahkan ke sana.
+        // 2. Kalau halaman ini dibuka sebagai pintu masuk peta (beranda atau
+        //    peta.php tanpa penanda), dan pengunjung terakhir memilih 2D,
+        //    arahkan ke sana.
         //    Penanda ?tetap=1 berarti pengunjung sengaja memilih 3D, jadi
         //    tidak boleh dibelokkan.
         var params = new URLSearchParams(window.location.search);

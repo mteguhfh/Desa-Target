@@ -24,6 +24,11 @@ const catat = (nama, lulus, detail = '') => {
 // supaya ketukan tidak tertelan lapisan muat.
 async function bukaPeta(browser, halaman, ukuran) {
   const page = await browser.newPage({ viewport: { width: ukuran.width, height: ukuran.height } });
+  // Uji ini menguji tab bar, bukan pop-up sambutan. Tandai sambutan sudah
+  // tampil supaya lapisannya tidak menelan ketukan pada kunjungan pertama.
+  await page.addInitScript(() => {
+    try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
+  });
   await page.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => {
     const m = document.getElementById('layarMuat');
@@ -51,12 +56,13 @@ function tumpang(a, b) {
       const galat = [];
       page.on('pageerror', (e) => galat.push(String(e).slice(0, 120)));
 
-      // Fitur 3 menambah satu pil kecil Ruko di ujung tab bar; empat tab
-      // utama di depannya tetap yang diuji di sini (bukan tab kelima).
-      const jumlahTab = await page.locator('#tabBar .tab-item:not(.tab-pil)').count();
-      catat(label + ': 4 tab tampil', jumlahTab === 4, String(jumlahTab));
-      catat(label + ': pil Ruko tersedia',
-        await page.locator('#tabBar .tab-pil[href$="ruko.php"]').count() === 1);
+      // Ruko kini tab kelima yang setara, bukan pil kecil terpisah.
+      const jumlahTab = await page.locator('#tabBar .tab-item').count();
+      catat(label + ': 5 tab tampil', jumlahTab === 5, String(jumlahTab));
+      catat(label + ': tidak ada pil Ruko terpisah',
+        await page.locator('#tabBar .tab-pil').count() === 0);
+      catat(label + ': tab Ruko membuka panel di peta',
+        await page.locator('#tabBar .tab-item[data-panel="ruko"]').count() === 1);
 
       // Panel tertutup saat halaman baru dibuka.
       catat(label + ': panel tertutup di awal', await page.locator('#panelBersayap').isHidden());
@@ -115,15 +121,16 @@ function tumpang(a, b) {
     }
   }
 
-  // Tab Desa dan Aku adalah tautan biasa menuju halaman yang benar.
+  // Di halaman peta, semua tab membuka panel di dalam dunia; tidak ada yang
+  // berpindah halaman. Tab Bangunan dan Aku diperiksa di dua ukuran layar.
   for (const ukuran of [UKURAN[0], UKURAN[2]]) {
     const page = await bukaPeta(browser, 'peta.php', ukuran);
-    // Di halaman peta, slot "Desa" dipakai tombol Bangunan, jadi tautan yang
-    // tersisa di tab bar adalah Aku.
     catat('tab Bangunan tersedia di peta (' + ukuran.width + 'px)',
       (await page.locator('#tabBar .tab-item[data-panel="bangunan"]').count()) === 1);
-    const hrefAku = await page.locator('#tabBar a.tab-item:not(.tab-pil)').last().getAttribute('href');
-    catat('tautan tab Aku benar (' + ukuran.width + 'px)', hrefAku === 'ktp.php', String(hrefAku));
+    catat('tab Aku membuka panel di peta (' + ukuran.width + 'px)',
+      (await page.locator('#tabBar .tab-item[data-panel="aku"]').count()) === 1);
+    catat('tab bar peta tidak memuat tautan halaman lain (' + ukuran.width + 'px)',
+      (await page.locator('#tabBar a.tab-item').count()) === 0);
     await page.close();
   }
 

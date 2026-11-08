@@ -1,6 +1,6 @@
 # ADR-0001: Peta 3D sebagai layar utama, peta 2D sebagai opsi
 
-- Status: Diterima
+- Status: Diterima, sebagian digantikan oleh [ADR-0005](0005-beranda-peta-3d.md) (butir 4: beranda kini peta 3D, bukan halaman 2D)
 - Tanggal: 2026-11-08
 - Diterapkan: 2026-11-08 (`peta.php` 3D default, `peta2d.php` mode 2D, sakelar di kedua halaman)
 - Konteks: pembanding produk Sekolah Bebaz, lihat `replica/recon.md`

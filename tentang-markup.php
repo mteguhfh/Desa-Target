@@ -1,5 +1,7 @@
 <?php
-// Markup beranda. Dimuat oleh index.php setelah includes/header.php.
+// Markup halaman Tentang. Sebelumnya ini isi beranda; sejak ADR-0005 beranda
+// adalah peta 3D dan isi lama tinggal di sini. Dimuat oleh tentang.php
+// setelah includes/header.php.
 // Variabel yang dipakai: $totalWarga, $totalBangunan, $terbaru, $papanGang.
 $jumlahGang = count(GANG_WARGA);
 $adaTerbaru = $terbaru !== null;
@@ -15,8 +17,8 @@ $adaTerbaru = $terbaru !== null;
             oleh Bang Uju, Kepala Desa kami.
         </p>
         <div class="hero-aksi">
-            <a class="tombol tombol-utama" href="ktp.php">Bikin KTP Warga, Gratis</a>
-            <a class="tombol tombol-biasa" href="peta.php">Lihat Peta Desa</a>
+            <a class="tombol tombol-utama" href="index.php">Masuk ke Desa 3D</a>
+            <a class="tombol tombol-biasa" href="ktp.php">Bikin KTP Warga, Gratis</a>
         </div>
         <div class="hero-statistik">
             <div class="statistik">
@@ -43,7 +45,7 @@ $adaTerbaru = $terbaru !== null;
 <section class="seksi">
     <div class="seksi-kepala">
         <h2>Pembangunan Hari Ini</h2>
-        <a href="peta.php">Lihat semua di peta desa</a>
+        <a href="index.php">Lihat semua di peta desa</a>
     </div>
     <article class="kartu-bangunan sorotan">
         <div class="kartu-bangunan-isi">
@@ -105,3 +107,17 @@ $adaTerbaru = $terbaru !== null;
     <a class="tombol tombol-utama" href="ktp.php">Bikin KTP Warga</a>
 </section>
 
+
+<?php // Tautan kembali ke pop-up sambutan. Pop-up itu ditutup sekali saja;
+      // pengunjung yang menutupnya tanpa membaca masih bisa membukanya lagi
+      // dari sini lewat ?sambutan=1 (ADR-0005). ?>
+<section class="seksi">
+    <div class="seksi-kepala">
+        <h2>Belum sempat membaca sambutan?</h2>
+        <a href="index.php?sambutan=1">Buka lagi sambutan di beranda</a>
+    </div>
+    <p class="seksi-deskripsi">
+        Beranda sekarang langsung membuka desa 3D. Sambutan pertama berisi tiga langkah cara main,
+        dan untuk warga yang sudah punya KTP Warga isinya tombol klaim poin harian.
+    </p>
+</section>

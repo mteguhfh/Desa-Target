@@ -79,6 +79,9 @@ try {
             // tautan hanya berisi URL https yang sudah diperiksa server.
             'jenis' => (string) ($baris['jenis'] ?? 'komentar'),
             'tautan' => $baris['tautan'] ?? null,
+            // Gambar usaha ruko (jalur relatif assets/img/, sudah disaring
+            // server saat disimpan).
+            'gambar' => (string) ($baris['gambar'] ?? ''),
             'tanggal' => $baris['tanggal'] ? format_tanggal($baris['tanggal']) : null,
             // Kavling di luar tabel posisi tidak dikirim posisinya: klien
             // menaruhnya di tanah kosong terakhir, bukan menebak sendiri.

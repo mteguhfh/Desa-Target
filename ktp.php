@@ -61,9 +61,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         $idBaru = (int) $pdo->lastInsertId();
 
+        // Kunci rahasia terbit untuk warga baru. Ditulis eksplisit karena
+        // nilai bawaan kolom tidak selalu terbaca pada baris yang baru saja
+        // disisipkan.
+        $pdo->prepare('UPDATE warga SET kunci = ? WHERE id = ?')
+            ->execute([bin2hex(random_bytes(16)), $idBaru]);
+
         // Token lama hangus, ganti baru untuk pengiriman berikutnya.
         $_SESSION['token_ktp'] = bin2hex(random_bytes(16));
         $_SESSION['pesan_ktp'] = 'Selamat datang di Desa Target! Ini KTP Wargamu, tersimpan rapi di balai desa.';
+        // Tandai bahwa kartu ini baru dibuat di peramban ini. Kunci rahasia
+        // hanya boleh dicetak untuk kartu yang ditandai, bukan untuk kartu
+        // warga lain yang dibuka lewat ?kartu=N.
+        $_SESSION['kartu_baru'] = $idBaru;
 
         header('Location: ktp.php?kartu=' . $idBaru);
         exit;
@@ -95,12 +105,16 @@ if (isset($_GET['kartu']) && ctype_digit((string) $_GET['kartu'])) {
 }
 
 if ($kartuWarga !== null) {
-    // Kunci rahasia pemilik kartu ikut dicetak di kartunya sendiri, supaya
-    // browser pemilik bisa menyimpannya (dt_nomor + dt_kunci di localStorage)
-    // dan fitur yang butuh identitas bisa membuktikan bahwa dialah pemilik
-    // kartu itu. Kunci tidak pernah tampil di daftar warga atau pencarian.
+    // Kunci rahasia hanya dicetak untuk kartu yang baru dibuat di sesi ini,
+    // supaya browser pemilik bisa menyimpannya (dt_nomor + dt_kunci di
+    // localStorage). Kartu warga lain yang dibuka lewat ?kartu=N tidak
+    // pernah memuat kunci. Penanda sesi tidak dihapus agar pemilik bisa
+    // memuat ulang kartunya selama sesi masih hidup.
     $nomorKartu = nomor_warga((int) $kartuWarga['id']);
-    $kunciKartu = (string) ($kartuWarga['kunci'] ?? '');
+    $kunciKartu = '';
+    if ((int) ($_SESSION['kartu_baru'] ?? 0) === (int) $kartuWarga['id']) {
+        $kunciKartu = (string) ($kartuWarga['kunci'] ?? '');
+    }
 }
 
 // Token baru untuk formulir, dibuat setelah token lama dipakai atau saat pertama datang.

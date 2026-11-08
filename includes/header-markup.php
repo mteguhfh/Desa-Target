@@ -22,8 +22,8 @@
         <span class="merek-teks">Desa <strong>Target</strong></span>
     </a>
     <nav class="situs-nav">
-        <a href="index.php"<?= $halamanAktif === 'beranda' ? ' class="aktif"' : '' ?>>Beranda</a>
-        <a href="peta.php"<?= $halamanAktif === 'peta' ? ' class="aktif"' : '' ?>>Peta Desa</a>
+        <a href="index.php"<?= in_array($halamanAktif, ['beranda', 'peta'], true) ? ' class="aktif"' : '' ?>>Beranda</a>
+        <a href="tentang.php"<?= $halamanAktif === 'tentang' ? ' class="aktif"' : '' ?>>Tentang</a>
         <a href="ktp.php"<?= $halamanAktif === 'ktp' ? ' class="aktif"' : '' ?>>Bikin KTP Warga</a>
         <a href="ruko.php"<?= $halamanAktif === 'ruko' ? ' class="aktif"' : '' ?>>Buka Ruko</a>
         <a href="pasar.php"<?= $halamanAktif === 'pasar' ? ' class="aktif"' : '' ?>>Pasar Desa</a>
