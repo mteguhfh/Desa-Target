@@ -31,11 +31,14 @@ Aturan status:
 
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
-| 0 | Simpan dan amankan yang sudah jalan | 6 | 4 |
+| 0 | Simpan dan amankan yang sudah jalan | 6 | 4, sisa 0.3 dan sisa 0.5 |
 | 1 | Identitas dan alasan balik lagi | 8 | 0 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **4** |
+| **Total** | | **27** | **5** |
+
+Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
+disarankan.
 
 ## Kondisi awal
 
@@ -66,12 +69,13 @@ Selisih yang paling terasa, urut dari yang paling membuat kalah:
 
 ## Temuan penting di luar paritas
 
-**Kunci rahasia warga bisa dibaca siapa saja.** `ktp.php?kartu=207` mencetak
+**Sudah ditutup 2026-11-08 (lihat 0.5).** Dulu `ktp.php?kartu=207` mencetak
 `$kunciKartu` untuk setiap kartu yang dibuka, dan nomor kartu berurutan.
 Artinya siapa pun bisa membuka kartu warga lain lalu memakai kuncinya untuk
 klaim poin, chat, atau ruko. Komentar di `ktp.php` menyebut kunci hanya untuk
 pemilik, tetapi kodenya tidak membedakan pemilik dari pengunjung. Ini bukan
-fitur paritas, tetapi harus ditutup. Lihat 0.5.
+fitur paritas, tetapi harus ditutup. Kini kunci hanya dicetak untuk kartu
+yang baru dibuat di sesi itu; sisa pekerjaannya (kode pemulihan) ada di 1.7.
 
 ---
 
@@ -391,6 +395,61 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ---
 
+## Pekerjaan berikutnya
+
+Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
+
+### Bisa dikerjakan sekarang
+
+1. **0.3 Uji baru pekerjaan lama.** Lima berkas uji belum ada: beranda peta 3D,
+   pop-up sambutan, panel Aku, panel Ruko, gambar usaha. Tanpa ini, pekerjaan
+   sesi lalu hanya dijaga uji tak langsung (`ruko.js`, `tab-bar-panel.js`).
+2. **1.7 Kode pemulihan kartu.** Sisa dari 0.5: pemilik yang localStorage-nya
+   hilang belum punya jalan memulihkan kartu. Ini yang menutup celah keamanan
+   sampai selesai.
+3. **1.1 Pemilih tampilan di panel Aku.** Bahan sudah lengkap (`WARNA_*`,
+   `warna_sah()`, kolom `warna_*`); `ktp-json.php` masih mengabaikan warna.
+4. **1.2 Pratinjau karakter.** Butuh 1.1. Sekalian memasang avatar di kartu.
+
+### Sesudah itu, Gelombang 1 sisanya
+
+5. **1.5 Hari ke-N** dan **1.6 banner kabar.** Keduanya kecil dan hanya
+   menyentuh bilah atas serta `config.php`; ia memberi alasan balik lagi setiap
+   hari tanpa data baru.
+6. **1.3 Misi dengan bar kemajuan, streak, tombol aksi.** Bahan dari tabel
+   `misi_selesai`, `klaim_harian`, `poin_log` sudah ada.
+7. **1.4 Lencana Koleksiku.** Butuh 1.3 agar lencana misi punya angka.
+8. **1.8 Nama panggilan dan izin.** Mengubah formulir dan teks; lakukan
+   bersamaan dengan 1.7 supaya formulir hanya ditulis sekali.
+
+### Gelombang 2
+
+9. **2.1a Antar**, lalu **2.2 Lihat dari atas**, lalu **2.3 titik nongkrong**
+   dan **2.4 cari teman terbang**, lalu **2.1b Ikuti**.
+10. **2.5 kapasitas gedung**, **2.6 tombol aksi kontekstual**, dan
+    **2.7 dunia lebih padat**. Kerjakan 2.6 sebelum 3.3 agar pintu masuk
+    interior tidak perlu ditulis dua kali.
+
+### Gelombang 3
+
+11. **3.2 katalog berkategori** (butuh migrasi kolom `kategori`), lalu
+    **3.5 variasi topi/rambut**, lalu **3.1 mini game**, lalu **3.3 interior
+    Pasar dan ruko**, lalu **3.4 sapuan gaya visual kertas** paling akhir
+    supaya tidak merombak tampilan yang masih akan berubah.
+
+### Detail yang masih menggantung
+
+- **0.3:** belum ada berkas `beranda-peta.js`, `sambutan.js`, `aku-panel.js`,
+  `ruko-panel.js`, `gambar-usaha.js`.
+- **0.5:** kebocoran sudah ditutup dan diuji (`ktp-kunci.js` 4/4), tetapi
+  status masih setengah karena janji "pemilik bisa memulihkan kartu"
+  bergantung pada 1.7.
+- **1.4:** lencana "Tetangga Baik" sengaja dibuang karena butuh data baru.
+- **2.7:** angka batas figur (kini 80) baru boleh dinaikkan setelah ada
+  pengukuran bingkai di perangkat lemah.
+- **3.4:** belum ada nilai kontras yang diukur; wajib dicek sebelum dicentang.
+- **3.3:** nama gedung memakai Pasar dan ruko, bukan "Kantin".
+
 ## Ketergantungan antar item
 
 - 1.2 butuh 1.1.
@@ -436,6 +495,9 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   Semua uji lama dan baru lulus. Catatan fitur (`replica/features.csv`,
   `replica/rencana-kerja.md`, `tools/uji/README.md`) diperbarui untuk beranda
   peta 3D, pop-up sambutan, panel Aku, panel Ruko, dan gambar usaha.
+- 2026-11-08: bilah atas peta 3D dirapikan (semua chip sama tinggi dan
+  sejajar) dan uji `bilah-atas.js` ditambah, commit `e91f563`. Gelombang 0
+  tinggal 0.3 (uji baru) dan sisa 0.5 (kode pemulihan, dikerjakan di 1.7).
 - 2026-11-08: commit `24b103b` di-push dan di-deploy ke
   https://desa.kejartarget.id. Verifikasi live: halaman wajib 200, berkas
   rahasia 403, kartu publik tidak memuat kunci.
