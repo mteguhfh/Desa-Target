@@ -31,11 +31,11 @@ Aturan status:
 
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
-| 0 | Simpan dan amankan yang sudah jalan | 6 | 3 |
+| 0 | Simpan dan amankan yang sudah jalan | 6 | 4 |
 | 1 | Identitas dan alasan balik lagi | 8 | 0 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **3** |
+| **Total** | | **27** | **4** |
 
 ## Kondisi awal
 
@@ -121,10 +121,15 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   `tools/uji/ktp-kunci.js` lulus 4/4: kartu publik tanpa `#ktpIdentitas`,
   tanpa `data-kunci`, dan kunci tidak muncul di HTML. Sisa pekerjaan: kode
   pemulihan untuk pemilik yang localStorage-nya hilang, dikerjakan di 1.7.
-- [ ] **0.6 Commit, push, deploy**
+- [x] **0.6 Commit, push, deploy**
   Ukuran selesai: `git status` bersih, situs live memuat beranda peta 3D.
   Catatan: data contoh ruko dan pasar di DB lokal bisa dihapus dengan
   `php tools/isi-data-ruko-pasar.php --hapus` sebelum deploy.
+  Hasil 2026-11-08: commit `24b103b` di-push ke `origin/main`, lalu di-deploy
+  ke `/var/www/vhosts/kejartarget.id/site2`. Semua halaman wajib membalas 200,
+  `config.php`/`db.php`/`data/` 403, dan http 301 ke https. `DEPLOY.local.md`
+  sempat ikut terunggah lalu dihapus dari server; perintah tar di berkas itu
+  sekarang mengecualikannya.
 
 ---
 
@@ -431,3 +436,6 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   Semua uji lama dan baru lulus. Catatan fitur (`replica/features.csv`,
   `replica/rencana-kerja.md`, `tools/uji/README.md`) diperbarui untuk beranda
   peta 3D, pop-up sambutan, panel Aku, panel Ruko, dan gambar usaha.
+- 2026-11-08: commit `24b103b` di-push dan di-deploy ke
+  https://desa.kejartarget.id. Verifikasi live: halaman wajib 200, berkas
+  rahasia 403, kartu publik tidak memuat kunci.
