@@ -5,4 +5,4 @@
 - [x] Formulir pemulihan di KTP dan panel Aku.
 - [x] Uji pemulihan 13 pemeriksaan dan lint PHP.
 - [x] Selesaikan seluruh regresi dan tracker.
-- [ ] Commit, push, deploy.
+- [x] Commit, push, deploy.
