@@ -98,7 +98,9 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
           // supaya sabuk pengaman: nomor saja tidak cukup untuk warga lain. ?>
     <span id="ktpIdentitas" hidden
           data-nomor="<?= e($nomorKartu) ?>"
-          data-kunci="<?= e($kunciKartu) ?>"></span>
+          data-kunci="<?= e($kunciKartu) ?>"
+          data-nama="<?= e($kartuWarga['nama']) ?>"
+          data-gang="<?= e($kartuWarga['gang']) ?>"></span>
     <script>
     (function () {
         var identitas = document.getElementById('ktpIdentitas');

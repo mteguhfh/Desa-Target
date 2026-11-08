@@ -140,5 +140,29 @@ foreach ($panelPapanGang as $barisPapan) {
             <p class="panel-catatan">Setelah kartumu jadi, tekan tombol kembali di halaman KTP. Kamu akan mendarat lagi di peta, dan namamu sudah berdiri sebagai warga baru di depan balai desa.</p>
         </div>
 
+        <?php // Chat antar gang (Fitur 2). Tidak ada tab kelima: isi ini dibuka
+              // dari tombol Chat di bilah atas. Hanya frase preset, tanpa kolom
+              // teks bebas, dan semua pesan publik. ?>
+        <div class="panel-isi" data-isi="chat" hidden>
+            <p class="panel-deskripsi">Sapa warga desa lewat pilihan kalimat di bawah. Chat ini publik, semua warga bisa membaca, tidak ada pesan pribadi.</p>
+
+            <div class="chat-pilih" id="chatPilih" role="group" aria-label="Pilih kanal chat"></div>
+
+            <div class="chat-riwayat" id="chatRiwayat" aria-live="polite" aria-label="Pesan terbaru">
+                <p class="chat-kosong" id="chatKosong">Sedang memuat pesan…</p>
+            </div>
+
+            <div class="chat-kirim" id="chatKirim" hidden>
+                <p class="chat-kirim-judul">Pilih kalimat untuk dikirim</p>
+                <div class="chat-frase" id="chatFrase"></div>
+                <p class="chat-kabar" id="chatKabar" role="status" hidden></p>
+            </div>
+
+            <div class="chat-tamu" id="chatTamu" hidden>
+                <p class="panel-deskripsi">Bikin KTP Warga supaya bisa ikut menyapa di chat. Membaca pesan tetap gratis tanpa kartu.</p>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+            </div>
+        </div>
+
     </div>
 </section>

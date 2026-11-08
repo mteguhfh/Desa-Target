@@ -142,6 +142,24 @@ function db(): PDO
         )"
     );
 
+    // Chat antar gang: publik, satu kanal umum dan satu kanal per gang.
+    // Isinya hanya kode frase preset dari CHAT_FRASE (config.php), bukan teks
+    // bebas. nama dan gang disalin dari kartu warga saat pesan dikirim,
+    // supaya riwayat lama tetap terbaca walau datanya berubah kemudian.
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS chat_pesan (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kanal TEXT NOT NULL,
+            nomor TEXT NOT NULL,
+            nama TEXT NOT NULL,
+            gang TEXT NOT NULL,
+            frase TEXT NOT NULL,
+            dibuat_pada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_chat_kanal_id ON chat_pesan (kanal, id)');
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_chat_nomor ON chat_pesan (nomor, id)');
+
     $daftarMisi = [
         ['usulkan-usaha', 'Usulkan satu usaha impianmu', 'Komentari usaha yang ingin kamu dirikan di desa di postingan Instagram desa. Satu komentar saja sudah cukup.', 1],
         ['dukung-teman', 'Dukung komentar warga lain', 'Sukai komentar warga lain yang idenya bagus. Like terbanyak besok pagi dibangun jadi bangunan.', 2],
@@ -591,4 +609,128 @@ function ringkasan_misi(array $daftar): array
         }
     }
     return ['selesai' => $selesai, 'total' => count($daftar)];
+}
+
+// ---------------------------------------------------------------------------
+// Chat antar gang (Fitur 2). Publik total: tidak ada DM, tidak ada teks bebas.
+// Yang boleh dikirim hanya kode frase dari CHAT_FRASE, dan nama serta gang
+// pengirim selalu diambil dari tabel warga, bukan dari kiriman peramban.
+// ---------------------------------------------------------------------------
+
+// Daftar kanal chat: kanal umum lebih dulu, lalu lima gang dengan nama persis
+// seperti di tabel warga. Nama gang tidak disimpan terpisah, jadi kalau daftar
+// gang berubah, kanalnya ikut menyesuaikan dengan sendirinya.
+function daftar_kanal_chat(): array
+{
+    return array_merge([CHAT_KANAL_UMUM], GANG_WARGA);
+}
+
+// Kanal yang sah: 'alun-alun' atau satu nama gang persis. Selain itu null.
+function kanal_chat_sah($kanal): ?string
+{
+    return is_string($kanal) && in_array($kanal, daftar_kanal_chat(), true) ? $kanal : null;
+}
+
+// Kode frase yang sah, atau null bila tidak ada di CHAT_FRASE.
+function frase_chat_sah($frase): ?string
+{
+    return is_string($frase) && array_key_exists($frase, CHAT_FRASE) ? $frase : null;
+}
+
+// Daftar frase untuk dikirim ke peramban: [{ kode, teks }].
+function daftar_frase_chat(): array
+{
+    $daftar = [];
+    foreach (CHAT_FRASE as $kode => $teks) {
+        $daftar[] = ['kode' => (string) $kode, 'teks' => $teks];
+    }
+    return $daftar;
+}
+
+// Pesan di satu kanal dengan id lebih besar dari $sejak, urut naik (paling
+// lama dulu), paling banyak $batas. Paling ujung hanya 50 pesan terbaru yang
+// diambil supaya jawaban tidak pernah membengkak.
+function pesan_chat(PDO $pdo, string $kanal, int $sejak = 0, int $batas = 50): array
+{
+    $batas = max(1, min(50, $batas));
+    $sejak = max(0, $sejak);
+    $stmt = $pdo->prepare(
+        'SELECT * FROM (
+            SELECT id, kanal, nomor, nama, gang, frase, dibuat_pada
+            FROM chat_pesan
+            WHERE kanal = ? AND id > ?
+            ORDER BY id DESC
+            LIMIT ' . $batas . '
+         ) ORDER BY id ASC'
+    );
+    $stmt->execute([$kanal, $sejak]);
+
+    $hasil = [];
+    foreach ($stmt->fetchAll() as $baris) {
+        $kode = (string) $baris['frase'];
+        $hasil[] = [
+            'id' => (int) $baris['id'],
+            'kanal' => $baris['kanal'],
+            'nomor' => $baris['nomor'],
+            'nama' => $baris['nama'],
+            'gang' => $baris['gang'],
+            'frase' => $kode,
+            // Frase yang sudah dihapus dari CHAT_FRASE tetap terbaca netral,
+            // bukan kosong, supaya riwayat lama tidak jadi baris tanpa arti.
+            'teks' => CHAT_FRASE[$kode] ?? 'Pesan lama',
+            'dibuat_pada' => $baris['dibuat_pada'],
+        ];
+    }
+    return $hasil;
+}
+
+// Kirim satu pesan frase atas nama warga pemilik nomor + kunci.
+// Mengembalikan:
+//   ['ok' => true, 'pesan' => [baris, ...pesan baru]]
+//   ['galat' => 'kanal' | 'frase' | 'warga' | 'kanal-lain' | 'terlalu-cepat']
+function kirim_chat(PDO $pdo, $kanal, $frase, $nomor, $kunci): array
+{
+    $kanal = kanal_chat_sah($kanal);
+    if ($kanal === null) {
+        return ['galat' => 'kanal'];
+    }
+    $frase = frase_chat_sah($frase);
+    if ($frase === null) {
+        return ['galat' => 'frase'];
+    }
+    $warga = warga_dari_nomor_dan_kunci($pdo, $nomor, $kunci);
+    if ($warga === null) {
+        return ['galat' => 'warga'];
+    }
+    // Menulis hanya di kanal umum atau gang sendiri. Kanal gang lain tetap
+    // bisa dibaca, tapi tidak bisa ditulisi dari luar gang itu.
+    if ($kanal !== CHAT_KANAL_UMUM && $kanal !== $warga['gang']) {
+        return ['galat' => 'kanal-lain'];
+    }
+
+    $nomorWarga = nomor_warga((int) $warga['id']);
+    $terakhir = $pdo->prepare('SELECT dibuat_pada FROM chat_pesan WHERE nomor = ? ORDER BY id DESC LIMIT 1');
+    $terakhir->execute([$nomorWarga]);
+    $waktuTerakhir = $terakhir->fetchColumn();
+    if ($waktuTerakhir !== false) {
+        $jeda = time() - (int) strtotime((string) $waktuTerakhir . ' UTC');
+        if ($jeda < CHAT_JEDA_DETIK) {
+            return ['galat' => 'terlalu-cepat'];
+        }
+    }
+
+    // nama dan gang diambil dari baris warga, tidak pernah dari klien.
+    $insert = $pdo->prepare(
+        'INSERT INTO chat_pesan (kanal, nomor, nama, gang, frase) VALUES (?, ?, ?, ?, ?)'
+    );
+    $insert->execute([$kanal, $nomorWarga, $warga['nama'], $warga['gang'], $frase]);
+    $id = (int) $pdo->lastInsertId();
+
+    $baru = [];
+    foreach (pesan_chat($pdo, $kanal, $id - 1, 1) as $pesan) {
+        if ($pesan['id'] === $id) {
+            $baru[] = $pesan;
+        }
+    }
+    return ['ok' => true, 'pesan' => $baru];
 }

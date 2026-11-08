@@ -73,3 +73,25 @@ const WARNA_BAWAAN = ['baju' => 'teal', 'kulit' => 'cerah', 'topi' => 'merah'];
 // memakai poin ini sebagai modal.
 const POIN_KLAIM_HARIAN = 10;
 const POIN_PER_MISI = 5;
+
+// Chat antar gang (lihat SPESIFIKASI-FITUR-BELUM-DIBANGUN.md, Fitur 2).
+// Chat publik total: hanya frase preset di bawah ini yang bisa dikirim, tidak
+// ada teks bebas dan tidak ada pesan privat. Menambah frase cukup lewat commit
+// di sini; kodenya (kunci array) yang disimpan di basis data, teksnya dicetak
+// dari konstanta ini supaya teks lama tidak ikut berubah di riwayat.
+const CHAT_FRASE = [
+    'halo' => 'Halo, warga!',
+    'warga-baru' => 'Aku warga baru nih, salam kenal!',
+    'semangat' => 'Semangat jualannya hari ini!',
+    'mampir' => 'Mampir ke tempatku ya!',
+    'tanya-balai' => 'Ada urusan ke Balai Desa, ada yang bareng?',
+    'pasar' => 'Nanti pasar malam, gas!',
+    'pagi' => 'Selamat pagi, desa!',
+    'malam' => 'Selamat malam, desa!',
+];
+
+// Kanal umum: dibaca semua warga, boleh ditulisi semua warga.
+const CHAT_KANAL_UMUM = 'alun-alun';
+
+// Jeda paling cepat antar pesan satu warga, dalam detik.
+const CHAT_JEDA_DETIK = 5;

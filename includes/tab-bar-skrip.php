@@ -29,6 +29,7 @@
         'misi': 'Misi Desa',
         'papan-gang': 'Papan Gang',
         'bangunan': 'Bangunan Desa',
+        'chat': 'Chat Desa',
         'aku': 'Aku'
     };
 
@@ -105,6 +106,23 @@
         if (panel.contains(e.target) || tabBar.contains(e.target)) return;
         tutup(false);
     });
+
+    // Tombol di luar tab bar yang membuka isi panel, misalnya Chat di bilah
+    // atas. Berperilaku sama dengan tab: ketuk sekali membuka, ketuk lagi
+    // saat isi yang sama sedang terbuka menutup panel.
+    function pasangPintasan(id, nama) {
+        var tombol = document.getElementById(id);
+        if (!tombol || !JUDUL[nama]) return;
+        tombol.addEventListener('click', function (e) {
+            e.preventDefault();
+            var sedangAktif = panel.classList.contains('terbuka') &&
+                !!panel.querySelector('[data-isi="' + nama + '"]:not([hidden])');
+            if (sedangAktif) tutup(false);
+            else buka(nama, tombol);
+        });
+    }
+    pasangPintasan('tombolChat', 'chat');
+    pasangPintasan('tombolChat2d', 'chat');
 
     // Pintasan untuk peta 3D: tombol "Papan Gang" lama kini membuka panel
     // yang sama, bukan panel terpisah. Dijalankan setelah halaman siap.

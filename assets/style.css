@@ -736,6 +736,19 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     font-weight: 600;
 }
 .peta-nav a:hover { background: var(--putih); color: var(--biru-gelap); }
+/* Tombol Chat di peta 2D: bentuknya sama dengan tautan di sebelahnya. */
+.peta-nav-chat {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    padding: 0.42rem 0.95rem;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+    color: var(--teks);
+    font: 600 0.9rem system-ui, sans-serif;
+    cursor: pointer;
+}
+.peta-nav-chat:hover { background: var(--putih); color: var(--biru-gelap); }
+.peta-nav-chat:focus-visible { outline: 3px solid var(--biru); outline-offset: 2px; }
 .peta-intro {
     position: absolute;
     top: 76px;
@@ -981,6 +994,92 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
     .sakelar-opsi { transition: none; }
 }
+
+/* --- Chat antar gang di panel (Fitur 2) --------------------------------- */
+/* Hanya frase preset, tanpa kolom teks: tidak ada tempat mengetik pesan. */
+.chat-pilih {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.chat-pilih[hidden] { display: none; }
+.chat-kanal {
+    border: 1px solid var(--garis);
+    background: var(--putih);
+    color: var(--teks);
+    font: 700 12.5px system-ui, sans-serif;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.chat-kanal:hover { background: var(--biru-pucat); }
+.chat-kanal.aktif { background: var(--biru); border-color: var(--biru); color: var(--putih); }
+.chat-kanal:focus-visible { outline: 3px solid var(--biru); outline-offset: 2px; }
+
+.chat-riwayat {
+    max-height: 220px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 0 12px;
+    padding: 2px 2px 2px 0;
+    border: 1px solid var(--garis);
+    border-radius: var(--radius);
+    background: #f8fafc;
+}
+.chat-pesan {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eef2f7;
+}
+.chat-pesan:last-child { border-bottom: none; }
+.chat-pesan-isi { font-size: 14px; line-height: 1.45; color: var(--teks); }
+.chat-pesan-meta { font-size: 11.5px; color: var(--teks-lembut); }
+.chat-pesan.milikku { background: var(--biru-pucat); }
+.chat-pesan.milikku .chat-pesan-meta { color: var(--biru-gelap); font-weight: 700; }
+.chat-kosong, .chat-memuat {
+    margin: 0;
+    padding: 14px 12px;
+    font-size: 13.5px;
+    color: var(--teks-lembut);
+}
+.chat-kosong[hidden] { display: none; }
+
+.chat-kirim[hidden] { display: none; }
+.chat-kirim-judul {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--teks-lembut);
+}
+.chat-frase { display: grid; gap: 6px; margin-bottom: 8px; }
+.chat-frase button {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: 1px solid var(--garis);
+    border-radius: 12px;
+    background: var(--putih);
+    font: 600 13.5px system-ui, sans-serif;
+    color: var(--teks);
+    cursor: pointer;
+}
+.chat-frase button:hover:not(:disabled) { background: var(--biru-pucat); border-color: var(--biru-muda); }
+.chat-frase button:disabled { opacity: 0.55; cursor: default; }
+.chat-frase button:focus-visible { outline: 3px solid var(--biru); outline-offset: 1px; }
+.chat-kabar {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--teks-lembut);
+}
+.chat-kabar.galat { color: #b91c1c; }
+.chat-kabar[hidden] { display: none; }
+.chat-tamu[hidden] { display: none; }
 
 /* --- Tab bar bawah dan panel bersayap -------------------------------------
    Dipakai peta 3D dan peta 2D. Tujuannya: berpindah isi tanpa meninggalkan
@@ -1396,3 +1495,4 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
     display: inline-block;
 }
 .ktp-warna-teks { font-size: 13px; color: var(--teks-lembut); }
+

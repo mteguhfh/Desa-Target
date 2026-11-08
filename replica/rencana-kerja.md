@@ -7,14 +7,17 @@ pekerjaan yang benar-benar belum ada.
 Status saat rencana ini ditulis: 11 fitur selesai, 4 sebagian, 7 belum,
 5 sengaja tidak dikerjakan.
 
-**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1 dari
-`SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga dan misi per warga).
-Sekarang 21 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan. Yang
-tersisa di tabel Tahap 3: suara latar desa dan pembagian warga per huruf awal.
+**Perbarui 2026-11-08:** Tahap 1 dan 2 selesai, ditambah Fitur 1 dan Fitur 2
+dari `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` (dompet poin warga, lalu chat antar
+gang). Sekarang 22 selesai, 0 sebagian, 2 belum, 5 sengaja tidak dikerjakan.
+Yang tersisa di tabel Tahap 3: suara latar desa dan pembagian warga per huruf
+awal.
 
 Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
 masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah
-selesai: Fitur 1 (dompet poin warga dan misi per warga).
+selesai: Fitur 1 (dompet poin warga dan misi per warga) dan Fitur 2 (chat
+antar gang, publik, frase preset). Berikutnya menurut urutan spesifikasi:
+Fitur 3 dan 4 (boleh tukar), lalu Fitur 5.
 
 ## Prinsip urutan
 
@@ -139,6 +142,45 @@ Sumber acuan: `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` bagian 3.
 **Uji:** `tools/uji/dompet-poin.js`, 47 pemeriksaan (klaim ganda 409, klaim
 hari berikutnya, isolasi dua warga, kunci salah atau milik warga lain,
 injeksi nomor/kunci/kode, dan panel di peta 3D dan 2D).
+
+---
+
+## Fitur 2 — Chat antar gang (publik, frase preset, tanpa DM)
+
+Sumber acuan: `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` bagian 4.
+
+| # | pekerjaan | status | bukti |
+| --- | --- | --- | --- |
+| F2.1 | Skema `chat_pesan` + indeks `idx_chat_kanal_id` | **selesai** | migrasi idempoten di `db.php` |
+| F2.2 | Daftar frase preset `CHAT_FRASE` dan jeda `CHAT_JEDA_DETIK` | **selesai** | `config.php`; 8 frase, ditambah lewat commit |
+| F2.3 | Fungsi `daftar_kanal_chat()`, `kanal_chat_sah()`, `pesan_chat()`, `kirim_chat()` | **selesai** | `db.php`; nama dan gang diambil dari tabel `warga` |
+| F2.4 | Endpoint `chat.php` GET (`kanal`, `sejak`, maks 50, urut naik) dan POST (`kanal`, `frase`, `nomor`, `kunci`) | **selesai** | GET boleh tanpa kartu; POST 403 tanpa kunci, 429 terlalu cepat |
+| F2.5 | Panel `data-isi="chat"` + tombol Chat di bilah atas 3D dan 2D | **selesai** | `includes/chat-skrip.php`, `includes/panel-bersayap.php`; tab bar tetap 4 |
+
+**Keputusan yang diambil di luar teks spesifikasi:**
+
+- **Tanpa tab kelima.** Chat dibuka lewat tombol Chat di bilah atas (3D) dan
+  di baris navigasi (2D). `tab-bar-skrip.php` mendapat pintasan umum
+  `pasangPintasan()` sehingga tombol di luar tab bar berperilaku sama dengan
+  tab, tanpa menambah tab.
+- **Menulis butuh nomor + kunci kartu**, sama seperti Fitur 1. Tanpa kunci,
+  endpoint menolak dengan jawaban yang sama seperti nomor tidak dikenal,
+  supaya tidak bisa dipakai menebak nomor warga.
+- **Kanal gang sendiri saja.** Menulis hanya di Alun-Alun atau gang milik warga
+  itu sendiri; kanal gang lain tetap bisa dibaca. Diperiksa di server, bukan
+  hanya disembunyikan di UI.
+- **Endpoint tidak punya kolom teks bebas.** Field `teks`/`pesan` diabaikan
+  sepenuhnya; hanya kode dari `CHAT_FRASE` yang diterima.
+- **Polling selaras dengan panel.** Polling 5 detik memakai `sejak` dan hanya
+  berjalan saat panel terbuka dan tab peramban terlihat. Pengawas
+  `MutationObserver` plus pemeriksaan berkala 1 detik menutup celah animasi
+  panel 300 ms setelah ditutup.
+
+**Uji:** `tools/uji/chat.js`, 64 pemeriksaan (teks bebas ditolak, nama/gang
+tidak bisa dipalsukan, kunci wajib, kanal gang lain 403, batas laju 429,
+kanal tidak sah, injeksi kanal/nomor/kunci/frase, `sejak` tanpa pesan ganda,
+panel chat tanpa kolom teks di 3D dan 2D, polling berhenti saat panel
+ditutup dan hidup lagi saat dibuka).
 
 ---
 

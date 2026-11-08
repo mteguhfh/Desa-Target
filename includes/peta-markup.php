@@ -472,6 +472,8 @@
                 <a href="index.php">Beranda</a>
                 <a href="ktp.php">Bikin KTP Warga</a>
                 <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
+                <?php // Chat antar gang (Fitur 2): isi panel bersayap yang sama. ?>
+                <button type="button" class="peta-nav-chat" id="tombolChat2d" data-panel="chat">Chat</button>
             </nav>
         </div>
 
@@ -1506,4 +1508,6 @@ $awalanPoin = '';
 require __DIR__ . '/dompet-skrip.php';
 $awalanMisi = '';
 require __DIR__ . '/misi-skrip.php';
+$awalanChat = '';
+require __DIR__ . '/chat-skrip.php';
 ?>

@@ -446,6 +446,10 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
+    <?php // Chat antar gang (Fitur 2). Dibuka sebagai isi panel bersayap, jadi
+          // tab bar tetap empat dan dunia 3D di belakangnya tidak hilang. ?>
+    <button type="button" class="pil-nav" id="tombolChat" data-panel="chat"
+            title="Chat antar gang, publik">Chat</button>
     <?php // Saldo poin warga aktif. Disembunyikan sampai peramban tahu nomor
           // warga (localStorage dt_nomor); tanpa itu bilah atas tidak berubah. ?>
     <button type="button" class="chip-poin" id="chipPoin" hidden
@@ -523,6 +527,7 @@ require __DIR__ . '/../includes/tab-bar.php';
 <?php require __DIR__ . '/../includes/cari-warga-skrip.php'; ?>
 <?php $awalanPoin = $awalan; require __DIR__ . '/../includes/dompet-skrip.php'; ?>
 <?php $awalanMisi = $awalan; require __DIR__ . '/../includes/misi-skrip.php'; ?>
+<?php $awalanChat = $awalan; require __DIR__ . '/../includes/chat-skrip.php'; ?>
 
 <script type="module">
 import * as THREE from 'three';
