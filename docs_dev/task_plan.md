@@ -7,7 +7,7 @@ Implementasi dan bukti lokal tercatat di gelombang3-verifikasi.md. Kriteria meny
 - [x] Katalog dan bentuk avatar: verifikasi integrasi
 - [x] Interior Pasar/ruko dan kontras visual
 - [x] Seluruh regresi lama
-- [ ] Perbarui tracker, commit, push, deploy dan smoke test
+- [x] Perbarui tracker, commit, push, deploy dan smoke test
 
 ## Keputusan
 - Kerjakan berurutan sesuai ketergantungan di rencana paritas.

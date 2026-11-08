@@ -26,3 +26,4 @@ Verifikasi 2026-11-09:
 - Regresi ruko 47/47 pada salinan basis data terpisah dengan kavling kosong. Fixture izin pada chat/dompet/ruko/Aku disesuaikan; suite pencarian mengikuti perilaku warga terbaru dan tombol tujuan warga yang sudah berlaku sejak Gelombang 2.
 - Lint seluruh PHP dan pemeriksaan whitespace bersih.
 - Regresi akhir: adr0004 11, Aku 11, beranda 7, bilah atas 25, chat 64, dompet 47, gambar 9, kunci publik 4, mode jalan 19, Pasar 36, pemulihan 13, sakelar 20, ruko 47, panel ruko 12, sambutan 8, panel/tab 130, pencarian/interior Balai 31, tata letak 6; semua lulus.
+- Deploy `c499096`: stylesheet terbaru diunggah tanpa menyentuh SQLite. Smoke browser produksi 360px: beranda/KTP/Pasar/Ruko 200; peci memakai radius 3px dan tidak ada overflow pada halaman KTP.
