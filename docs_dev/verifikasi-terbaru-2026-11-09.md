@@ -7,4 +7,15 @@
 - Autoplay produksi Chromium langsung running. Pengujian sebelumnya yang menunggu resume pada kebijakan terbatas timeout; HP fisik dan browser yang benar-benar memblokir autoplay belum diverifikasi.
 - Tidak mengklaim pemeriksaan suara secara pendengaran atau performa HP fisik.
 
-Sisa: uji klik/patroli Uju yang terlihat pada viewport, HP fisik/autoplay, blokir DM, pembersihan foto, dan penguatan waktu panen. Posisi warga tetap simulasi yang disetujui.
+## Pemeriksaan lanjutan produksi
+
+`tools/uji/uju-audio-produksi.cjs` lulus pada 360/1440px dengan input sentuh dan kebijakan Chromium `document-user-activation-required`:
+- Audio awal benar-benar suspended, sentuhan pertama membuat running.
+- Tombol mati membuat suspended; sentuhan lain tidak menyalakannya kembali; tombol nyala membuat running.
+- Patroli mengubah posisi lebih dari tiga unit.
+- Kamera diarahkan ke model asli melalui kait uji yang sudah tersedia. Ketukan koordinat kanvas sesungguhnya membuka popup Bang Uju, lalu tombol tutup bekerja.
+- Tidak ada pageerror; screenshot 360px diperiksa, karakter 3D dan popup terbaca tanpa keluar viewport.
+
+Percobaan awal desktop gagal karena kait scene belum siap; penantian diperbaiki dengan pemeriksaan scene sebelum mengakses model. Tidak ada perubahan aplikasi diperlukan.
+
+Sisa: HP fisik dan Safari belum tersedia untuk pengujian; emulasi sentuh Chromium lulus. Blokir DM, pembersihan foto, dan penguatan waktu panen masih backlog. Posisi warga tetap simulasi yang disetujui.
