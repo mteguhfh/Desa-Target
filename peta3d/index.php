@@ -562,7 +562,8 @@ require __DIR__ . '/../includes/sakelar-peta.php';
 
 <div class="bar-atas">
     <span class="lencana-merek">🎯 Desa <span class="target">Target</span> <span class="versi">3D</span></span>
-    <span class="chip-hari" id="chipHari">Hari <?= max(1, (int) ((new DateTimeImmutable('today'))->diff(new DateTimeImmutable(DESA_DIBUKA))->days + 1)) ?></span>
+    <span class="chip-hari" id="chipHari">Hari <?= max(1, (int) (new DateTimeImmutable(DESA_DIBUKA))->diff(new DateTimeImmutable('today'))->format('%r%a') + 1) ?></span>
+    <button type="button" class="pil-nav" id="suaraDesa" aria-pressed="false" title="Nyalakan burung, angin, dan musik instrumental">Suara: mati</button>
     <span class="chip-petunjuk" id="chipPetunjuk">Seret buat keliling. Putar dan zoom petanya, tap bangunan, atau jalan-jalan pakai tombol Keliling Desa.</span>
     <?php // Chat antar gang (Fitur 2). Dibuka sebagai isi panel bersayap, jadi
           // tab bar tetap empat dan dunia 3D di belakangnya tidak hilang. ?>
@@ -1254,6 +1255,7 @@ function bangunBangunan(daftar) {
         model.position.copy(pos);
         const ruko = b.jenis === 'ruko';
         const popover = {
+            kavling: k,
             jenis: b.jenis,
             kicker: ruko ? 'RUKO WARGA' : 'DETAIL BANGUNAN',
             judul: b.nama,
@@ -1636,23 +1638,20 @@ function bangunWarga(daftar) {
         });
     });
 }
-// Bang Uju: sprite billboard dari gambar resmi maskot, patroli alun-alun.
+// Bang Uju berukuran setara warga dan tetap berpatroli di alun-alun.
 const agenUju = { x: titikPatroli[0][0], y: titikPatroli[0][1], target: null, indeks: 0, tunggu: 2, kecepatan: 26, jedaPopover: false };
 let spriteUju = null;
 {
-    const tex = new THREE.TextureLoader().load('<?= $awalan ?>assets/bang-uju-peta.png', (t) => {
-        const aspek = t.image.width / t.image.height;
-        spriteUju.scale.set(168 * aspek, 168, 1);
-    });
-    spriteUju = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-    spriteUju.scale.set(130, 168, 1);
+    spriteUju = buatFigur(0x1d4ed8, { topi: 0xdc2626, kulit: 0xfcd9b8, bentuk: 'pet' });
+    spriteUju.name = 'bang-uju-3d';
+    spriteUju.scale.setScalar(1.05);
     const pos = KE3(agenUju.x, agenUju.y);
-    spriteUju.position.set(pos.x, 84, pos.z);
+    spriteUju.position.set(pos.x, 0, pos.z);
     spriteUju.userData.popover = { kicker: 'KEPALA DESA', judul: 'Bang Uju', lencana: null, kutipan: '“Ikutin Bang Uju, biar sama-sama sampai tujuan!”', isi: 'Kepala Desa Target yang sedang ronda keliling alun-alun Balai Desa.' };
     dunia.add(spriteUju);
     bisaDiklik.push(spriteUju);
     const label = labelNama('Bang Uju', 0.95);
-    label.position.set(pos.x, 196, pos.z);
+    label.position.set(pos.x, 100, pos.z);
     label.name = 'labelUju';
     dunia.add(label);
 }
@@ -2327,7 +2326,7 @@ chipAksi.addEventListener('click', () => {
     if (data.jenis === 'ruko' || /pasar/i.test(data.judul || '')) {
         aturModeJalan(false); tutupPopover();
         window.__tabBar?.tutup();
-        window.__usaha?.buka(data.judul, data.jenis !== 'ruko');
+        window.__usaha?.buka(data.judul, data.jenis !== 'ruko', data.kavling);
     } else bukaPopover(data, objekDekat, innerWidth / 2 - 150, innerHeight * .55);
 });
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'e' && !chipAksi.hidden) chipAksi.click(); });
@@ -2950,8 +2949,9 @@ function putaran() {
         const posU = KE3(agenUju.x, agenUju.y);
         // Bang Uju melayang naik-turun sendiri; lompatan klik ditambahkan
         // di atasnya supaya keduanya tidak saling hapus.
-        spriteUju.position.set(posU.x, 84 + Math.sin(t * 2.2) * 2.5 + offsetLompat(spriteUju), posU.z);
-        if (labelUju) labelUju.position.set(posU.x, 196 + Math.sin(t * 2.2) * 2.5, posU.z);
+        spriteUju.position.set(posU.x, Math.sin(t * 2.2) * 1.2 + offsetLompat(spriteUju), posU.z);
+        if (agenUju.target) spriteUju.rotation.y = Math.atan2(agenUju.target.x - agenUju.x, agenUju.target.y - agenUju.y);
+        if (labelUju) labelUju.position.set(posU.x, 100 + Math.sin(t * 2.2) * 1.2, posU.z);
         // Gelombang bendera dan kerlip air kolam.
         if (bendera && geoBenderaAsli) {
             const posAttr = bendera.geometry.attributes.position;
@@ -2999,5 +2999,6 @@ function putaran() {
 }
 putaran();
 </script>
+<script src="<?= $awalan ?>assets/suara-desa.js?v=2" defer></script>
 </body>
 </html>

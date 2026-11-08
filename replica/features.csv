@@ -25,7 +25,7 @@ Status desa (ramai atau sepi) di bilah atas,ambience,could,yes,selesai,chipSuasa
 Suara latar desa,ambience,could,no,belum,tidak ada audio,Sengaja tidak meniru video pembanding
 Misi harian untuk menggerakkan komentar,gamification,could,yes,selesai,daftar_misi()/tandai_misi() + misi.php + panel Misi,Per warga sejak Fitur 1: status dan poin tidak tercampur antar warga
 Dompet poin warga (klaim harian + poin misi),gamification,must,no,selesai,poin.php + klaim.php + tambah_poin()/klaim_harian() di db.php,Identitas nomor KTP + kunci rahasia dari kartu; fondasi ruko dan lapak
-Chat antar gang publik dengan frase preset (tanpa DM),community,must,no,selesai,chat.php + kirim_chat()/pesan_chat() di db.php + includes/chat-skrip.php,Hanya frase preset dari CHAT_FRASE; nama+gang dari kartu; menulis wajib nomor+kunci; jeda 5 detik per warga; kanal gang lain hanya dibaca
+Chat publik teks bebas dan inbox pribadi,community,must,no,selesai,chat.php + inbox.php + includes/chat-skrip.php,Teks maksimal 280 karakter; identitas dari kartu; jeda kirim; notifikasi dan status baca inbox; kanal gang lain hanya dibaca
 Ruko komersil untuk usaha warga (satu warga satu ruko),commerce,must,no,selesai,ruko.php + klaim_ruko()/lepas_ruko() di db.php,Panel Ruko di dalam peta (tab kelima, ADR-0006); gambar usaha dipilih dari assets/img; tautan https saja; tampil di peta 2D dan 3D serta daftar bangunan
 Pasar Malam dan CFD dengan lapak gratis (klaim hanya saat acara),commerce,must,no,selesai,pasar.php + lapak.php + klaim_lapak() di db.php,Tabel lapak; jadwal ACARA_LAPAK; tenda di peta 3D hanya saat acara; chip suasana membuka panel Pasar
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding

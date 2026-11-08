@@ -405,6 +405,10 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ---
 
+## Pembaruan setelah paritas, 2026-11-09
+
+Arahan pengguna menggantikan batas awal: unggah foto usaha, chat bebas, inbox privat dengan notifikasi/status baca, dan katalog interior sudah tersedia. Audio burung/angin/musik aktif secara bawaan dengan fallback interaksi browser; Bang Uju memakai figur 3D seukuran warga. Daftar pekerjaan berikut di bawah merupakan riwayat urutan implementasi, bukan backlog aktif.
+
 ## Pekerjaan berikutnya
 
 Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.

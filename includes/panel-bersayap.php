@@ -305,7 +305,7 @@ foreach ($panelPapanGang as $barisPapan) {
               // tamu (ajakan bikin KTP) dan pemilik ruko (data rukunya).
               // Formulir klaim dan lepas ruko memakai ruko.php yang sama. ?>
         <div class="panel-isi" data-isi="ruko" hidden>
-            <button type="button" class="tombol-panel-utama masuk-usaha" hidden onclick="window.__tabBar?.tutup(); window.__desa?.aturModeJalan(false); window.__usaha?.buka('Ruko contoh', false)">Masuk ruko contoh</button>
+            <button type="button" class="tombol-panel-utama masuk-usaha" hidden onclick="window.__tabBar?.tutup(); window.__desa?.aturModeJalan(false); window.__usaha?.buka('Ruko warga', false)">Masuk katalog ruko</button>
             <div class="ruko-panel-tamu" id="rukoPanelTamu" hidden>
                 <p class="panel-deskripsi">Buka ruko usahamu di desa: nama usaha, cerita singkat, dan satu tautan jualan. Gratis, dan pembeli diarahkan langsung ke tempat jualanmu sendiri.</p>
                 <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga dulu</a>

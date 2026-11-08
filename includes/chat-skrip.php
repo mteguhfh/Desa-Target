@@ -2,9 +2,8 @@
 // Chat antar gang di panel bersayap (Fitur 2).
 //
 // Aturan yang dijaga berkas ini:
-//   - Tidak ada kolom teks. Yang bisa dikirim hanya tombol frase preset yang
-//     datang dari server (CHAT_FRASE di config.php).
-//   - Publik total. Tidak ada pilihan pesan privat di UI maupun endpoint.
+//   - Chat publik menerima teks bebas dan pilihan frasa dari server.
+//   - Inbox privat memakai endpoint terpisah dengan status baca per warga.
 //   - Nama dan gang diambil server dari kartu warga; peramban hanya mengirim
 //     nomor dan kunci untuk membuktikan siapa yang menulis.
 //   - Pengunjung tanpa kartu tetap bisa membaca semua kanal.

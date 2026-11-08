@@ -1482,6 +1482,19 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 .panen-game { margin-top: 18px; padding-top: 14px; border-top: 1px solid #cbd5e1; }
 .panen-game h3 { margin: 0 0 5px; }
 .usaha-judul { position: absolute; top: 70px; left: 16px; max-width: calc(100% - 32px); margin: 0; padding: 12px; background: #fff9e8; color: #172b46; font-size: 20px; }
+.usaha-katalog { position: absolute; top: 135px; left: 16px; bottom: 155px; width: min(340px, calc(100% - 32px)); overflow: auto; padding: 14px; box-sizing: border-box; background: #fff9e8; color: #172b46; border: 2px solid #172b46; border-radius: 10px; }
+.usaha-katalog label { display: block; font-weight: 700; }
+.usaha-katalog select, .usaha-katalog button, .usaha-katalog a { min-height: 44px; cursor: pointer; font: inherit; }
+.usaha-katalog select { width: 100%; color: #172b46; background: white; }
+.usaha-katalog ul { list-style: none; margin: 0; padding: 0; }
+.usaha-katalog li { padding: 14px 0; border-top: 1px solid #99724a; overflow-wrap: anywhere; }
+.usaha-katalog img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; }
+.usaha-katalog h3 { margin: 8px 0; }
+.usaha-katalog a { display: flex; align-items: center; color: #172b46; font-weight: 700; text-decoration: underline; }
+.usaha-katalog a:hover { background: #ffe486; }
+.usaha-katalog a:active { background: #f8ce46; }
+.usaha-katalog :focus-visible { outline: 3px solid #315c8c; outline-offset: 2px; }
+@media (max-width: 600px) { .usaha-katalog { top: 130px; bottom: auto; max-height: 42vh; } }
 .panen-ladang { position: relative; height: 62px; margin: 10px 0; border: 2px solid #166534; border-radius: 8px; background: repeating-linear-gradient(90deg, #86efac 0 18px, #4ade80 18px 20px); overflow: hidden; }
 .panen-ladang span { position: absolute; left: 50%; top: 13px; font-size: 30px; transform: translateX(-50%); }
 .panen-ladang::before { content: ''; position: absolute; left: 43%; width: 14%; height: 100%; background: #fff9e8; border-inline: 2px solid #172b46; }
