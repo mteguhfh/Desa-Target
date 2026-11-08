@@ -254,6 +254,84 @@ function db(): PDO
         ]);
     }
 
+    // -----------------------------------------------------------------
+    // Fitur 5 (SPESIFIKASI-FITUR-BELUM-DIBANGUN.md): LMS Pusat Pembelajaran.
+    // Kelas berisi materi berurutan (video, artikel, kuis). Materi hanya
+    // terbuka setelah materi sebelumnya selesai untuk warga yang sama.
+    // Progres disimpan per warga; kunci jawaban kuis tidak pernah dikirim
+    // ke klien. Menyelesaikan materi memberi poin lewat jalur 'materi'.
+    // -----------------------------------------------------------------
+    $pdo->exec('CREATE TABLE IF NOT EXISTS kelas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT NOT NULL UNIQUE,
+        judul TEXT NOT NULL,
+        keterangan TEXT NOT NULL DEFAULT \'\',
+        urutan INTEGER NOT NULL DEFAULT 0
+    )');
+    $pdo->exec('CREATE TABLE IF NOT EXISTS materi (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kelas_id INTEGER NOT NULL REFERENCES kelas(id),
+        judul TEXT NOT NULL,
+        tipe TEXT NOT NULL,
+        youtube_id TEXT,
+        isi TEXT NOT NULL DEFAULT \'\',
+        poin INTEGER NOT NULL DEFAULT 10,
+        urutan INTEGER NOT NULL DEFAULT 0,
+        UNIQUE (kelas_id, urutan, judul)
+    )');
+    $pdo->exec('CREATE TABLE IF NOT EXISTS progres_materi (
+        nomor TEXT NOT NULL,
+        materi_id INTEGER NOT NULL REFERENCES materi(id),
+        selesai_pada TEXT NOT NULL,
+        PRIMARY KEY (nomor, materi_id)
+    )');
+
+    // Kurikulum bawaan sebagai data (bukan kode di halaman): kelas di-upsert
+    // menurut slug, materi menurut (kelas, urutan, judul). Boleh diedit atau
+    // ditambah lewat basis data tanpa mengubah naskah halaman belajar.
+    $seedBelajar = $pdo->prepare(
+        'INSERT INTO kelas (slug, judul, keterangan, urutan) VALUES (?, ?, ?, ?)
+         ON CONFLICT(slug) DO UPDATE SET judul = excluded.judul,
+             keterangan = excluded.keterangan, urutan = excluded.urutan'
+    );
+    $cariKelas = $pdo->prepare('SELECT id FROM kelas WHERE slug = ?');
+    $seedMateri = $pdo->prepare(
+        'INSERT INTO materi (kelas_id, judul, tipe, youtube_id, isi, poin, urutan)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(kelas_id, urutan, judul) DO UPDATE SET tipe = excluded.tipe,
+             youtube_id = excluded.youtube_id, isi = excluded.isi, poin = excluded.poin'
+    );
+    foreach (kurikulum_belajar() as $kelasSeed) {
+        $materiSeed = $kelasSeed['materi'];
+        unset($kelasSeed['materi']);
+        $seedBelajar->execute([$kelasSeed['slug'], $kelasSeed['judul'], $kelasSeed['keterangan'], $kelasSeed['urutan']]);
+        $cariKelas->execute([$kelasSeed['slug']]);
+        $kelasId = (int) $cariKelas->fetchColumn();
+        foreach ($materiSeed as $i => $m) {
+            $seedMateri->execute([$kelasId, $m['judul'], $m['tipe'], $m['youtube_id'] ?? null, $m['isi'] ?? '', $m['poin'] ?? 10, $i + 1]);
+        }
+    }
+
+    // Bangunan pembelajaran sebagai fasilitas desa. Ditanam sekali dengan
+    // jenis fasilitas supaya mengisi kavling setelah Balai Desa dan tampil
+    // di peta 2D dan 3D serta daftar bangunan; kavling selebihnya masih
+    // muat (12 kavling, bangunan komentar menyusul dari antrean warga).
+    $cekBelajar = $pdo->prepare("SELECT COUNT(*) FROM bangunan WHERE jenis = 'fasilitas' AND nama = 'Pusat Pembelajaran'");
+    $cekBelajar->execute();
+    if ((int) $cekBelajar->fetchColumn() === 0) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO bangunan (nama, gang, diminta_oleh, komentar, tanggal, jenis) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            'Pusat Pembelajaran',
+            null,
+            'Bang Uju',
+            'Tempat warga belajar dokumen usaha, konten jualan, dan keuangan. Masuk lewat halaman Belajar.',
+            date('Y-m-d'),
+            'fasilitas',
+        ]);
+    }
+
     return $pdo;
 }
 
@@ -737,6 +815,7 @@ function koleksi_warga(PDO $pdo, string $nomor): array
         ['kode' => 'suara-gang', 'nama' => 'Suara Gang', 'syarat' => 'Pernah mengirim pesan', 'terbuka' => (int) $chat->fetchColumn() > 0],
         ['kode' => 'penjelajah', 'nama' => 'Penjelajah', 'syarat' => 'Menyelesaikan Keliling Desa', 'terbuka' => (int) $pdo->prepare('SELECT COUNT(*) FROM misi_selesai WHERE nomor = ? AND kode = ?')->execute([$nomor, 'keliling-desa'])],
         ['kode' => 'misi-tuntas', 'nama' => 'Misi Tuntas', 'syarat' => 'Menyelesaikan 5 misi dalam sehari', 'terbuka' => (int) $misiHari->fetchColumn() >= 5],
+        ['kode' => 'warga-cerdas', 'nama' => 'Warga Cerdas', 'syarat' => 'Menuntaskan satu kelas di Pusat Pembelajaran', 'terbuka' => kelas_selesai_warga($pdo, $nomor) > 0],
     ];
     // PDOStatement::execute mengembalikan bool, jadi hitung lencana penjelajah ulang.
     $cekJelajah = $pdo->prepare('SELECT COUNT(*) FROM misi_selesai WHERE nomor = ? AND kode = ?');
@@ -1341,5 +1420,335 @@ function keadaan_pasar(PDO $pdo, ?string $sekarang = null): array
         'jadwal' => $jadwal,
         'lapak' => $aktif === null ? [] : daftar_lapak($pdo, $aktif, $tanggalAktif),
         'batas' => $aktif === null ? 0 : (int) ACARA_LAPAK[$aktif]['batas'],
+    ];
+}
+
+// ---------------------------------------------------------------------------
+// Pusat Pembelajaran (Fitur 5). Kelas dan materi satu sumber data untuk
+// halaman Belajar dan interior 3D (ADR-0004). Kunci jawaban kuis hanya
+// pernah dibaca di server; yang sampai ke peramban hanya soal dan pilihan.
+// ---------------------------------------------------------------------------
+
+// Seluruh kelas terurut, masing-masing dengan ringkasan materinya.
+function daftar_kelas(PDO $pdo): array
+{
+    $kelas = $pdo->query(
+        'SELECT k.*,
+            (SELECT COUNT(*) FROM materi m WHERE m.kelas_id = k.id) AS jumlah_materi,
+            (SELECT COALESCE(SUM(m2.poin), 0) FROM materi m2 WHERE m2.kelas_id = k.id) AS total_poin
+         FROM kelas k ORDER BY k.urutan, k.id'
+    )->fetchAll();
+    return $kelas;
+}
+
+// Kelas menurut slug; null bila tidak ada.
+function kelas_dari_slug(PDO $pdo, string $slug): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM kelas WHERE slug = ?');
+    $stmt->execute([$slug]);
+    $baris = $stmt->fetch();
+    return $baris === false ? null : $baris;
+}
+
+// Daftar materi satu kelas menurut urutan.
+function daftar_materi(PDO $pdo, int $kelasId): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM materi WHERE kelas_id = ? ORDER BY urutan, id');
+    $stmt->execute([$kelasId]);
+    return $stmt->fetchAll();
+}
+
+// Materi menurut id; null bila tidak ada.
+function materi_dari_id(PDO $pdo, int $materiId): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM materi WHERE id = ?');
+    $stmt->execute([$materiId]);
+    $baris = $stmt->fetch();
+    return $baris === false ? null : $baris;
+}
+
+// Himpunan materi_id yang sudah dituntaskan warga (kunci = materi_id).
+function progres_warga(PDO $pdo, string $nomor): array
+{
+    $stmt = $pdo->prepare('SELECT materi_id, selesai_pada FROM progres_materi WHERE nomor = ?');
+    $stmt->execute([$nomor]);
+    $hasil = [];
+    foreach ($stmt->fetchAll() as $baris) {
+        $hasil[(int) $baris['materi_id']] = $baris['selesai_pada'];
+    }
+    return $hasil;
+}
+
+// Materi terbuka bila semua materi sebelumnya dalam kelas yang sama sudah
+// selesai untuk warga ini. Untuk pengunjung tanpa kartu, hanya materi
+// pertama yang terbuka.
+function materi_terbuka(PDO $pdo, array $materi, ?string $nomor): bool
+{
+    $daftar = daftar_materi($pdo, (int) $materi['kelas_id']);
+    $progres = $nomor !== null ? progres_warga($pdo, $nomor) : [];
+    foreach ($daftar as $m) {
+        if ((int) $m['id'] === (int) $materi['id']) {
+            return true;
+        }
+        if (!isset($progres[(int) $m['id']])) {
+            return false;
+        }
+    }
+    return false;
+}
+
+// Materi berikutnya dalam kelas yang belum dituntaskan, atau null bila
+// kelas sudah tuntas. Dipakai untuk tombol Lanjut sesudah satu materi usai.
+function materi_berikutnya(PDO $pdo, string $nomor, int $kelasId): ?array
+{
+    $progres = progres_warga($pdo, $nomor);
+    foreach (daftar_materi($pdo, $kelasId) as $m) {
+        if (!isset($progres[(int) $m['id']])) {
+            return $m;
+        }
+    }
+    return null;
+}
+
+// Satu kelas tuntas bila semua materinya selesai untuk warga ini.
+function kelas_selesai_untuk(PDO $pdo, string $nomor, int $kelasId): bool
+{
+    $daftar = daftar_materi($pdo, $kelasId);
+    if ($daftar === []) {
+        return false;
+    }
+    $progres = progres_warga($pdo, $nomor);
+    foreach ($daftar as $m) {
+        if (!isset($progres[(int) $m['id']])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Jumlah kelas yang sudah dituntaskan warga (dasar lencana Warga Cerdas).
+function kelas_selesai_warga(PDO $pdo, string $nomor): int
+{
+    $jumlah = 0;
+    foreach (daftar_kelas($pdo) as $k) {
+        if (kelas_selesai_untuk($pdo, $nomor, (int) $k['id'])) {
+            $jumlah++;
+        }
+    }
+    return $jumlah;
+}
+
+// Keadaan belajar lengkap satu warga untuk satu kelas: daftar materi dengan
+// status masing-masing (terkunci, terbuka, selesai, segera) plus ringkasan
+// progres. Inilah satu sumber data untuk halaman Belajar dan panel/interior.
+function keadaan_belajar(PDO $pdo, ?string $nomor, int $kelasId): array
+{
+    $daftar = daftar_materi($pdo, $kelasId);
+    $progres = $nomor !== null ? progres_warga($pdo, $nomor) : [];
+    $materi = [];
+    $selesai = 0;
+    $gembokPatah = true;
+    foreach ($daftar as $m) {
+        $id = (int) $m['id'];
+        $sudah = isset($progres[$id]);
+        if ($sudah) {
+            $selesai++;
+        }
+        $segera = $m['tipe'] === 'video' && trim((string) ($m['youtube_id'] ?? '')) === '';
+        $materi[] = $m + [
+            'selesai' => $sudah,
+            'selesai_pada' => $progres[$id] ?? null,
+            'terbuka' => $gembokPatah,
+            'segera' => $segera,
+        ];
+        if (!$sudah) {
+            $gembokPatah = false;
+        }
+    }
+    $total = count($daftar);
+    return [
+        'materi' => $materi,
+        'selesai' => $selesai,
+        'total' => $total,
+        'persen' => $total > 0 ? (int) round($selesai / $total * 100) : 0,
+        'tuntas' => $total > 0 && $selesai === $total,
+    ];
+}
+
+// Catat materi selesai dan beri poinnya, semuanya dalam satu transaksi.
+// tambah_poin() membuka transaksinya sendiri, jadi di sini penulisan poin
+// mengikuti pola simpan_panen(): UPDATE warga dan INSERT poin_log manual
+// dengan sumber 'materi' di dalam transaksi yang sama dengan progresnya.
+// Kunci utama progres_materi membuat kiriman ulang tidak menggandakan poin.
+function selesaikan_materi(PDO $pdo, string $nomor, array $materi): array
+{
+    $materiId = (int) $materi['id'];
+    $sudah = $pdo->prepare('SELECT COUNT(*) FROM progres_materi WHERE nomor = ? AND materi_id = ?');
+    $sudah->execute([$nomor, $materiId]);
+    if ((int) $sudah->fetchColumn() > 0) {
+        return ['ok' => true, 'baru' => false, 'poin' => 0, 'saldo' => saldo_poin($pdo, $nomor)];
+    }
+    $warga = warga_dari_nomor($pdo, $nomor);
+    if ($warga === null) {
+        return ['ok' => false, 'galat' => 'warga'];
+    }
+    $poin = (int) $materi['poin'];
+    $pdo->beginTransaction();
+    try {
+        $tulis = $pdo->prepare(
+            'INSERT INTO progres_materi (nomor, materi_id, selesai_pada) VALUES (?, ?, ?)
+             ON CONFLICT(nomor, materi_id) DO NOTHING'
+        );
+        $tulis->execute([$nomor, $materiId, date('Y-m-d H:i:s')]);
+        $baru = $tulis->rowCount() > 0;
+        if ($baru && $poin !== 0) {
+            $pdo->prepare('UPDATE warga SET poin = poin + ? WHERE id = ?')
+                ->execute([$poin, (int) $warga['id']]);
+            $pdo->prepare(
+                'INSERT INTO poin_log (nomor, delta, sumber, ref, tanggal) VALUES (?, ?, ?, ?, ?)'
+            )->execute([$nomor, $poin, 'materi', (string) $materiId, date('Y-m-d')]);
+        }
+        $pdo->commit();
+        return ['ok' => true, 'baru' => $baru, 'poin' => $baru ? $poin : 0, 'saldo' => saldo_poin($pdo, $nomor)];
+    } catch (Throwable) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return ['ok' => false, 'galat' => 'gagal'];
+    }
+}
+
+// Soal kuis tanpa kunci jawaban: inilah satu-satunya bentuk soal yang boleh
+// sampai ke peramban. Kunci 'jawaban' disingkirkan di sini, di server.
+function soal_kuis_publik(array $materi): array
+{
+    $data = json_decode((string) ($materi['isi'] ?? ''), true);
+    $soal = is_array($data) && is_array($data['soal'] ?? null) ? $data['soal'] : [];
+    $hasil = [];
+    foreach ($soal as $s) {
+        $hasil[] = [
+            'tanya' => (string) ($s['tanya'] ?? ''),
+            'pilihan' => array_values(array_map('strval', is_array($s['pilihan'] ?? null) ? $s['pilihan'] : [])),
+        ];
+    }
+    return $hasil;
+}
+
+// Nilai jawaban kuis di server. Lulus hanya bila semua soal benar; kiriman
+// yang tidak lengkap atau di luar pilihan yang ada otomatis tidak lulus.
+function nilai_kuis(array $materi, array $jawabanWarga): array
+{
+    $data = json_decode((string) ($materi['isi'] ?? ''), true);
+    $soal = is_array($data) && is_array($data['soal'] ?? null) ? $data['soal'] : [];
+    $benar = 0;
+    foreach ($soal as $i => $s) {
+        $kunci = $s['jawaban'] ?? null;
+        $pilihan = is_array($s['pilihan'] ?? null) ? $s['pilihan'] : [];
+        $jawab = $jawabanWarga[$i] ?? null;
+        if (is_int($kunci) && is_int($jawab) && $jawab >= 0 && $jawab < count($pilihan) && $jawab === $kunci) {
+            $benar++;
+        }
+    }
+    $total = count($soal);
+    return ['lulus' => $total > 0 && $benar === $total, 'benar' => $benar, 'total' => $total];
+}
+
+// Kurikulum bawaan Pusat Pembelajaran. Teks artikel ditulis ringkas untuk
+// warga UMKM; video yang belum punya ID YouTube tampil sebagai segera hadir.
+function kurikulum_belajar(): array
+{
+    return [
+        [
+            'slug' => 'dokumen-usaha-dasar',
+            'judul' => 'Dokumen Usaha Dasar',
+            'keterangan' => 'Tiga dokumen yang paling sering dipakai usaha kecil: invoice, surat penawaran, dan slip gaji. Pelajari fungsinya, isinya, dan kesalahan yang paling sering terjadi.',
+            'urutan' => 1,
+            'materi' => [
+                [
+                    'judul' => 'Invoice: Bukti Tagihan yang Rapi',
+                    'tipe' => 'artikel',
+                    'poin' => 10,
+                    'isi' => <<<'HTML'
+<p>Invoice adalah dokumen tagihan resmi dari penjual kepada pembeli. Fungsinya bukan sekadar meminta bayaran, tapi juga menjadi bukti transaksi yang bisa dipakai untuk pembukuan, pajak, dan penagihan ulang bila pembayaran terlambat. Usaha sekecil apa pun terlihat lebih profesional saat mengirim invoice yang rapi.</p>
+<p>Isi invoice yang baik selalu memuat nomor invoice yang unik, tanggal terbit, nama dan kontak penjual, nama pembeli, rincian barang atau jasa beserta jumlah dan harga satuan, total yang harus dibayar, serta cara pembayaran seperti nomor rekening atau kode QRIS. Tambahkan juga tanggal jatuh tempo supaya pembeli tahu batas waktunya.</p>
+<p>Kesalahan yang paling sering terjadi adalah nomor invoice yang dobel, total yang tidak cocok dengan rincian, dan tidak mencantumkan jatuh tempo. Akibatnya pembayaran sering tertunda karena pembeli bingung atau harus bertanya lagi. Biasakan memeriksa total dan nomor sebelum invoice dikirim.</p>
+<p>Di Desa Target, urusan invoice dibantu Kantor Desa lewat Kejar Target. Kamu bisa membuat invoice gratis dengan pratinjau langsung dan ekspor PDF sekali klik, tanpa perlu memasang aplikasi tambahan.</p>
+HTML,
+                ],
+                [
+                    'judul' => 'Surat Penawaran: Meyakinkan Sebelum Menjual',
+                    'tipe' => 'artikel',
+                    'poin' => 10,
+                    'isi' => <<<'HTML'
+<p>Surat penawaran adalah dokumen yang dikirim kepada calon pembeli untuk menawarkan produk atau jasa secara resmi. Surat ini biasanya menjadi pintu pertama kerja sama bisnis, jadi isinya harus jelas, sopan, dan mudah dipahami dalam sekali baca.</p>
+<p>Struktur surat penawaran yang baik dimulai dari kop atau identitas usaha, tanggal dan nomor surat, pihak yang dituju, lalu pembuka singkat. Bagian inti berisi rincian penawaran: nama barang atau jasa, spesifikasi, harga, jumlah, dan syarat seperti waktu pengerjaan atau garansi. Tutup dengan masa berlaku penawaran dan ajakan untuk menghubungi kamu bila ada pertanyaan.</p>
+<p>Dua kesalahan umum adalah harga yang tidak disertai rincian dan penawaran tanpa masa berlaku. Harga tanpa rincian membuat calon pembeli ragu, sedangkan penawaran tanpa batas waktu bisa ditagih bertahun-tahun kemudian dengan harga lama. Cantumkan selalu kalimat seperti: penawaran ini berlaku 14 hari sejak tanggal surat.</p>
+<p>Surat penawaran yang rapi menunjukkan usaha kamu serius. Lewat Kejar Target di Kantor Desa, formatnya sudah disiapkan; kamu tinggal mengisi rincian dan mengunduh PDF-nya.</p>
+HTML,
+                ],
+                [
+                    'judul' => 'Slip Gaji: Kecil-kecil Penting',
+                    'tipe' => 'artikel',
+                    'poin' => 10,
+                    'isi' => <<<'HTML'
+<p>Slip gaji adalah bukti tertulis pembayaran gaji kepada karyawan. Dokumen ini penting untuk dua pihak: karyawan memakainya untuk keperluan administrasi seperti pengajuan kredit, sedangkan pemilik usaha memakainya sebagai arsip pengeluaran yang rapi dan bisa dipertanggungjawabkan.</p>
+<p>Komponen slip gaji umumnya terdiri dari gaji pokok, tunjangan seperti transport dan makan, lembur bila ada, lalu potongan seperti pajak penghasilan pasal 21, iuran BPJS, atau cicilan. Di bagian bawah selalu ada gaji bersih, yaitu jumlah akhir yang diterima karyawan setelah semua potongan.</p>
+<p>Kesalahan yang sering terjadi adalah potongan yang tidak dijelaskan, total yang tidak cocok antara slip dan transfer, dan slip yang hanya diberikan saat karyawan meminta. Berikan slip setiap periode gaji, simpan salinannya, dan pastikan angka di slip sama persis dengan uang yang ditransfer.</p>
+<p>Usaha kecil yang baru punya satu atau dua karyawan tetap dianjurkan memakai slip gaji. Format standarnya tersedia gratis di Kejar Target, termasuk hitungan PPh 21 sederhana, jadi kamu tidak perlu menyusun dari nol di spreadsheet.</p>
+HTML,
+                ],
+            ],
+        ],
+        [
+            'slug' => 'ngonten-buat-jualan',
+            'judul' => 'Ngonten Buat Jualan',
+            'keterangan' => 'Dasar membuat konten jualan yang jujur dan konsisten untuk media sosial usaha kecil, dari ide sampai jadwal posting.',
+            'urutan' => 2,
+            'materi' => [
+                [
+                    'judul' => 'Mulai Ngonten Tanpa Ribet',
+                    'tipe' => 'artikel',
+                    'poin' => 10,
+                    'isi' => <<<'HTML'
+<p>Konten jualan tidak harus mewah. Yang paling penting adalah jelas dan konsisten: calon pembeli bisa paham apa yang kamu jual, berapa harganya, dan bagaimana cara memesannya, hanya dari satu postingan.</p>
+<p>Mulailah dari tiga jenis konten sederhana. Pertama, konten produk: foto atau video barang dengan harga dan cara order. Kedua, konten proses: suasana membuat, mengemas, atau mengantar pesanan, karena proses membangun kepercayaan. Ketiga, konten bukti: testimoni pembeli atau foto pesanan yang sudah sampai.</p>
+<p>Soal jadwal, lebih baik dua kali seminggu secara tetap daripada sepuluh postingan dalam sehari lalu hilang sebulan. Tulis keterangan dengan bahasa sehari-hari, cantumkan harga bila memungkinkan, dan akhiri dengan ajakan yang jelas seperti: pesan lewat WhatsApp di nomor profil.</p>
+<p>Video pembuka kelas ini sedang disiapkan. Setelah materi artikel ini selesai, kamu bisa lanjut kapan pun videonya terbit, dan progresmu tetap tersimpan.</p>
+HTML,
+                ],
+                [
+                    'judul' => 'Video: Kenalan dengan Konten Jualan',
+                    'tipe' => 'video',
+                    'youtube_id' => '',
+                    'poin' => 10,
+                    'isi' => '',
+                ],
+            ],
+        ],
+        [
+            'slug' => 'ngatur-duit-usaha',
+            'judul' => 'Ngatur Duit Usaha',
+            'keterangan' => 'Keuangan dasar usaha kecil: memisahkan uang pribadi dan uang usaha, mencatat arus kas, dan menyiapkan dana cadangan.',
+            'urutan' => 3,
+            'materi' => [
+                [
+                    'judul' => 'Pisahkan Uang Usaha dan Uang Pribadi',
+                    'tipe' => 'artikel',
+                    'poin' => 10,
+                    'isi' => <<<'HTML'
+<p>Masalah keuangan yang paling sering menimpa usaha kecil bukanlah kurang laku, melainkan uang yang tercampur. Uang usaha dipakai belanja harian, uang pribadi menambal modal, dan di akhir bulan tidak ada yang tahu usaha ini sebenarnya untung atau rugi.</p>
+<p>Langkah pertama sederhana: pisahkan tempatnya. Buka rekening atau dompet digital khusus usaha, dan biasakan semua pemasukan jualan masuk ke sana. Setiap kali kamu mengambil uang usaha untuk keperluan pribadi, catat sebagai gaji pemilik dengan jumlah dan tanggal yang jelas.</p>
+<p>Langkah kedua adalah catatan arus kas sederhana: tanggal, keterangan, uang masuk, uang keluar, dan sisa. Cukup satu buku atau satu berkas spreadsheet. Dari catatan ini kamu bisa melihat pola, misalnya hari ramai, biaya yang diam-diam membengkak, atau pelanggan yang sering membayar terlambat.</p>
+<p>Terakhir, sisihkan dana cadangan sedikit demi sedikit, misalnya 5 sampai 10 persen dari keuntungan, sampai terkumpul biaya operasional satu bulan. Dana ini yang menyelamatkan usaha saat penjualan sepi atau ada alat yang rusak mendadak. Setelah materi ini, kerjakan kuisnya untuk menguji pemahamanmu.</p>
+HTML,
+                ],
+                [
+                    'judul' => 'Kuis: Ngatur Duit Usaha',
+                    'tipe' => 'kuis',
+                    'poin' => 10,
+                    'isi' => '{"soal":[{"tanya":"Apa langkah pertama supaya keuangan usaha tidak tercampur dengan uang pribadi?","pilihan":["Menyimpan semua uang di satu dompet supaya praktis","Memisahkan rekening atau dompet digital khusus usaha","Meminjam uang pribadi setiap modal kurang","Mencatat hanya pemasukan yang besar saja"],"jawaban":1},{"tanya":"Catatan arus kas yang sederhana setidaknya memuat apa saja?","pilihan":["Tanggal, keterangan, uang masuk, uang keluar, dan sisa","Nama semua pesaing usaha di sekitar","Daftar harga dari pemasok saja","Foto setiap produk yang terjual"],"jawaban":0},{"tanya":"Berapa perkiraan dana cadangan yang disarankan untuk disisihkan sampai terkumpul?","pilihan":["Tidak perlu dana cadangan","Semua keuntungan bulan pertama","5 sampai 10 persen dari keuntungan, sampai cukup untuk biaya operasional satu bulan","50 persen dari setiap pemasukan, tanpa kecuali"],"jawaban":2}]}',
+                ],
+            ],
+        ],
     ];
 }

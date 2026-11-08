@@ -27,6 +27,7 @@
         <a href="ktp.php"<?= $halamanAktif === 'ktp' ? ' class="aktif"' : '' ?>>Bikin KTP Warga</a>
         <a href="ruko.php"<?= $halamanAktif === 'ruko' ? ' class="aktif"' : '' ?>>Buka Ruko</a>
         <a href="pasar.php"<?= $halamanAktif === 'pasar' ? ' class="aktif"' : '' ?>>Pasar Desa</a>
+        <a href="belajar.php"<?= $halamanAktif === 'belajar' ? ' class="aktif"' : '' ?>>Belajar</a>
         <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
     </nav>
 </header>

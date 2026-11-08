@@ -645,6 +645,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
     <p class="kutipan" id="popKutipan" hidden></p>
     <p id="popIsi"></p>
     <button type="button" class="pop-pesan" id="popPesan" hidden>Kirim pesan pribadi</button>
+    <button type="button" class="pop-pesan" id="popBelajar" hidden>Masuk Pusat Pembelajaran</button>
     <a class="pop-kunjungi" id="popKunjungi" href="#" target="_blank" rel="noopener noreferrer" hidden>Kunjungi usaha</a>
 </div>
 
@@ -655,6 +656,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
     <button type="button" class="bawah" data-arah="mundur" aria-label="Jalan ke belakang">&#9660;</button>
 </div>
 <button type="button" class="chip-masuk" id="chipMasuk">Masuk Balai Desa</button>
+<button type="button" class="chip-masuk" id="chipBelajar">Belajar</button>
 <div class="chip-petunjuk-jalan" id="chipJalan">WASD atau tombol panah buat jalan. Esc buat berhenti.</div>
 
 <div class="webgl-gagal" id="webglGagal">
@@ -691,6 +693,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
 
 <?php require __DIR__ . '/interior-balai.php'; ?>
 <?php require __DIR__ . '/interior-usaha.php'; ?>
+<?php require __DIR__ . '/interior-belajar.php'; ?>
 <?php require __DIR__ . '/interior-balai3d.js.php'; ?>
 
 <div id="stats"></div>
@@ -2234,6 +2237,16 @@ function bukaPopover(data, objek, clientX, clientY) {
         aturModeJalan(false);
         window.__bicaraWarga?.(data.nomor, data.judul);
     };
+    const tombolBelajar = document.getElementById('popBelajar');
+    if (tombolBelajar) {
+        tombolBelajar.hidden = data.jenis !== 'fasilitas';
+        tombolBelajar.onclick = () => {
+            tutupPopover();
+            aturModeJalan(false);
+            if (window.__belajar3d) window.__belajar3d.buka();
+            else window.__tabBar?.buka('belajar');
+        };
+    }
     if (tombolKunjungi) {
         const tautan = tautanAman(data.tautan);
         if (tautan) {

@@ -107,6 +107,7 @@ function papanNama(teks, w, h, opsi) {
 export function varianBangunan(nama) {
     const n = (nama || '').toLowerCase();
     if (n.includes('balai desa')) return 'balai';
+    if (n.includes('pembelajaran') || n.includes('belajar')) return 'sekolah';
     if (n.includes('kopi') || n.includes('warung')) return 'kopi';
     if (n.includes('bengkel')) return 'bengkel';
     if (n.includes('kue') || n.includes('roti') || n.includes('toko')) return 'bakery';

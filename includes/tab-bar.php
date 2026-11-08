@@ -45,6 +45,11 @@ $daftarTab = [
     // membuka panel Ruko di dalam peta, bukan halaman baru (ADR-0006).
     ['id' => 'ruko', 'ikon' => '&#127978;', 'teks' => 'Ruko', 'panel' => 'ruko'],
     ['id' => 'pasar', 'ikon' => '&#128717;', 'teks' => 'Pasar', 'panel' => 'pasar'],
+    // Belajar (Fitur 5) adalah tautan halaman, bukan panel: kurikulumnya
+    // panjang dan butuh ruang baca penuh. Panel data-isi="belajar" tetap
+    // tersedia dari chip Belajar di bilah atas peta 3D dan bangunan
+    // Pusat Pembelajaran.
+    ['id' => 'belajar', 'ikon' => '&#128218;', 'teks' => 'Belajar', 'href' => $tabAwalan . 'belajar.php'],
 ];
 ?>
 <nav class="tab-bar" id="tabBar" aria-label="Navigasi utama desa">

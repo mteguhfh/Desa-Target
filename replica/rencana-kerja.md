@@ -22,8 +22,11 @@ Sekolah Bebaz ada di `replica/rencana-paritas.md`.
 Fitur dari spesifikasi terpisah `SPESIFIKASI-FITUR-BELUM-DIBANGUN.md` tidak
 masuk tabel Tahap 3 di bawah; urutannya diatur dokumen itu sendiri. Yang sudah
 selesai: Fitur 1 (dompet poin warga dan misi per warga), Fitur 2 (chat antar
-gang, publik, frase preset), Fitur 3 (ruko warga), dan Fitur 4 (Pasar Malam
-dan CFD dengan lapak gratis). Berikutnya menurut urutan spesifikasi: Fitur 5.
+gang, publik, frase preset), Fitur 3 (ruko warga), Fitur 4 (Pasar Malam
+dan CFD dengan lapak gratis), dan Fitur 5 (LMS Pusat Pembelajaran, lihat
+bagian Fitur 5 di bawah). Berikutnya menurut urutan spesifikasi: Fitur 6
+(paket nuansa: suara latar, status buka-tutup desa, dan pembagian warga
+per huruf awal).
 
 ## Prinsip urutan
 
@@ -283,6 +286,50 @@ terlalu pendek ditolak, nomor asing dan kunci salah dijawab sama, nama usaha
 berisi HTML disimpan sebagai teks, poin tidak berkurang, `data-desa.php`
 mengirim `acara` yang benar, peta 3D dan 2D membuka panel Pasar, chip suasana
 menjadi pintu masuk).
+
+---
+
+## Fitur 5 - LMS Pusat Pembelajaran
+
+Selesai di salinan kerja fitur ini; menunggu peninjauan dan dorongan oleh
+pemilik repo. Rancangan mengikuti bagian 7 spesifikasi.
+
+- **Skema sebagai data.** Tabel `kelas`, `materi`, dan `progres_materi`
+  dibuat idempoten di `db.php`. Kurikulum bawaan (Dokumen Usaha Dasar,
+  Ngonten Buat Jualan, Ngatur Duit Usaha) ditanam sebagai data lewat
+  `kurikulum_belajar()`, bukan ditulis di halaman.
+- **Alur belajar.** Materi berurutan dan terkunci per warga
+  (`materi_terbuka()`, `keadaan_belajar()`). Video memakai penyematan
+  youtube-nocookie; video tanpa ID tampil sebagai segera hadir dan tidak
+  bisa ditandai selesai (ditolak server dengan galat `segera`).
+- **Kuis dinilai di server.** `soal_kuis_publik()` menyingkirkan kunci
+  jawaban sebelum data apa pun sampai ke peramban; `nilai_kuis()` menilai
+  di server dan lulus hanya bila semua soal benar.
+- **Poin sekali saja.** `selesaikan_materi()` mencatat progres dan poin
+  dalam satu transaksi. Karena `tambah_poin()` membuka transaksinya
+  sendiri, penulisan poin mengikuti pola `simpan_panen()`: UPDATE warga
+  dan INSERT `poin_log` manual dengan sumber `materi` di transaksi yang
+  sama. Kunci utama `progres_materi` membuat kiriman ulang tidak
+  menggandakan poin.
+- **Lencana Warga Cerdas.** Dihitung dari progres (`kelas_selesai_warga()`,
+  entri `warga-cerdas` di `koleksi_warga()`), tampil di dompet panel Aku,
+  halaman `poin.php`, dan daftar warga `warga.php`.
+- **Bangunan.** Bangunan fasilitas `Pusat Pembelajaran` ditanam idempoten
+  di `db.php` (pemeriksaan CLI: `tools/tanam-pembelajaran.php`). Kata
+  kunci belajar dan pembelajaran diarahkan ke varian `sekolah` di
+  `varian_bangunan()` dan `varianBangunan()`; kedua perender jatuh ke
+  rangka rumah toko generik, jadi tampilannya bangunan bertanda nama.
+- **Permukaan.** Halaman penuh `belajar.php` (GET dan POST JSON sempit ala
+  `misi.php`), panel `data-isi="belajar"` di peta 2D dan 3D, lapisan
+  `peta3d/interior-belajar.php` dari popover bangunan dan chip Belajar,
+  tautan Belajar di tab bar dan navigasi situs, serta ringkasan
+  `kelasBelajar` di `data-desa.php`. Semua membaca sumber yang sama
+  (ADR-0004).
+
+**Uji:** `tools/uji/belajar.js`, HTTP murni tanpa peramban: kunci
+berurutan dua warga, poin tepat sekali pada kiriman ulang, kunci jawaban
+tidak muncul di HTML maupun JSON kuis, kelas tanpa video tuntas penuh,
+video tanpa ID ditolak, dan galat identitas seragam.
 
 ---
 

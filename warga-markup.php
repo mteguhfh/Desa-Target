@@ -43,6 +43,9 @@
                         <span class="daftar-warga-nomor"><?= e(nomor_warga((int) $w['id'])) ?></span>
                         <span class="daftar-warga-nama"><?= e($w['nama']) ?></span>
                         <span class="daftar-warga-gang"><?= e($w['gang']) ?></span>
+                        <?php if (kelas_selesai_warga($pdo, nomor_warga((int) $w['id'])) > 0): ?>
+                            <span class="lencana-warga-cerdas">Warga Cerdas</span>
+                        <?php endif; ?>
                     </a>
                 </li>
             <?php endforeach; ?>

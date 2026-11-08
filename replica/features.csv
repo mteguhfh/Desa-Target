@@ -28,6 +28,7 @@ Dompet poin warga (klaim harian + poin misi),gamification,must,no,selesai,poin.p
 Chat publik teks bebas dan inbox pribadi,community,must,no,selesai,chat.php + inbox.php + includes/chat-skrip.php,Teks maksimal 280 karakter; identitas dari kartu; jeda kirim; notifikasi dan status baca inbox; kanal gang lain hanya dibaca
 Ruko komersil untuk usaha warga (satu warga satu ruko),commerce,must,no,selesai,ruko.php + klaim_ruko()/lepas_ruko() di db.php,Panel Ruko di dalam peta (tab kelima, ADR-0006); gambar usaha dipilih dari assets/img; tautan https saja; tampil di peta 2D dan 3D serta daftar bangunan
 Pasar Malam dan CFD dengan lapak gratis (klaim hanya saat acara),commerce,must,no,selesai,pasar.php + lapak.php + klaim_lapak() di db.php,Tabel lapak; jadwal ACARA_LAPAK; tenda di peta 3D hanya saat acara; chip suasana membuka panel Pasar
+LMS Pusat Pembelajaran (kelas materi video artikel kuis dan lencana Warga Cerdas),learning,must,no,selesai,belajar.php + db.php (kelas/materi/progres_materi) + peta3d/interior-belajar.php + tools/uji/belajar.js,Fitur 5 dari SPESIFIKASI-FITUR-BELUM-DIBANGUN.md; kurikulum data di db.php; kuis dinilai di server; bangunan fasilitas Pusat Pembelajaran
 Pembagian warga berdasarkan huruf awal nama,community,could,yes,belum,tidak ada,Opsional; pola pembanding
 Koperasi afiliasi TikTok Shop,commerce,skip,yes,tidak dikerjakan,-,Perjanjian komersial mereka bukan fitur produk
 Video YouTube dan absen murid,media,skip,yes,tidak dikerjakan,-,Kanal mereka sendiri

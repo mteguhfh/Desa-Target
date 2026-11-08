@@ -46,6 +46,14 @@ try {
 
     $pdo = db();
 
+    // Pusat Pembelajaran (Fitur 5): ringkasan kelas untuk strip tautan
+    // cepat di dunia 3D. Konten dan progres tetap dari belajar.php
+    // (ADR-0004); di sini hanya slug dan judul.
+    $kelasBelajar = [];
+    foreach (daftar_kelas($pdo) as $k) {
+        $kelasBelajar[] = ['slug' => (string) $k['slug'], 'judul' => (string) $k['judul']];
+    }
+
     $warga = [];
     foreach ($pdo->query('SELECT * FROM warga ORDER BY id ASC') as $baris) {
         $warna = warna_warga($baris);
@@ -124,6 +132,7 @@ try {
 
     echo json_encode(
         [
+            'kelasBelajar' => $kelasBelajar,
             'acara' => $pasar['acara'],
             'namaAcara' => $pasar['namaAcara'],
             'acaraBerikutnya' => $pasar['berikutnya'],

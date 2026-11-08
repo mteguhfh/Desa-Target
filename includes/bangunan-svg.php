@@ -57,6 +57,11 @@ function varian_bangunan(string $nama, ?string $jenis = null): string
     if (str_contains($n, 'balai desa')) {
         return 'balai';
     }
+    if (str_contains($n, 'pembelajaran') || str_contains($n, 'belajar')) {
+        // Varian sekolah digambar oleh gambar_bangunan() di berkas ini;
+        // di peta 3D kata kuncinya mengarah ke varian sekolah juga.
+        return 'sekolah';
+    }
     if (str_contains($n, 'kopi') || str_contains($n, 'warung')) {
         return 'kopi';
     }

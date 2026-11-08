@@ -30,7 +30,8 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 `http://localhost:8100`.
 
 | berkas | yang diperiksa |
-| --- | --- |
+| --- | --- | --- |
+| `belajar.js` | Pusat Pembelajaran (HTTP murni, tanpa peramban): kunci berurutan dua warga, poin tepat sekali, kunci jawaban kuis tidak bocor, kelas tanpa video tuntas, video tanpa ID ditolak |
 | `paritas-mini-game.js` | latensi, waktu tidak sah, autentikasi, token replay, hadiah harian dan saldo |
 | `paritas-katalog.js` | kategori dan harga, filter, fallback, interior Pasar/ruko, keyboard dan D-pad pada 360/1440px |
 | `paritas-bentuk.js` | empat pratinjau kepala, penyimpanan, kartu dan fallback nilai asing |

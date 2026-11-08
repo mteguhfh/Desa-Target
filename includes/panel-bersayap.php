@@ -375,7 +375,14 @@ foreach ($panelPapanGang as $barisPapan) {
             </div>
         </div>
 
+        <?php // Pusat Pembelajaran (Fitur 5). Seperti Chat, tidak ada tab
+              // ketujuh: isi ini dibuka dari chip Belajar di bilah atas dan
+              // dari bangunan Pusat Pembelajaran. Isinya diisi belajar-skrip
+              // dari belajar.php, sumber data yang sama (ADR-0004). ?>
+        <?php require __DIR__ . '/belajar-panel.php'; ?>
+
     </div>
 </section>
 <?php require __DIR__ . '/mini-game-skrip.php'; ?>
 <?php require __DIR__ . '/katalog-skrip.php'; ?>
+<?php require __DIR__ . '/belajar-skrip.php'; ?>

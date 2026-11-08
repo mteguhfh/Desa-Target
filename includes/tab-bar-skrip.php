@@ -32,7 +32,8 @@
         'chat': 'Chat Desa',
         'pasar': 'Pasar Desa',
         'ruko': 'Ruko Wargamu',
-        'aku': 'Aku'
+        'aku': 'Aku',
+        'belajar': 'Pusat Pembelajaran'
     };
 
     function isiUntuk(nama) {
@@ -127,6 +128,8 @@
     pasangPintasan('tombolChat2d', 'chat');
     // Chip suasana di peta 3D juga membuka panel Pasar (Fitur 4).
     pasangPintasan('chipSuasana', 'pasar');
+    // Chip Belajar di peta 3D membuka panel Pusat Pembelajaran (Fitur 5).
+    pasangPintasan('chipBelajar', 'belajar');
     // Tombol ruko bundar di kontrol 3D membuka panel Ruko yang sama
     // (ADR-0006), jadi pengunjung tidak meninggalkan dunia 3D.
     pasangPintasan('tombolRuko3d', 'ruko');
