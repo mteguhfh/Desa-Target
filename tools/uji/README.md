@@ -31,6 +31,11 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 
 | berkas | yang diperiksa |
 | --- | --- |
+| `beranda-peta.js` | beranda 200, kanvas 3D, lima tab, vendor lokal, Tentang dan tautan sambutan |
+| `sambutan.js` | muncul pertama kali, diingat, buka ulang, Escape, sapaan warga, aksi Misi |
+| `aku-panel.js` | validasi nama, terbit KTP dari panel, nomor dan kunci tersimpan serta dikenali setelah muat ulang |
+| `ruko-panel.js` | lima tab sejajar di desktop dan ponsel, keadaan tamu, tanpa ruko, pemilik, dan katalog |
+| `gambar-usaha.js` | pilih, ganti, hapus gambar lokal, sinkronisasi peta dan panel, URL bebas ditolak |
 | `peta-3d-sakelar.js` | 3D jadi default, sakelar pindah mode, pilihan diingat, jalan di ponsel |
 | `tata-letak-sakelar.js` | sakelar tidak menimpa tombol atau chip di 3 ukuran layar |
 | `bilah-atas.js` | chip bilah atas peta 3D (merek, Chat, Poin, Siang, suasana) sama tinggi dan sejajar di 5 ukuran layar, tidak keluar layar, maksimal dua baris |
@@ -45,3 +50,7 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | `ktp-kunci.js` | kunci rahasia warga tidak tercetak di `ktp.php?kartu=N` saat dibuka pengunjung lain, tetapi nama dan gang kartu tetap tampil |
 
 Semua berkas keluar dengan kode 1 bila ada yang gagal.
+
+Lima uji paritas memakai `bantuan-paritas.js` bersama. Salin berkas bantuan
+itu juga saat menjalankan dari folder lain. Warga dan ruko yang dibuatnya
+dibersihkan berdasarkan nomor khusus uji dalam blok `finally`.

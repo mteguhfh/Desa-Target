@@ -1,0 +1,26 @@
+const { jalankan } = require('./bantuan-paritas');
+jalankan(async ({ halaman, buatWarga, cek, BASE }) => {
+  const page = await halaman(null, false);
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.locator('#sambutan').waitFor({ state: 'visible', timeout: 60000 });
+  cek('pengunjung baru mendapat sambutan tamu', await page.locator('#sambutanAksiTamu').isVisible());
+  await page.locator('#sambutanTutup').click();
+  cek('penanda sambutan disimpan', await page.evaluate(() => localStorage.getItem('dt_sambutan')) === '1');
+  await page.reload({ waitUntil: 'networkidle' });
+  cek('sambutan tidak berulang', await page.locator('#sambutan').isHidden());
+  await page.goto(BASE + '/?sambutan=1', { waitUntil: 'networkidle' });
+  await page.locator('#sambutan').waitFor({ state: 'visible', timeout: 60000 });
+  cek('tautan bisa membuka ulang sambutan', await page.locator('#sambutan').isVisible());
+  await page.keyboard.press('Escape');
+  cek('Escape menutup sambutan', await page.locator('#sambutan').isHidden());
+  const warga = await buatWarga();
+  await page.close();
+  const pemilik = await halaman(warga, false);
+  await pemilik.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await pemilik.locator('#sambutan').waitFor({ state: 'visible', timeout: 60000 });
+  cek('warga disapa dengan nama', (await pemilik.locator('#sambutanJudul').innerText()).includes(warga.nama));
+  cek('aksi warga ditampilkan', await pemilik.locator('#sambutanAksiWarga').isVisible());
+  await pemilik.locator('#sambutanMisi').click();
+  await pemilik.locator('[data-isi="misi"]').waitFor({ state: 'visible' });
+  cek('aksi Misi menutup sambutan dan membuka panel', await pemilik.locator('#sambutan').isHidden());
+});

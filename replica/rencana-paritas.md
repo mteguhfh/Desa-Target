@@ -31,7 +31,7 @@ Aturan status:
 
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
-| 0 | Simpan dan amankan yang sudah jalan | 6 | 4, sisa 0.3 dan sisa 0.5 |
+| 0 | Simpan dan amankan yang sudah jalan | 6 | 5, sisa 0.5 (pemulihan kartu) |
 | 1 | Identitas dan alasan balik lagi | 8 | 0 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
@@ -100,12 +100,15 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   tab-bar-panel 130/130. Uji usang yang diperbaiki: hitungan tab 4 menjadi 5,
   pil Ruko dihapus, pop-up sambutan dilewati lewat `dt_sambutan`, dan klaim
   pasar diuji dengan jam acara tetap agar tidak bergantung jam mesin.
-- [ ] **0.3 Tulis uji baru untuk pekerjaan sesi lalu**
+- [x] **0.3 Tulis uji baru untuk pekerjaan sesi lalu**
   Berkas baru: `tools/uji/beranda-peta.js`, `sambutan.js`, `aku-panel.js`,
   `ruko-panel.js`, `gambar-usaha.js`. Ukuran selesai: beranda `/` benar-benar
   peta 3D, `tentang.php` 200, pop-up muncul sekali lalu diingat, KTP dari panel
   menyimpan kunci, tab Ruko kelima dan sejajar, gambar usaha bisa dipilih,
   diubah, dan dihapus.
+  Hasil: lima berkas uji ditambahkan dan lulus 44 pemeriksaan: beranda 7,
+  sambutan 8, panel Aku 8, panel Ruko 12, gambar usaha 9. Data baru yang
+  dibuat kelima uji dibersihkan berdasarkan nomor warga uji.
 - [x] **0.4 Perbarui catatan fitur**
   Berkas: `replica/features.csv`, `replica/rencana-kerja.md`,
   `tools/uji/README.md`. Ukuran selesai: status dan bukti cocok dengan kode.
@@ -401,9 +404,8 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 
 ### Bisa dikerjakan sekarang
 
-1. **0.3 Uji baru pekerjaan lama.** Lima berkas uji belum ada: beranda peta 3D,
-   pop-up sambutan, panel Aku, panel Ruko, gambar usaha. Tanpa ini, pekerjaan
-   sesi lalu hanya dijaga uji tak langsung (`ruko.js`, `tab-bar-panel.js`).
+1. **0.3 sudah selesai.** Lima uji langsung lulus 44 pemeriksaan untuk
+   beranda peta 3D, sambutan, panel Aku, panel Ruko, dan gambar usaha.
 2. **1.7 Kode pemulihan kartu.** Sisa dari 0.5: pemilik yang localStorage-nya
    hilang belum punya jalan memulihkan kartu. Ini yang menutup celah keamanan
    sampai selesai.
@@ -439,8 +441,7 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
 
 ### Detail yang masih menggantung
 
-- **0.3:** belum ada berkas `beranda-peta.js`, `sambutan.js`, `aku-panel.js`,
-  `ruko-panel.js`, `gambar-usaha.js`.
+- **0.3:** selesai, lima berkas uji tersedia dan lulus.
 - **0.5:** kebocoran sudah ditutup dan diuji (`ktp-kunci.js` 4/4), tetapi
   status masih setengah karena janji "pemilik bisa memulihkan kartu"
   bergantung pada 1.7.
@@ -497,7 +498,7 @@ Urutan yang disarankan, dari yang paling murah ke yang paling berdampak.
   peta 3D, pop-up sambutan, panel Aku, panel Ruko, dan gambar usaha.
 - 2026-11-08: bilah atas peta 3D dirapikan (semua chip sama tinggi dan
   sejajar) dan uji `bilah-atas.js` ditambah, commit `e91f563`. Gelombang 0
-  tinggal 0.3 (uji baru) dan sisa 0.5 (kode pemulihan, dikerjakan di 1.7).
+  saat itu tinggal 0.3 (kini selesai) dan sisa 0.5 (kode pemulihan di 1.7).
 - 2026-11-08: commit `24b103b` di-push dan di-deploy ke
   https://desa.kejartarget.id. Verifikasi live: halaman wajib 200, berkas
   rahasia 403, kartu publik tidak memuat kunci.
