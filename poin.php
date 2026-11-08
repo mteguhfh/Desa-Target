@@ -52,6 +52,7 @@ try {
             // Misi hari ini beserta statusnya untuk warga ini. Tidak ada data
             // desa yang perlu dikirim ulang, cukup status per warga.
             'ringkasan' => $ringkasan,
+            'streak' => streak_warga($pdo, $nomor),
             'daftar' => $daftar,
         ],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES

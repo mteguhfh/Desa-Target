@@ -666,7 +666,21 @@ function ringkasan_misi(array $daftar): array
             $selesai++;
         }
     }
-    return ['selesai' => $selesai, 'total' => count($daftar)];
+    return ['selesai' => $selesai, 'total' => count($daftar), 'persen' => count($daftar) > 0 ? (int) round($selesai / count($daftar) * 100) : 0];
+}
+
+function streak_warga(PDO $pdo, string $nomor): int
+{
+    $stmt = $pdo->prepare("SELECT tanggal FROM (SELECT tanggal FROM misi_selesai WHERE nomor = ? UNION SELECT tanggal FROM klaim_harian WHERE nomor = ?) GROUP BY tanggal ORDER BY tanggal DESC");
+    $stmt->execute([$nomor, $nomor]);
+    $streak = 0;
+    $cek = new DateTimeImmutable('today');
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $tanggal) {
+        if ($tanggal !== $cek->format('Y-m-d')) break;
+        $streak++;
+        $cek = $cek->modify('-1 day');
+    }
+    return $streak;
 }
 
 // ---------------------------------------------------------------------------

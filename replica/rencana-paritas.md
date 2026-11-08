@@ -32,10 +32,10 @@ Aturan status:
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
 | 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
-| 1 | Identitas dan alasan balik lagi | 8 | 3 |
+| 1 | Identitas dan alasan balik lagi | 8 | 4 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **9** |
+| **Total** | | **27** | **10** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -174,7 +174,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.3 Misi dengan bar kemajuan, streak, dan tombol aksi
 
-- [ ] Panel Misi menampilkan bar kemajuan `selesai/total`, hitungan streak
+- [x] Panel Misi menampilkan bar kemajuan `selesai/total`, hitungan streak
   hari beruntun, dan satu tombol aksi per misi yang langsung menuju tempat
   atau panel yang dimaksud.
 - Berkas: `includes/panel-bersayap.php`, `includes/misi-skrip.php`,

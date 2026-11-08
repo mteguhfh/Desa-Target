@@ -66,6 +66,11 @@ foreach ($panelPapanGang as $barisPapan) {
                 <strong id="misiRingkasan"><?= (int) $ringkasMisi['selesai'] ?> dari <?= (int) $ringkasMisi['total'] ?></strong> misi hari ini sudah selesai.
                 Status dan poin di bawah ini milikmu sendiri setelah kartu warga tersimpan di peramban ini.
             </p>
+            <div class="misi-kemajuan" aria-label="Kemajuan misi hari ini">
+                <div class="misi-kemajuan-kepala"><strong>Kemajuan hari ini</strong><span id="misiKemajuanLabel"><?= (int) $ringkasMisi['persen'] ?>%</span></div>
+                <div class="misi-bar" id="misiBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $ringkasMisi['persen'] ?>"><span style="width: <?= (int) $ringkasMisi['persen'] ?>%"></span></div>
+                <p class="misi-streak" id="misiStreak">Streak: belum mulai</p>
+            </div>
 
             <div class="misi-dompet" id="misiDompet" hidden>
                 <p class="misi-saldo"><span class="misi-saldo-angka" id="misiSaldo">0</span> poin</p>
@@ -88,6 +93,7 @@ foreach ($panelPapanGang as $barisPapan) {
                             <span class="misi-keterangan"><?= e($m['keterangan']) ?></span>
                             <button type="button" class="misi-tandai" data-kode="<?= e($m['kode']) ?>"
                                     <?= $m['selesai'] ? 'hidden' : '' ?>>Tandai selesai, +<?= (int) $m['poin'] ?> poin</button>
+                            <button type="button" class="misi-aksi" data-aksi="<?= e($m['kode']) ?>">Buka tujuan</button>
                         </span>
                         <span class="misi-status"><?= $m['selesai'] ? 'Selesai' : 'Belum' ?></span>
                         <span class="misi-poin">+<?= (int) $m['poin'] ?> poin</span>

@@ -24,6 +24,9 @@
     var tombolKlaim = document.getElementById('tombolKlaimHarian');
     var kabar = document.getElementById('misiKabar');
     var ringkasanEl = document.getElementById('misiRingkasan');
+    var kemajuanLabel = document.getElementById('misiKemajuanLabel');
+    var kemajuanBar = document.getElementById('misiBar');
+    var streakEl = document.getElementById('misiStreak');
     var chipPoin = document.getElementById('chipPoin');
     var chipAngka = document.getElementById('chipPoinAngka');
     if (!dompet || !tamu) return;
@@ -80,7 +83,13 @@
     function isiRingkasan(ringkasan) {
         if (ringkasan && ringkasanEl) {
             ringkasanEl.textContent = ringkasan.selesai + ' dari ' + ringkasan.total;
+            var persen = parseInt(ringkasan.persen, 10) || 0;
+            if (kemajuanLabel) kemajuanLabel.textContent = persen + '%';
+            if (kemajuanBar) { kemajuanBar.setAttribute('aria-valuenow', persen); kemajuanBar.querySelector('span').style.width = persen + '%'; }
         }
+    }
+    function isiStreak(nilai) {
+        if (streakEl && typeof nilai === 'number') streakEl.textContent = nilai > 0 ? 'Streak: ' + nilai + ' hari beruntun' : 'Streak: belum mulai';
     }
 
     var klaimSelesai = false;
@@ -105,6 +114,7 @@
                 isiMisi(data.daftar);
                 isiRingkasan(data.ringkasan);
             }
+            isiStreak(data.streak);
             if (tombolKlaim) {
                 tombolKlaim.disabled = klaimSelesai;
                 tombolKlaim.textContent = klaimSelesai ? 'Poin harian sudah diklaim' : 'Klaim poin harian +' + (data.poinKlaimHarian || 0);
@@ -158,6 +168,7 @@
         tampilKabar: tampilKabar,
         isiMisi: isiMisi,
         isiRingkasan: isiRingkasan
+        ,isiStreak: isiStreak
     };
 
     muatDompet();

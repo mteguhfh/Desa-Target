@@ -27,6 +27,12 @@
         return;
     }
     var endpoint = penanda.getAttribute('data-endpoint') || 'misi.php';
+    var tujuan = {
+        'usulkan-usaha': function () { window.open('https://www.instagram.com/desatarget', '_blank', 'noopener'); },
+        'dukung-teman': function () { window.open('https://www.instagram.com/desatarget', '_blank', 'noopener'); },
+        'bikin-ktp': function () { var tombol = document.querySelector('[data-panel="aku"]'); if (tombol) tombol.click(); else window.location.href = 'ktp.php'; },
+        'keliling-desa': function () { var tombol = document.getElementById('tombolJalan'); if (tombol) tombol.click(); }
+    };
 
     function identitas() {
         try {
@@ -57,6 +63,7 @@
                 var teks = document.getElementById('misiRingkasan');
                 if (teks) teks.textContent = data.ringkasan.selesai + ' dari ' + data.ringkasan.total;
             }
+            if (window.__dompetPoin && typeof data.streak === 'number') window.__dompetPoin.isiStreak(data.streak);
             var baris = document.querySelector('.misi-baris[data-kode="' + kode + '"]');
             if (baris) {
                 baris.classList.add('selesai');
@@ -70,6 +77,13 @@
             if (typeof saatDapat === 'function') saatDapat(data);
         }).catch(function () { /* misi bukan hal kritis; gagal diam saja */ });
     }
+
+    document.querySelectorAll('.misi-aksi').forEach(function (tombol) {
+        tombol.addEventListener('click', function () {
+            var aksi = tujuan[this.getAttribute('data-aksi')];
+            if (aksi) aksi();
+        });
+    });
 
     var tombolJalan = document.getElementById('tombolJalan');
     if (tombolJalan) {

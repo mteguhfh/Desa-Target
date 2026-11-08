@@ -73,6 +73,7 @@ try {
             'daftar' => $daftar,
             'saldo' => (int) $hasil['saldo'],
             'poin' => (int) $hasil['poin'],
+            'streak' => streak_warga($pdo, $nomorWarga),
         ],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
     );

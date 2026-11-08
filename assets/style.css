@@ -1435,6 +1435,13 @@ main.main-penuh { max-width: none; margin: 0; padding: 0; }
 }
 .misi-tandai:hover { background: var(--biru-pucat); }
 .misi-tandai[hidden] { display: none; }
+.misi-kemajuan { margin: 12px 0 16px; padding: 10px 12px; background: #fffaf0; border: 1px solid #fed7aa; border-radius: 10px; }
+.misi-kemajuan-kepala { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: #78350f; }
+.misi-bar { height: 9px; margin-top: 7px; overflow: hidden; border-radius: 5px; background: #fde7c2; }
+.misi-bar span { display: block; height: 100%; background: #d97706; transition: width .25s ease; }
+.misi-streak { margin: 8px 0 0; font-size: 12px; color: #92400e; }
+.misi-aksi { width: max-content; margin-top: 4px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; color: #334155; font: inherit; font-size: 12px; cursor: pointer; }
+.misi-aksi:hover { background: #f1f5f9; }
 .misi-tandai:disabled { cursor: default; opacity: 0.6; }
 
 /* --- Dompet poin warga di panel Misi ------------------------------------ */
