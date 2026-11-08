@@ -223,6 +223,27 @@ foreach ($panelPapanGang as $barisPapan) {
                             <option value="<?= e($gangPilihan) ?>"><?= e($gangPilihan) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <fieldset class="pilih-warna pilih-warna-panel">
+                        <legend>Tampilan figurnya</legend>
+                        <?php foreach ([
+                            'baju' => ['label' => 'Warna baju', 'palet' => WARNA_BAJU],
+                            'kulit' => ['label' => 'Warna kulit', 'palet' => WARNA_KULIT],
+                            'topi' => ['label' => 'Warna topi', 'palet' => WARNA_TOPI],
+                        ] as $bagian => $info): ?>
+                            <div class="pilih-warna-baris" role="radiogroup" aria-label="<?= e($info['label']) ?>">
+                                <span class="pilih-warna-label"><?= e($info['label']) ?></span>
+                                <span class="pilih-warna-swal">
+                                    <?php foreach ($info['palet'] as $kunci => $warna): ?>
+                                        <label class="pilih-warna-satu" title="<?= e($warna['nama']) ?>">
+                                            <input type="radio" name="warna_<?= e($bagian) ?>" value="<?= e($kunci) ?>"<?= $kunci === WARNA_BAWAAN[$bagian] ? ' checked' : '' ?>>
+                                            <span class="pilih-warna-bulat" style="background: <?= e($warna['hex']) ?>"></span>
+                                            <span class="sr-saja"><?= e($warna['nama']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    </fieldset>
                     <button type="submit" class="tombol-panel-utama">Bikin KTP Warga, Gratis</button>
                 </form>
                 <p class="aku-kabar" id="akuKabar" role="status" hidden></p>

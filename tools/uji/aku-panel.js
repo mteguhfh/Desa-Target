@@ -7,6 +7,9 @@ jalankan(async ({ halaman, nomorUji, cek, BASE }) => {
   cek('tamu melihat formulir KTP', await page.locator('#akuFormKtp').isVisible());
   await page.locator('#akuNama').fill('Ab');
   await page.locator('#akuGang').selectOption('Gang Kuliner');
+  await page.locator('input[name="warna_baju"][value="ungu"]').check({ force: true });
+  await page.locator('input[name="warna_kulit"][value="sawo"]').check({ force: true });
+  await page.locator('input[name="warna_topi"][value="kuning"]').check({ force: true });
   let jawaban = page.waitForResponse(r => r.url().endsWith('/ktp-json.php'));
   await page.locator('#akuFormKtp button[type="submit"]').click();
   cek('nama pendek ditolak server', (await jawaban).status() === 422);
@@ -20,6 +23,9 @@ jalankan(async ({ halaman, nomorUji, cek, BASE }) => {
   await page.locator('#akuPunya').waitFor({ state: 'visible' });
   const id = await page.evaluate(() => ({ nomor: localStorage.getItem('dt_nomor'), kunci: localStorage.getItem('dt_kunci') }));
   cek('nomor dan kunci tersimpan', /^DT-\d{4,9}$/.test(id.nomor) && id.nomor === warga.nomor && id.kunci === warga.kunci && /^[a-f0-9]{32}$/.test(id.kunci));
+  const warna = await page.request.get(BASE + '/ktp.php?kartu=' + Number(warga.nomor.slice(3)));
+  const html = await warna.text();
+  cek('pilihan warna panel tersimpan', html.includes('Baju Ungu') && html.includes('kulit sawo matang') && html.includes('topi kuning'));
   cek('pembuatan kartu tidak meninggalkan peta', new URL(page.url()).pathname === '/');
   await page.waitForFunction(() => document.getElementById('akuMeta').textContent.includes('Gang Kuliner'));
   cek('nama pemilik ditampilkan', await page.locator('#akuName').innerText() === warga.nama);

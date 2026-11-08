@@ -9,8 +9,7 @@
 //
 // Formulir di halaman ktp.php tetap ada dan memakai logika yang sama; jalur
 // ini hanya mengembalikan jawaban JSON untuk panel, supaya pengunjung tidak
-// dipindah ke halaman lain. Warna tampilan memakai bawaan karena panel tidak
-// menanyakan warna: warna bisa diganti nanti lewat halaman KTP.
+// dipindah ke halaman lain.
 //
 // Kunci rahasia ikut dikirim di jawaban, sama seperti yang tercetak di
 // kartu warga. Tanpa kunci, peramban tidak bisa memakai fitur poin, ruko,
@@ -62,7 +61,7 @@ if ($galat !== []) {
 $pdo = db();
 $warna = [];
 foreach (['baju', 'kulit', 'topi'] as $bagian) {
-    $warna[$bagian] = WARNA_BAWAAN[$bagian];
+    $warna[$bagian] = warna_sah($bagian, $_POST['warna_' . $bagian] ?? null) ?? WARNA_BAWAAN[$bagian];
 }
 
 $stmt = $pdo->prepare(

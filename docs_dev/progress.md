@@ -3,6 +3,9 @@
 Pemulihan kartu di-deploy melalui commit e13bd6e. Beranda, KTP dan peta2d
 live 200; pulihkan.php menolak GET dengan 405. tools/ 403, catatan deploy 404.
 
+1.1: panel Aku sekarang memiliki pemilih warna baju, kulit, dan topi. Pilihan
+divalidasi server dan disimpan pada kolom warna warga. Uji panel 9/9 lulus.
+
 1.7: kode pemulihan, endpoint POST bertoken sesi, formulir KTP dan panel
 Aku tersedia. Uji pemulihan 13/13, lint PHP, dan seluruh regresi lulus.
 Uji 2D menemukan sesi dibuka setelah output; session_start dipindah ke awal

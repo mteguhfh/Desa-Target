@@ -32,10 +32,10 @@ Aturan status:
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
 | 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
-| 1 | Identitas dan alasan balik lagi | 8 | 1 |
+| 1 | Identitas dan alasan balik lagi | 8 | 2 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **7** |
+| **Total** | | **27** | **8** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -144,7 +144,7 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.1 Pemilih tampilan yang utuh dan tersimpan
 
-- [ ] Panel Aku punya pemilih warna kulit, baju, dan topi seperti halaman KTP,
+- [x] Panel Aku punya pemilih warna kulit, baju, dan topi seperti halaman KTP,
   dan pilihan itu ikut dikirim saat KTP dibuat dari panel.
 - [ ] `ktp-json.php` menerima `warna_baju`, `warna_kulit`, `warna_topi`
   memakai `warna_sah()` seperti `ktp.php`, bukan selalu memakai warna bawaan.
@@ -155,6 +155,8 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
   di `ktp-markup.php`.
 - Ukuran selesai: KTP yang dibuat dari panel dan dari halaman menghasilkan
   warna yang sama dengan pilihan pengguna; nilai asing jatuh ke warna bawaan.
+  Hasil 2026-11-08: pemilih ditambahkan ke panel Aku, `ktp-json.php` memakai
+  `warna_sah()`, dan `aku-panel.js` lulus 9/9 termasuk tiga pilihan warna.
 
 ### 1.2 Pratinjau karakter hidup
 

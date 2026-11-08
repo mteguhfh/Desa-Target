@@ -1,8 +1,7 @@
-# Pemulihan kartu 1.7
+# Pemilih warna panel Aku 1.1
 
-- [x] Periksa alur penerbitan kartu dan identitas.
-- [x] Tambah hash kode, pemulihan sekali pakai, dan pembuatan ulang.
-- [x] Formulir pemulihan di KTP dan panel Aku.
-- [x] Uji pemulihan 13 pemeriksaan dan lint PHP.
-- [x] Selesaikan seluruh regresi dan tracker.
+- [x] Tambahkan pemilih baju, kulit, dan topi ke panel Aku.
+- [x] Kirim pilihan ke `ktp-json.php` dan validasi dengan `warna_sah()`.
+- [x] Uji panel 9 pemeriksaan dan lint PHP.
+- [x] Perbarui tracker.
 - [x] Commit, push, deploy.
