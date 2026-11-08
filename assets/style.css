@@ -2175,6 +2175,12 @@ body.sambutan-terbuka #panggung { pointer-events: none; }
 #inboxDesa { padding:16px 0; border-bottom:1px solid #d8d5c8; }
 #inboxDesa summary { cursor:pointer; font-weight:700; }
 .inbox-pesan { display:block; width:100%; text-align:left; margin:8px 0; padding:12px; background:#fff; color:#172b46; border:1px solid #d8d5c8; border-radius:9px; font:inherit; overflow-wrap:anywhere; cursor:pointer; }
+.inbox-pesan.belum-dibaca { background: #fff5cf; border-color: #947315; font-weight: 700; }
+#notifikasiInbox { position: fixed; top: 76px; right: 12px; z-index: 36; max-width: calc(100vw - 24px); min-height: 44px; padding: 10px 14px; border: 1px solid #172b46; border-radius: 9px; background: #f8ce46; color: #172b46; font: inherit; font-weight: 700; cursor: pointer; }
+#notifikasiInbox[hidden] { display: none; }
+#notifikasiInbox:hover { background: #f2bf27; }
+#notifikasiInbox:active { transform: translateY(1px); }
+#notifikasiInbox:focus-visible { outline: 3px solid #172b46; outline-offset: 3px; }
 .filter-katalog-pilih {
     display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px;
     margin: 0 0 20px; padding: 12px 44px 12px 15px;

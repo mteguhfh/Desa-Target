@@ -334,19 +334,34 @@
     };
     const inbox = document.getElementById('inboxDesa');
     const inboxKabar = document.getElementById('inboxKabar');
+    const notifikasiInbox = document.createElement('button');
+    notifikasiInbox.type = 'button'; notifikasiInbox.id = 'notifikasiInbox'; notifikasiInbox.hidden = true;
+    notifikasiInbox.onclick = () => { window.__tabBar.buka('chat'); inbox.open = true; muatInbox(); };
+    document.body.append(notifikasiInbox);
+    let inboxMemuat = false, inboxTerakhir = 0;
     async function muatInbox(teks) {
+        if (document.hidden || inboxMemuat) return;
         const nomor = localStorage.getItem('dt_nomor') || '', kunci = localStorage.getItem('dt_kunci') || '';
         if (!nomor || !kunci) { inboxKabar.textContent = 'Bikin atau pulihkan KTP untuk membuka inbox.'; return; }
         const data = new URLSearchParams({nomor, kunci});
+        const terlihat = inbox.open && panelTampil();
+        if (terlihat && inboxTerakhir) data.set('baca', String(inboxTerakhir));
         if (teks !== undefined) { data.set('teks', teks); data.set('tujuan', document.getElementById('inboxTujuan').value); }
         try {
+            inboxMemuat = true;
             const response = await fetch(endpoint.replace('chat.php', 'inbox.php'), {method:'POST', body:data});
             const hasil = await response.json();
             if (!response.ok) throw new Error(hasil.galat || 'Inbox belum tersedia.');
+            const jumlah = hasil.belum_dibaca || 0;
+            notifikasiInbox.hidden = !jumlah;
+            notifikasiInbox.textContent = jumlah + ' pesan pribadi belum dibaca';
+            inbox.querySelector('summary').textContent = 'Inbox pribadi' + (jumlah ? ' (' + jumlah + ' baru)' : '');
+            inboxTerakhir = Math.max(0, ...(hasil.pesan || []).filter(p => p.penerima === nomor).map(p => Number(p.id)));
             const riwayat = document.getElementById('inboxRiwayat'); riwayat.replaceChildren();
             (hasil.pesan || []).forEach(p => {
                 const b = document.createElement('button'); b.type='button'; b.className='inbox-pesan';
                 b.textContent = (p.pengirim === nomor ? 'Kamu ke ' + p.nama_penerima : p.nama_pengirim + ' ke kamu') + ': ' + p.teks;
+                if (p.penerima === nomor && Number(p.id) > hasil.dibaca_sampai) { b.classList.add('belum-dibaca'); b.textContent = 'Baru · ' + b.textContent; }
                 b.onclick = () => { document.getElementById('inboxTujuan').value = p.pengirim === nomor ? p.penerima : p.pengirim; document.getElementById('inboxTeks').focus(); };
                 riwayat.append(b);
             });
@@ -354,10 +369,12 @@
             inboxKabar.textContent = teks !== undefined ? 'Pesan pribadi terkirim.' : '';
             if (teks !== undefined) document.getElementById('inboxTeks').value='';
         } catch (e) { inboxKabar.textContent=e.message; }
+        finally { inboxMemuat = false; }
     }
     inbox.addEventListener('toggle', () => { if (inbox.open) muatInbox(); });
     document.getElementById('inboxForm').addEventListener('submit', e => { e.preventDefault(); muatInbox(document.getElementById('inboxTeks').value); });
-    setInterval(() => { if (inbox.open && panelTampil()) muatInbox(); }, 5000);
+    setInterval(() => muatInbox(), 5000);
+    muatInbox();
     window.__bicaraWarga = function (nomor, nama) { window.__tabBar.buka('chat'); inbox.open=true; document.getElementById('inboxTujuan').value=nomor; inboxKabar.textContent='Bicara ke ' + nama; document.getElementById('inboxTeks').focus(); };
 })();
 </script>
