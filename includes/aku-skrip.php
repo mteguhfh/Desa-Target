@@ -37,6 +37,22 @@
     var elMeta = document.getElementById('akuMeta');
     var elPoin = document.getElementById('akuPoinAngka');
     var tombolKlaim = document.getElementById('akuKlaim');
+    var pratinjau = document.querySelector('.aku-avatar-pratinjau');
+
+    function perbaruiPratinjau() {
+        if (!pratinjau) return;
+        ['baju', 'kulit', 'topi'].forEach(function (bagian) {
+            var pilihan = form.querySelector('input[name="warna_' + bagian + '"]:checked');
+            if (pilihan) {
+                var warna = pilihan.nextElementSibling.style.backgroundColor;
+                pratinjau.style.setProperty('--avatar-' + bagian, warna);
+            }
+        });
+    }
+    form.querySelectorAll('input[type="radio"]').forEach(function (input) {
+        input.addEventListener('change', perbaruiPratinjau);
+    });
+    perbaruiPratinjau();
 
     function baca(kunci) {
         try { return localStorage.getItem(kunci) || ''; } catch (e) { return ''; }

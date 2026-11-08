@@ -5,11 +5,13 @@ jalankan(async ({ halaman, nomorUji, cek, BASE }) => {
   await page.locator('#tabBar [data-panel="aku"]').click();
   await page.locator('#akuTamu').waitFor({ state: 'visible' });
   cek('tamu melihat formulir KTP', await page.locator('#akuFormKtp').isVisible());
+  cek('tamu melihat pratinjau avatar', await page.locator('.aku-avatar-pratinjau').isVisible());
   await page.locator('#akuNama').fill('Ab');
   await page.locator('#akuGang').selectOption('Gang Kuliner');
   await page.locator('input[name="warna_baju"][value="ungu"]').check({ force: true });
   await page.locator('input[name="warna_kulit"][value="sawo"]').check({ force: true });
   await page.locator('input[name="warna_topi"][value="kuning"]').check({ force: true });
+  cek('pratinjau mengikuti warna pilihan', await page.locator('.aku-avatar-pratinjau').evaluate(el => getComputedStyle(el).getPropertyValue('--avatar-baju').trim() === 'rgb(124, 58, 237)'));
   let jawaban = page.waitForResponse(r => r.url().endsWith('/ktp-json.php'));
   await page.locator('#akuFormKtp button[type="submit"]').click();
   cek('nama pendek ditolak server', (await jawaban).status() === 422);

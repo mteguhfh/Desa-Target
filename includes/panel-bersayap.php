@@ -212,6 +212,8 @@ foreach ($panelPapanGang as $barisPapan) {
 
             <div class="aku-tamu" id="akuTamu" hidden>
                 <p class="panel-statistik"><strong><?= (int) $panelTotalWarga ?></strong> warga sudah tercatat di balai desa.</p>
+                <?php require_once __DIR__ . '/avatar-markup.php'; ?>
+                <?= avatar_warga_html(WARNA_BAWAAN['baju'], WARNA_BAWAAN['kulit'], WARNA_BAWAAN['topi'], 'aku-avatar-pratinjau') ?>
                 <form class="aku-form" id="akuFormKtp" novalidate>
                     <label class="sr-saja" for="akuNama">Nama lengkap</label>
                     <input id="akuNama" name="nama" type="text" maxlength="50" placeholder="Nama lengkap"

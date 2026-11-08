@@ -5,6 +5,7 @@ $adaKartu = $kartuWarga !== null;
 $adaPesan = $pesan !== null;
 $adaGalat = $galat !== [];
 $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
+require_once __DIR__ . '/includes/avatar-markup.php';
 ?>
 <?php if (!empty($kodePulihBaru)): ?>
 <section class="seksi sempit pemulihan-kartu">
@@ -47,7 +48,8 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
             <strong>DESA TARGET</strong>
         </div>
         <div class="ktp-badan">
-            <img src="assets/bang-uju.png" alt="Foto warga kehormatan: Bang Uju" class="ktp-foto">
+            <?php $wKartu = warna_warga($kartuWarga); ?>
+            <?= avatar_warga_html($wKartu['baju'], $wKartu['kulit'], $wKartu['topi'], 'ktp-avatar') ?>
             <dl class="ktp-data">
                 <div>
                     <dt>Nama Warga</dt>
@@ -72,7 +74,6 @@ $tokenForm = (string) ($_SESSION['token_ktp'] ?? '');
                 <div>
                     <dt>Warna di Peta</dt>
                     <dd class="ktp-warna">
-                        <?php $wKartu = warna_warga($kartuWarga); ?>
                         <?php foreach ([
                             'baju' => ['label' => 'Baju', 'palet' => WARNA_BAJU],
                             'kulit' => ['label' => 'Kulit', 'palet' => WARNA_KULIT],

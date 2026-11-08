@@ -8,6 +8,9 @@ divalidasi server dan disimpan pada kolom warna warga. Uji panel 9/9 lulus.
 Commit 7377b37 sudah di-push dan di-deploy. Beranda, KTP, dan peta2d live
 membalas 200.
 
+1.2: kartu KTP sekarang menampilkan avatar warga dan panel Aku menampilkan
+pratinjau yang berubah saat warna dipilih. Uji panel 11/11 dan lint PHP lulus.
+
 1.7: kode pemulihan, endpoint POST bertoken sesi, formulir KTP dan panel
 Aku tersedia. Uji pemulihan 13/13, lint PHP, dan seluruh regresi lulus.
 Uji 2D menemukan sesi dibuka setelah output; session_start dipindah ke awal

@@ -32,10 +32,10 @@ Aturan status:
 | Gelombang | Isi | Jumlah | Selesai |
 | --- | --- | --- | --- |
 | 0 | Simpan dan amankan yang sudah jalan | 6 | 6 |
-| 1 | Identitas dan alasan balik lagi | 8 | 2 |
+| 1 | Identitas dan alasan balik lagi | 8 | 3 |
 | 2 | Navigasi dan dunia yang terasa hidup | 8 | 0 |
 | 3 | Permainan, katalog, dan rasa visual | 5 | 0 |
-| **Total** | | **27** | **8** |
+| **Total** | | **27** | **9** |
 
 Lihat bagian [Pekerjaan berikutnya](#pekerjaan-berikutnya) untuk urutan yang
 disarankan.
@@ -160,15 +160,17 @@ dimulai sebelum ini bersih, supaya kalau ada yang rusak gampang dilacak.
 
 ### 1.2 Pratinjau karakter hidup
 
-- [ ] Saat warna dipilih, pratinjau figur berubah langsung tanpa memuat ulang.
+- [x] Saat warna dipilih, pratinjau figur berubah langsung tanpa memuat ulang.
   Pratinjau dipakai di halaman KTP dan di panel Aku.
-- [ ] Kartu KTP menampilkan avatar warga, bukan foto Bang Uju.
+- [x] Kartu KTP menampilkan avatar warga, bukan foto Bang Uju.
 - Berkas: `ktp-markup.php`, `includes/aku-skrip.php`, `assets/style.css`,
   `peta3d/index.php` (bila pembentuk avatar dipakai ulang).
 - Keputusan: Bang Uju tidak dihapus; ia tetap warga kehormatan di
   `tentang-markup.php`.
 - Ukuran selesai: avatar di kartu sama dengan avatar di peta, termasuk warna
   kulit, baju, dan topi; pratinjau juga bekerja dengan papan tombol.
+  Hasil 2026-11-08: avatar HTML memakai token palet yang sama dengan SVG peta;
+  pratinjau panel merespons pilihan radio tanpa muat ulang dan uji panel 11/11.
 
 ### 1.3 Misi dengan bar kemajuan, streak, dan tombol aksi
 
