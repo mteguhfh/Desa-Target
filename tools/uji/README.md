@@ -29,6 +29,13 @@ berikutnya. Bila berkas uji dijalankan dari salinan, isi `CWD_UJI` dengan akar
 repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 `http://localhost:8100`.
 
+**Jangan jalankan uji ini ke production.** Beberapa berkas membuat data
+sungguhan di basis data yang dituju: `bantuan-paritas.js` (dipakai
+`paritas-bentuk.js`, `paritas-mini-game.js`, `ruko-panel.js`) mendaftarkan
+warga "Warga Uji Paritas" lewat `POST /ktp-json`, `chat*.js` mengirim pesan,
+dan `belajar.js` mengunci jawaban kuis. Ke production cukup uji baca-saja
+(`beranda-peta`, `tab-bar-panel`, `mode-jalan`, `peta-3d-sakelar`, `sambutan`).
+
 | berkas | yang diperiksa |
 | --- | --- | --- |
 | `belajar.js` | Pusat Pembelajaran (HTTP murni, tanpa peramban): kunci berurutan dua warga, poin tepat sekali, kunci jawaban kuis tidak bocor, kelas tanpa video tuntas, video tanpa ID ditolak |
