@@ -34,7 +34,7 @@ if (!function_exists('e')) {
 $meta = $metaBeranda ?? [
     'judul' => 'Peta Desa Target 3D',
     'deskripsi' => 'Jelajahi Desa Target dalam tiga dimensi. Bangunan di sini lahir dari komentar warga Instagram @desatarget.',
-    'kanonis' => APP_BASE_URL . '/peta.php',
+    'kanonis' => APP_BASE_URL . '/peta',
 ];
 
 // Berkas ini sengaja PHP, bukan HTML statis, supaya penanda versi modul
@@ -633,7 +633,7 @@ require __DIR__ . '/../includes/sambutan-markup.php';
     <button type="button" class="bulat" id="tombolRuko3d" data-panel="ruko"
             aria-label="Buka ruko usaha" title="Buka ruko usaha">&#127978;</button>
     <?php if ($dariAkar): ?>
-        <a class="bulat tombol-tentang-kontrol" href="tentang.php" aria-label="Tentang desa" title="Tentang desa">&#8505;&#65039;</a>
+        <a class="bulat tombol-tentang-kontrol" href="tentang" aria-label="Tentang desa" title="Tentang desa">&#8505;&#65039;</a>
     <?php endif; ?>
 </div>
 
@@ -664,8 +664,8 @@ require __DIR__ . '/../includes/sambutan-markup.php';
         <h2>Peta 3D tidak bisa dibuka</h2>
         <p>Browser kamu tidak mendukung WebGL, jadi desa tiga dimensinya tidak bisa digambar. Tenang, peta desa versi 2D tetap bisa dipakai seperti biasa.</p>
         <p>
-            <a href="<?= $awalan ?>peta2d.php">Buka Peta Desa 2D</a>
-            &middot; <a href="<?= $awalan ?>tentang.php">Baca tentang desa</a>
+            <a href="<?= $awalan ?>peta2d">Buka Peta Desa 2D</a>
+            &middot; <a href="<?= $awalan ?>tentang">Baca tentang desa</a>
         </p>
     </div>
 </div>
@@ -680,12 +680,12 @@ require __DIR__ . '/../includes/sambutan-markup.php';
         <h1><?= e($meta['judul']) ?></h1>
         <p><?= e($meta['deskripsi']) ?></p>
         <p>
-            <a href="<?= $awalan ?>peta2d.php">Buka peta desa 2D</a>
-            &middot; <a href="<?= $awalan ?>tentang.php">Tentang desa</a>
-            &middot; <a href="<?= $awalan ?>ktp.php">Bikin KTP Warga</a>
-            &middot; <a href="<?= $awalan ?>warga.php">Daftar warga</a>
-            &middot; <a href="<?= $awalan ?>ruko.php">Buka ruko</a>
-            &middot; <a href="<?= $awalan ?>pasar.php">Pasar Desa</a>
+            <a href="<?= $awalan ?>peta2d">Buka peta desa 2D</a>
+            &middot; <a href="<?= $awalan ?>tentang">Tentang desa</a>
+            &middot; <a href="<?= $awalan ?>ktp">Bikin KTP Warga</a>
+            &middot; <a href="<?= $awalan ?>warga">Daftar warga</a>
+            &middot; <a href="<?= $awalan ?>ruko">Buka ruko</a>
+            &middot; <a href="<?= $awalan ?>pasar">Pasar Desa</a>
         </p>
         <p>Warga terdaftar: <?= (int) $TOTAL_WARGA_SERVER ?>. Bangunan berdiri: <?= (int) count($BANGUNAN_SERVER) ?>.</p>
     </div>
@@ -820,7 +820,7 @@ function rectWaraUntuk(namaGang) {
 // ---------------------------------------------------------------------------
 async function ambilDataDesa() {
     try {
-        const respons = await fetch('<?= $folder3d ?>data-desa.php', { headers: { 'Accept': 'application/json' } });
+        const respons = await fetch('<?= $folder3d ?>data-desa', { headers: { 'Accept': 'application/json' } });
         if (!respons.ok) return null;
         const data = await respons.json();
         if (!data || data.galat) return null;
@@ -2078,7 +2078,7 @@ setInterval(async () => {
     if (document.hidden || chatMemuat) return;
     chatMemuat=true;
     try {
-        const r=await fetch('<?= $awalan ?>chat.php?kanal=alun-alun&sejak=' + (chatCursor || 0));
+        const r=await fetch('<?= $awalan ?>chat?kanal=alun-alun&sejak=' + (chatCursor || 0));
         if (!r.ok) return;
         const data=await r.json();
         if (chatCursor !== null) for (const p of data.pesan || []) {

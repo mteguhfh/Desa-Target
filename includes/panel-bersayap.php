@@ -48,8 +48,8 @@ foreach ($panelPapanGang as $barisPapan) {
 
         <div class="panel-isi" data-isi="warga" hidden>
             <p class="panel-deskripsi">Cari warga berdasarkan nama atau nomor kartu. Pilih warga untuk menerbangkan kamera ke titik nongkrongnya.</p>
-            <form class="cari-warga" id="cariWargaForm" method="get" action="<?= e($tabAwalan) ?>warga.php"
-                  data-endpoint="<?= e($tabAwalan) ?>cari-warga.php">
+            <form class="cari-warga" id="cariWargaForm" method="get" action="<?= e($tabAwalan) ?>warga"
+                  data-endpoint="<?= e($tabAwalan) ?>cari-warga">
                 <label class="sr-saja" for="cariWargaKunci">Nama atau nomor warga</label>
                 <input class="cari-warga-isian" id="cariWargaKunci" name="cari" type="search"
                        placeholder="Nama atau DT-0007" autocomplete="off"
@@ -57,7 +57,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 <button class="tombol-panel-utama cari-warga-tombol" type="submit">Cari</button>
             </form>
             <div class="cari-warga-hasil" id="cariWargaHasil" aria-live="polite"></div>
-            <p class="panel-catatan">Semua warga juga bisa dilihat di <a href="<?= e($tabAwalan) ?>warga.php">daftar warga desa</a>.</p>
+            <p class="panel-catatan">Semua warga juga bisa dilihat di <a href="<?= e($tabAwalan) ?>warga">daftar warga desa</a>.</p>
         </div>
 
         <div class="panel-isi" data-isi="misi" hidden>
@@ -81,7 +81,7 @@ foreach ($panelPapanGang as $barisPapan) {
 
             <div class="misi-tamu" id="misiTamu">
                 <p class="panel-deskripsi">Bikin KTP Warga dulu supaya misi dan poinmu tercatat atas namamu sendiri.</p>
-                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp">Bikin KTP Warga</a>
             </div>
 
             <ul class="daftar-misi" id="daftarMisi">
@@ -101,7 +101,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 <?php endforeach; ?>
             </ul>
             <a class="tombol-panel-utama" href="https://www.instagram.com/desatarget" target="_blank" rel="noopener">Buka Instagram</a>
-            <div class="panen-game" id="panenGame" data-endpoint="<?= e($tabAwalan) ?>main.php">
+            <div class="panen-game" id="panenGame" data-endpoint="<?= e($tabAwalan) ?>main">
                 <h3>Panen padi</h3>
                 <p>Ketuk tombol saat padi berada di tengah. Skor minimal 60 mendapat 5 poin. Satu hasil dicatat setiap hari.</p>
                 <div class="panen-ladang" aria-label="Ladang panen"><span id="panenPadi">🌾</span></div>
@@ -123,7 +123,7 @@ foreach ($panelPapanGang as $barisPapan) {
                     </div>
                 <?php endforeach; ?>
             </div>
-            <p class="panel-gabung"><a href="<?= e($tabAwalan) ?>ktp.php">Gabung gang-mu</a></p>
+            <p class="panel-gabung"><a href="<?= e($tabAwalan) ?>ktp">Gabung gang-mu</a></p>
         </div>
 
         <div class="panel-isi" data-isi="bangunan" hidden>
@@ -175,7 +175,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 </ul>
             <?php endif; ?>
             <?php // Ruko warga (Fitur 3): jalan masuk ke halaman klaim ruko. ?>
-            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>ruko.php">Buka ruko usahamu di desa</a></p>
+            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>ruko">Buka ruko usahamu di desa</a></p>
         </div>
 
         <?php // Pasar Malam dan CFD (Fitur 4). Lapak gratis, hanya saat acara
@@ -222,10 +222,10 @@ foreach ($panelPapanGang as $barisPapan) {
 
             <div class="pasar-tamu" id="pasarTamu" hidden>
                 <p class="panel-deskripsi">Bikin KTP Warga supaya bisa membuka lapak. Melihat jadwal dan lapak tetap gratis.</p>
-                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp">Bikin KTP Warga</a>
             </div>
 
-            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>pasar.php">Lihat halaman Pasar Desa</a> atau <a href="<?= e($tabAwalan) ?>ruko.php">buka ruko usahamu</a>.</p>
+            <p class="panel-catatan"><a href="<?= e($tabAwalan) ?>pasar">Lihat halaman Pasar Desa</a> atau <a href="<?= e($tabAwalan) ?>ruko">buka ruko usahamu</a>.</p>
         </div>
 
         <?php // KTP Warga dibuat langsung di panel ini (ADR-0007), supaya
@@ -281,7 +281,7 @@ foreach ($panelPapanGang as $barisPapan) {
                     <button type="submit" class="tombol-panel-utama">Bikin KTP Warga, Gratis</button>
                 </form>
                 <p class="aku-kabar" id="akuKabar" role="status" hidden></p>
-                <p class="panel-catatan">Kartumu tersimpan di peramban ini. Buka <a href="<?= e($tabAwalan) ?>ktp.php">halaman KTP Warga</a> kalau mau melihat kartu lengkapnya.</p>
+                <p class="panel-catatan">Kartumu tersimpan di peramban ini. Buka <a href="<?= e($tabAwalan) ?>ktp">halaman KTP Warga</a> kalau mau melihat kartu lengkapnya.</p>
             </div>
 
             <div class="aku-punya" id="akuPunya" hidden>
@@ -292,7 +292,7 @@ foreach ($panelPapanGang as $barisPapan) {
                 <p class="aku-kabar" id="akuKabarPunya" role="status" hidden></p>
                 <p class="aku-aksi">
                     <button type="button" class="tombol-panel-utama" id="akuKlaim">Klaim poin harian</button>
-                    <a class="tombol-panel-biasa" href="<?= e($tabAwalan) ?>ktp.php">Lihat kartu lengkap</a>
+                    <a class="tombol-panel-biasa" href="<?= e($tabAwalan) ?>ktp">Lihat kartu lengkap</a>
                 </p>
                 <p class="panel-catatan">Poin bisa dipakai untuk usaha di desa. Misi dan riwayatnya ada di panel Misi.</p>
                 <div class="aku-koleksi" id="akuKoleksi"><h3>Koleksiku</h3><div class="aku-lencana" id="akuLencana"><p class="panel-catatan">Memuat lencana…</p></div></div>
@@ -308,8 +308,8 @@ foreach ($panelPapanGang as $barisPapan) {
             <button type="button" class="tombol-panel-utama masuk-usaha" hidden onclick="window.__tabBar?.tutup(); window.__desa?.aturModeJalan(false); window.__usaha?.buka('Ruko warga', false)">Masuk katalog ruko</button>
             <div class="ruko-panel-tamu" id="rukoPanelTamu" hidden>
                 <p class="panel-deskripsi">Buka ruko usahamu di desa: nama usaha, cerita singkat, dan satu tautan jualan. Gratis, dan pembeli diarahkan langsung ke tempat jualanmu sendiri.</p>
-                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga dulu</a>
-                <p class="panel-catatan">Sudah punya kartu? Buka <a href="<?= e($tabAwalan) ?>ktp.php">KTP Warga</a> sekali, lalu kembali ke sini.</p>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp">Bikin KTP Warga dulu</a>
+                <p class="panel-catatan">Sudah punya kartu? Buka <a href="<?= e($tabAwalan) ?>ktp">KTP Warga</a> sekali, lalu kembali ke sini.</p>
             </div>
 
             <div class="ruko-panel-muat" id="rukoPanelMuat">
@@ -325,14 +325,14 @@ foreach ($panelPapanGang as $barisPapan) {
                 <p class="ruko-panel-kabar" id="rukoPanelKabar" role="status" hidden></p>
                 <p class="ruko-panel-aksi">
                     <a class="tombol-panel-utama" id="rukoPanelKunjungi" href="#" target="_blank" rel="noopener noreferrer" hidden>Kunjungi tempat jualan</a>
-                    <a class="tombol-panel-biasa" id="rukoPanelUbah" href="<?= e($tabAwalan) ?>ruko.php">Ubah ruko</a>
+                    <a class="tombol-panel-biasa" id="rukoPanelUbah" href="<?= e($tabAwalan) ?>ruko">Ubah ruko</a>
                 </p>
                 <p class="panel-catatan">Pesanan tetap berjalan di tempat jualanmu sendiri. Desa tidak memproses pembayaran apa pun.</p>
             </div>
 
             <div class="ruko-panel-kosong" id="rukoPanelKosong" hidden>
                 <p class="panel-deskripsi">Kamu belum punya ruko di desa. Ruko tampil di peta dengan namamu, dan bisa dipakai berjualan di Pasar Malam atau CFD.</p>
-                <a class="tombol-panel-utama" id="rukoPanelBuka" href="<?= e($tabAwalan) ?>ruko.php">Buka ruko usahamu</a>
+                <a class="tombol-panel-utama" id="rukoPanelBuka" href="<?= e($tabAwalan) ?>ruko">Buka ruko usahamu</a>
             </div>
 
             <?php // Ruko warga lain: 2 kolom bergambar seperti katalog, supaya
@@ -343,8 +343,8 @@ foreach ($panelPapanGang as $barisPapan) {
             </div>
 
             <p class="panel-catatan">
-                <a href="<?= e($tabAwalan) ?>ruko.php">Halaman ruko warga</a>
-                &middot; <a href="<?= e($tabAwalan) ?>pasar.php">Pasar Desa</a>
+                <a href="<?= e($tabAwalan) ?>ruko">Halaman ruko warga</a>
+                &middot; <a href="<?= e($tabAwalan) ?>pasar">Pasar Desa</a>
             </p>
         </div>
 
@@ -371,7 +371,7 @@ foreach ($panelPapanGang as $barisPapan) {
 
             <div class="chat-tamu" id="chatTamu" hidden>
                 <p class="panel-deskripsi">Bikin KTP Warga supaya bisa ikut menyapa di chat. Membaca pesan tetap gratis tanpa kartu.</p>
-                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp.php">Bikin KTP Warga</a>
+                <a class="tombol-panel-utama" href="<?= e($tabAwalan) ?>ktp">Bikin KTP Warga</a>
             </div>
         </div>
 

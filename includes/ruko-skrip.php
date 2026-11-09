@@ -117,7 +117,7 @@
     // Daftar ruko dimuat apa pun keadaannya (tamu, belum punya, punya).
     // Dijalankan sekali; kegagalan jaringan cukup menyembunyikan daftar.
     function muatDaftarRuko() {
-        fetch(awalan + 'peta3d/data-desa.php', { headers: { Accept: 'application/json' } })
+        fetch(awalan + 'peta3d/data-desa', { headers: { Accept: 'application/json' } })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
                 if (!data || !Array.isArray(data.bangunan)) return;
@@ -138,7 +138,7 @@
 
     // ruko.php?nomor=...&kunci=...&json=1 mengembalikan { ruko: {...} | null }.
     // Tanpa penanda json=1 halaman biasa yang dikirim, jadi aman dipanggil.
-    var alamat = awalan + 'ruko.php?json=1&nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci);
+    var alamat = awalan + 'ruko?json=1&nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci);
     tampilKeadaan('muat');
 
     fetch(alamat, { credentials: 'same-origin' })

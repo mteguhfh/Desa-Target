@@ -18,9 +18,9 @@ $peta3dAkar = $peta3dAkar ?? false;
 ?>
 <nav class="sakelar-peta" aria-label="Pilih tampilan peta">
     <a class="sakelar-opsi<?= $modePeta === '3d' ? ' aktif' : '' ?>"
-       href="<?= $peta3dAkar ? $awalanPeta : $awalanPeta . 'peta.php' ?>?tetap=1" data-mode="3d"
+       href="<?= $peta3dAkar ? $awalanPeta : $awalanPeta . 'peta' ?>?tetap=1" data-mode="3d"
        aria-current="<?= $modePeta === '3d' ? 'true' : 'false' ?>">3D</a>
     <a class="sakelar-opsi<?= $modePeta === '2d' ? ' aktif' : '' ?>"
-       href="<?= $awalanPeta ?>peta2d.php" data-mode="2d"
+       href="<?= $awalanPeta ?>peta2d" data-mode="2d"
        aria-current="<?= $modePeta === '2d' ? 'true' : 'false' ?>">2D</a>
 </nav>

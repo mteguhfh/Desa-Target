@@ -4,6 +4,28 @@
     Deny from all
 </FilesMatch>
 
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Alamat tanpa akhiran .php: /ktp dilayani ktp.php, /peta3d/data-desa
+    # dilayani peta3d/data-desa.php. Alamat lama yang masih memakai .php
+    # dialihkan permanen ke bentuk bersih, tapi hanya GET/HEAD: POST yang
+    # dialihkan akan kehilangan isi formulirnya. THE_REQUEST (baris
+    # permintaan asli) dipakai supaya penulisan ulang internal di bawah
+    # tidak memicu pengalihan lagi.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s/+((?:[^\s?]*/)?)index\.php[\s?]
+    RewriteRule (^|/)index\.php$ /%1 [R=301,NE,L]
+
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s/+([^\s?]+)\.php[\s?]
+    RewriteRule \.php$ /%1 [R=301,NE,L]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+</IfModule>
+
 <IfModule mod_headers.c>
     # Jangan bocorkan versi PHP ke pengunjung.
     Header unset X-Powered-By

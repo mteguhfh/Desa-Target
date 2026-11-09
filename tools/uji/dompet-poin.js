@@ -28,7 +28,7 @@ const catat = (nama, lulus, detail = '') => {
 
 // Tanggal besok menurut jam server (bukan jam mesin uji).
 async function besok(api) {
-  const r = await api.request.get(BASE + '/poin.php');
+  const r = await api.request.get(BASE + '/poin');
   const waktu = new Date(r.headers()['date']);
   waktu.setDate(waktu.getDate() + 1);
   return waktu.toISOString().slice(0, 10);
@@ -39,20 +39,20 @@ async function buatWarga(browser, nama, gang) {
   // Kunjungan pertama membangun sesi (session_start() menulis cookie-nya
   // belakangan), jadi formulir dimuat sekali lalu sekali lagi supaya token
   // yang dipakai milik sesi yang sama.
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
   const token = await page.locator('input[name="token"]').inputValue();
   await page.locator('#nama').fill(nama);
   await page.locator('[name="izin_penerbitan"]').check();
   await page.locator('#gang').selectOption(gang);
   const [jawaban] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),
-    page.locator('form[action="ktp.php"] button[type="submit"]').click(),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp')),
+    page.locator('form[action="ktp"] button[type="submit"]').click(),
   ]);
   const lokasi = jawaban.headers()['location'] || '';
   const cocok = lokasi.match(/kartu=(\d+)/);
   if (!cocok) throw new Error('KTP tidak terbit untuk ' + nama + ': ' + lokasi);
-  await page.goto(BASE + '/ktp.php?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/ktp?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#ktpIdentitas', { state: 'attached' });
   const identitas = await page.evaluate(() => ({
     nomor: document.getElementById('ktpIdentitas').getAttribute('data-nomor'),
@@ -79,12 +79,12 @@ async function buatWarga(browser, nama, gang) {
   let cap = '';
   for (let i = 0; i < 4; i++) { cap += huruf[sisa % 26]; sisa = Math.floor(sisa / 26); }
   cap = ' Dompet ' + cap + ' ';
-  const klaimA = (nomor, kunci) => api.request.post(BASE + '/klaim.php', { form: { nomor, kunci } });
+  const klaimA = (nomor, kunci) => api.request.post(BASE + '/klaim', { form: { nomor, kunci } });
   const poin = async (nomor, kunci) => {
-    const r = await api.request.get(BASE + '/poin.php?nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci));
+    const r = await api.request.get(BASE + '/poin?nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci));
     return { status: r.status(), isi: await r.json().catch(() => null) };
   };
-  const misi = (kode, nomor, kunci) => api.request.post(BASE + '/misi.php', { form: { kode, nomor, kunci } });
+  const misi = (kode, nomor, kunci) => api.request.post(BASE + '/misi', { form: { kode, nomor, kunci } });
 
   // ---------------------------------------------------------------------------
   // 1. Kartu warga menerbitkan nomor dan kunci rahasia
@@ -103,7 +103,7 @@ async function buatWarga(browser, nama, gang) {
   // 2. Klaim harian: sekali per hari, besoknya diterima
   // ---------------------------------------------------------------------------
   const awalan = await poin(wargaA.nomor, wargaA.kunci);
-  catat('poin.php dengan kunci membuka dompet', awalan.status === 200 && awalan.isi.saldo === 0,
+  catat('poin dengan kunci membuka dompet', awalan.status === 200 && awalan.isi.saldo === 0,
     'saldo ' + (awalan.isi && awalan.isi.saldo));
 
   const saldoAwalA = awalan.isi.saldo;
@@ -118,7 +118,7 @@ async function buatWarga(browser, nama, gang) {
   const saldoSetelahGanda = await poin(wargaA.nomor, wargaA.kunci);
   catat('klaim ganda tidak menambah saldo', saldoSetelahGanda.isi.saldo === saldoAwalA + 10,
     'saldo ' + saldoSetelahGanda.isi.saldo);
-  catat('poin.php melaporkan klaim hari ini', saldoSetelahGanda.isi.klaim === true);
+  catat('poin melaporkan klaim hari ini', saldoSetelahGanda.isi.klaim === true);
 
   const saldoB = await poin(wargaB.nomor, wargaB.kunci);
   catat('klaim warga A tidak menambah saldo warga B',
@@ -192,11 +192,11 @@ async function buatWarga(browser, nama, gang) {
   // 4. Kunci wajib: nomor saja, kunci salah, atau kunci warga lain ditolak
   // ---------------------------------------------------------------------------
   const tanpaKunci = await poin(wargaA.nomor, '');
-  catat('poin.php tanpa kunci ditolak 403', tanpaKunci.status === 403);
+  catat('poin tanpa kunci ditolak 403', tanpaKunci.status === 403);
   const kunciSalah = await poin(wargaA.nomor, 'f'.repeat(32));
-  catat('poin.php dengan kunci salah ditolak 403', kunciSalah.status === 403);
+  catat('poin dengan kunci salah ditolak 403', kunciSalah.status === 403);
   const kunciTetangga = await poin(wargaA.nomor, wargaB.kunci);
-  catat('poin.php dengan kunci warga lain ditolak 403', kunciTetangga.status === 403);
+  catat('poin dengan kunci warga lain ditolak 403', kunciTetangga.status === 403);
   const klaimTetangga = await klaimA(wargaA.nomor, wargaB.kunci);
   catat('klaim harian dengan kunci warga lain ditolak 403', klaimTetangga.status() === 403);
   const misiTetangga = await misi('keliling-desa', wargaB.nomor, wargaA.kunci);
@@ -231,7 +231,7 @@ async function buatWarga(browser, nama, gang) {
   // ---------------------------------------------------------------------------
   // 6. UI: chip saldo dan panel Misi per warga di peta 3D dan 2D
   // ---------------------------------------------------------------------------
-  for (const halaman of ['peta.php', 'peta2d.php']) {
+  for (const halaman of ['peta', 'peta2d']) {
     // Pengunjung tanpa kartu: tidak ada chip saldo, panel menawarkan KTP.
     const tamu = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
@@ -248,7 +248,7 @@ async function buatWarga(browser, nama, gang) {
     await page.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
 
-    if (halaman === 'peta.php') {
+    if (halaman === 'peta') {
       catat(halaman + ': chip saldo tampil untuk warga', await page.locator('#chipPoin').isVisible());
     }
     await page.evaluate(() => window.__tabBar && window.__tabBar.buka('misi', null));
@@ -275,7 +275,7 @@ async function buatWarga(browser, nama, gang) {
       localStorage.setItem('dt_nomor', nomor);
       localStorage.setItem('dt_kunci', kunci);
     }, [wargaB.nomor, wargaB.kunci]);
-    await page.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+    await page.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
     await page.evaluate(() => window.__tabBar && window.__tabBar.buka('misi', null));
     await page.waitForTimeout(500);
     const klaimTombol = page.locator('#tombolKlaimHarian');

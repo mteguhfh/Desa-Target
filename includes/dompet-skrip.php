@@ -101,7 +101,7 @@
             return;
         }
         var body = 'nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci);
-        fetch(awalan + 'poin.php', {
+        fetch(awalan + 'poin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
             body: body
@@ -132,7 +132,7 @@
                 tombolKlaim.disabled = false;
                 return;
             }
-            kirim('klaim.php', 'nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci))
+            kirim('klaim', 'nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci))
                 .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
                 .then(function (hasil) {
                     if (hasil.status === 200) {

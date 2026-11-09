@@ -53,7 +53,7 @@ repo. `BASE_UJI` bisa dipakai untuk menunjuk alamat situs selain
 | `ruko.js` | Fitur 3: warga tanpa KTP tidak bisa klaim, satu warga satu ruko, tautan hanya https (javascript/data/http ditolak), cerita dibatasi dan dicetak sebagai teks, gang mengikuti kartu, ruko tampil di peta 2D dan 3D serta daftar bangunan, lepas ruko tidak menghapus baris |
 | `pasar.js` | Fitur 4: jadwal Pasar Malam (Sabtu) dan CFD (Minggu), lapak hanya saat acara berlangsung, batas 12 lapak, klaim ganda dan tautan tidak sah ditolak, lapak gratis (poin tidak berkurang), panel Pasar di peta 3D dan 2D, chip suasana jadi pintu masuk |
 | `mode-jalan.js` | Keliling Desa: pemain lahir di luar tapak gedung, WASD dan D-pad benar-benar menggeser pemain, D memutar 90°, kamera langsung di belakang bahu, masuk/keluar Balai Desa tanpa pindah halaman, jalan di ponsel 390px |
-| `ktp-kunci.js` | kunci rahasia warga tidak tercetak di `ktp.php?kartu=N` saat dibuka pengunjung lain, tetapi nama dan gang kartu tetap tampil |
+| `ktp-kunci.js` | kunci rahasia warga tidak tercetak di `ktp?kartu=N` saat dibuka pengunjung lain, tetapi nama dan gang kartu tetap tampil |
 
 Semua berkas keluar dengan kode 1 bila ada yang gagal.
 

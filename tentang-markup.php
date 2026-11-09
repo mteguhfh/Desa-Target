@@ -17,8 +17,8 @@ $adaTerbaru = $terbaru !== null;
             oleh Bang Uju, Kepala Desa kami.
         </p>
         <div class="hero-aksi">
-            <a class="tombol tombol-utama" href="index.php">Masuk ke Desa 3D</a>
-            <a class="tombol tombol-biasa" href="ktp.php">Bikin KTP Warga, Gratis</a>
+            <a class="tombol tombol-utama" href="./">Masuk ke Desa 3D</a>
+            <a class="tombol tombol-biasa" href="ktp">Bikin KTP Warga, Gratis</a>
         </div>
         <div class="hero-statistik">
             <div class="statistik">
@@ -45,7 +45,7 @@ $adaTerbaru = $terbaru !== null;
 <section class="seksi">
     <div class="seksi-kepala">
         <h2>Pembangunan Hari Ini</h2>
-        <a href="index.php">Lihat semua di peta desa</a>
+        <a href="./">Lihat semua di peta desa</a>
     </div>
     <article class="kartu-bangunan sorotan">
         <div class="kartu-bangunan-isi">
@@ -92,7 +92,7 @@ $adaTerbaru = $terbaru !== null;
 <section class="seksi">
     <div class="seksi-kepala">
         <h2>Papan Gang</h2>
-        <a href="ktp.php">Gabung gang-mu</a>
+        <a href="ktp">Gabung gang-mu</a>
     </div>
     <p class="seksi-deskripsi">Warga terbagi ke lima gang sesuai profesinya. Gang mana yang paling ramai?</p>
     <?php require __DIR__ . '/includes/papan-gang.php'; ?>
@@ -104,7 +104,7 @@ $adaTerbaru = $terbaru !== null;
         <h2>Belum punya KTP Warga?</h2>
         <p>Bikin sekarang, gratis. Namamu langsung tercatat sebagai warga resmi Desa Target dengan nomor warga sendiri.</p>
     </div>
-    <a class="tombol tombol-utama" href="ktp.php">Bikin KTP Warga</a>
+    <a class="tombol tombol-utama" href="ktp">Bikin KTP Warga</a>
 </section>
 
 
@@ -114,7 +114,7 @@ $adaTerbaru = $terbaru !== null;
 <section class="seksi">
     <div class="seksi-kepala">
         <h2>Belum sempat membaca sambutan?</h2>
-        <a href="index.php?sambutan=1">Buka lagi sambutan di beranda</a>
+        <a href="./?sambutan=1">Buka lagi sambutan di beranda</a>
     </div>
     <p class="seksi-deskripsi">
         Beranda sekarang langsung membuka desa 3D. Sambutan pertama berisi tiga langkah cara main,

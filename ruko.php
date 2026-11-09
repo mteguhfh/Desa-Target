@@ -79,13 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($tokenSesi === '' || !hash_equals($tokenSesi, $tokenForm)) {
         $_SESSION['pesan_ruko'] = 'Formulir ini sepertinya sudah terkirim sebelumnya. Coba kirim ulang dari halaman ini.';
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
 
     if ($wargaKirim === null) {
         $_SESSION['pesan_ruko'] = 'Buka kartu wargamu dulu supaya akun peramban ini dikenali.';
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
 
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fotoBaru = null;
     if (is_string($_POST['gambar'] ?? null) && str_starts_with($_POST['gambar'], 'assets/uploads/') && !str_starts_with($_POST['gambar'], 'assets/uploads/usaha/' . $nomorKirim . '-')) {
         $_SESSION['galat_ruko'] = ['Pilih foto milik usahamu sendiri.'];
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
     if (in_array($aksi, ['klaim', 'ubah'], true) && empty($_POST['hapus_gambar']) && ($_FILES['foto_usaha']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['gambar'] = $fotoBaru;
         } catch (RuntimeException $e) {
             $_SESSION['galat_ruko'] = [$e->getMessage()];
-            header('Location: ruko.php');
+            header('Location: ruko');
             exit;
         }
     }
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['pesan_ruko'] = ($hasil['galat'] ?? null) === null
             ? 'Rukomu sudah dilepas. Bangunanmu tidak tampil lagi di peta.'
             : 'Tidak ada ruko aktif atas namamu.';
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
 
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rukoKatalog = ruko_milik($pdo, $nomorKirim);
             if ($rukoKatalog) simpan_katalog($pdo, 'bangunan', (int) $rukoKatalog['id'], $_POST['kategori'] ?? 'lainnya', $_POST['harga'] ?? '');
             $_SESSION['pesan_ruko'] = 'Rukomu sudah diperbarui.';
-            header('Location: ruko.php');
+            header('Location: ruko');
             exit;
         }
         $_SESSION['isian_ruko'] = [
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'gambar' => ['Gambar itu tidak tersedia. Pilih salah satu gambar yang ada di daftar.'],
             default => ['Rukomu belum bisa diubah. Buka lagi kartu wargamu.'],
         };
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
 
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rukoKatalog = ruko_milik($pdo, $nomorKirim);
         if ($rukoKatalog) simpan_katalog($pdo, 'bangunan', (int) $rukoKatalog['id'], $_POST['kategori'] ?? 'lainnya', $_POST['harga'] ?? '');
         $_SESSION['pesan_ruko'] = 'Selamat! Rukomu sudah berdiri di Desa Target.';
-        header('Location: ruko.php');
+        header('Location: ruko');
         exit;
     }
 
@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'hapus_gambar' => !empty($_POST['hapus_gambar']),
     ];
     $_SESSION['galat_ruko'] = $galat;
-    header('Location: ruko.php');
+    header('Location: ruko');
     exit;
 }
 

@@ -20,7 +20,7 @@ const catat = (nama, lulus, detail = '') => {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 
   // 1. Endpoint mengirim data posisi lengkap.
-  const res = await page.request.get(BASE + '/peta3d/data-desa.php');
+  const res = await page.request.get(BASE + '/peta3d/data-desa');
   const data = await res.json();
   catat('endpoint mengirim kavling', Array.isArray(data.kavling) && data.kavling.length === 12, String(data.kavling?.length));
   catat('endpoint mengirim zonaGang', data.zonaGang && Object.keys(data.zonaGang).length === 5);
@@ -29,7 +29,7 @@ const catat = (nama, lulus, detail = '') => {
   catat('zona membawa kotak wara dari server', !!data.zonaGang['Gang Dagang'].wara);
 
   // 2. 3D memakai data server, bukan cadangan.
-  await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await page.waitForTimeout(4000);
   const info = await page.evaluate(() => ({
     sumber: window.__desa?.sumberData,
@@ -50,8 +50,8 @@ const catat = (nama, lulus, detail = '') => {
   catat('setiap titik kavling identik angka demi angka', samaDenganSumber);
 
   // 4. Cadangan dipakai bila endpoint mati, dan peta tetap tampil.
-  await page.route('**/data-desa.php', (r) => r.fulfill({ status: 500, body: '{}' }));
-  await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await page.route('**/data-desa', (r) => r.fulfill({ status: 500, body: '{}' }));
+  await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await page.waitForTimeout(4000);
   const cad = await page.evaluate(() => ({ sumber: window.__desa?.sumberData, n: window.__desa?.posisiKavling.length }));
   catat('endpoint mati: peta tetap tampil dengan cadangan', cad.sumber === 'cadangan' && cad.n === 12, JSON.stringify(cad));

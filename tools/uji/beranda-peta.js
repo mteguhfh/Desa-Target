@@ -11,7 +11,7 @@ jalankan(async ({ halaman, cek, BASE }) => {
   const vendor = await page.locator('script[type="importmap"]').textContent();
   cek('Three.js berasal dari vendor lokal', vendor.includes('vendor/') && !/https?:/.test(vendor));
   cek('beranda tanpa galat JavaScript', galat.length === 0);
-  const tentang = await page.goto(BASE + '/tentang.php', { waitUntil: 'networkidle' });
+  const tentang = await page.goto(BASE + '/tentang', { waitUntil: 'networkidle' });
   cek('Tentang membalas 200', tentang.status() === 200);
   cek('Tentang punya tautan sambutan', await page.locator('a[href*="sambutan=1"]').count() > 0);
 });

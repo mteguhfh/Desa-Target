@@ -41,7 +41,7 @@ $sambutanGang = $sambutanGang ?? 0;
         </ol>
 
         <div class="sambutan-aksi" id="sambutanAksiTamu">
-            <a class="sambutan-tombol utama" href="<?= e($sambutanAwalan) ?>ktp.php">Bikin KTP Warga, Gratis</a>
+            <a class="sambutan-tombol utama" href="<?= e($sambutanAwalan) ?>ktp">Bikin KTP Warga, Gratis</a>
             <button type="button" class="sambutan-tombol" id="sambutanJelajah">Jelajahi Desa Dulu</button>
         </div>
 
@@ -58,9 +58,9 @@ $sambutanGang = $sambutanGang ?? 0;
             &middot; <?= (int) $sambutanGang ?> gang
         </p>
         <p class="sambutan-kaki">
-            <a href="<?= e($sambutanAwalan) ?>tentang.php">Kenalan dulu sama Desa Target</a>
+            <a href="<?= e($sambutanAwalan) ?>tentang">Kenalan dulu sama Desa Target</a>
             <span aria-hidden="true">&middot;</span>
-            <a href="<?= e($sambutanAwalan) ?>peta2d.php">Versi 2D</a>
+            <a href="<?= e($sambutanAwalan) ?>peta2d">Versi 2D</a>
         </p>
     </div>
 </div>

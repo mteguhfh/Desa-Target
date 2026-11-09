@@ -99,7 +99,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
     </article>
     <p class="ktp-setelah">
         Simpan alamat halaman ini untuk melihat kartumu lagi kapan pun.
-        Kembali ke <a href="peta.php">Peta Desa</a> buat lihat namamu berdiri di depan balai desa.
+        Kembali ke <a href="peta">Peta Desa</a> buat lihat namamu berdiri di depan balai desa.
     </p>
     <?php if (($kunciKartu ?? '') !== ''): ?>
     <?php // Identitas untuk fitur poin di browser ini. Kuncinya ikut nomor,
@@ -122,7 +122,7 @@ require_once __DIR__ . '/includes/avatar-markup.php';
     <?php endif; ?>
     <?php endif; ?>
 
-    <form class="formulir" method="post" action="ktp.php">
+    <form class="formulir" method="post" action="ktp">
         <input type="hidden" name="token" value="<?= e($tokenForm) ?>">
         <h2 class="ktp-form-judul">Kenalan dulu, yuk</h2>
         <label for="nama">Nama panggilan</label>

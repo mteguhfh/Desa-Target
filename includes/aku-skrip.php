@@ -90,7 +90,7 @@
         var data = new FormData();
         data.append('nomor', nomor);
         data.append('kunci', kunci);
-        fetch(awalan + 'poin.php', { method: 'POST', body: data, credentials: 'same-origin' })
+        fetch(awalan + 'poin', { method: 'POST', body: data, credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (hasil) {
                 if (!hasil) return;
@@ -114,7 +114,7 @@
         data.set('token', window.__tokenKtp || '');
         if (tombol) tombol.disabled = true;
 
-        fetch(awalan + 'ktp-json.php', { method: 'POST', body: data, credentials: 'same-origin' })
+        fetch(awalan + 'ktp-json', { method: 'POST', body: data, credentials: 'same-origin' })
             .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, isi: j }; }); })
             .then(function (hasil) {
                 if (tombol) tombol.disabled = false;
@@ -146,7 +146,7 @@
             data.append('nomor', baca(KUNCI_NOMOR));
             data.append('kunci', baca(KUNCI_KUNCI));
             tombolKlaim.disabled = true;
-            fetch(awalan + 'klaim.php', { method: 'POST', body: data, credentials: 'same-origin' })
+            fetch(awalan + 'klaim', { method: 'POST', body: data, credentials: 'same-origin' })
                 .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, isi: j }; }); })
                 .then(function (hasil) {
                     tombolKlaim.disabled = false;

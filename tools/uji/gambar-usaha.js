@@ -2,7 +2,7 @@ const { jalankan } = require('./bantuan-paritas');
 jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   const warga = await buatWarga();
   const page = await halaman(warga);
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   await page.locator('#formRuko').waitFor({ state: 'visible' });
   const pilihan = await page.locator('#formRuko input[name="gambar"]').evaluateAll(es => es.map(e => e.value).filter(Boolean));
   cek('tersedia gambar lokal', pilihan.length >= 2 && pilihan.every(p => p.startsWith('assets/img/')));
@@ -20,7 +20,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   await page.locator(`#formUbahRuko label[data-gambar="${pilihan[1]}"]`).click();
   await kirim('#formUbahRuko');
   cek('gambar bisa diganti', await page.locator('.ruko-gambar-saya').getAttribute('src') === pilihan[1]);
-  const data = await (await page.request.get(BASE + '/peta3d/data-desa.php')).json();
+  const data = await (await page.request.get(BASE + '/peta3d/data-desa')).json();
   cek('gambar baru ikut data peta', data.bangunan.some(b => b.nama === 'Ruko Uji Gambar' && b.gambar === pilihan[1]));
   const peta = await halaman(warga);
   await peta.goto(BASE + '/', { waitUntil: 'networkidle' });
@@ -33,6 +33,6 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   await page.locator('#formUbahRuko input[name="hapus_gambar"]').check();
   await kirim('#formUbahRuko');
   cek('gambar bisa dihapus', await page.locator('.ruko-gambar-saya').count() === 0);
-  const akhir = await (await page.request.get(BASE + '/peta3d/data-desa.php')).json();
+  const akhir = await (await page.request.get(BASE + '/peta3d/data-desa')).json();
   cek('penghapusan ikut data peta', akhir.bangunan.some(b => b.nama === 'Ruko Uji Gambar' && !b.gambar));
 });

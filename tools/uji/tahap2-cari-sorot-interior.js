@@ -36,8 +36,8 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
 
   // --- 1. Endpoint pencarian -------------------------------------------------
   {
-    const page = await buka(browser, 'index.php');
-    const cari = async (k) => (await page.request.get(BASE + '/cari-warga.php?cari=' + encodeURIComponent(k))).json();
+    const page = await buka(browser, '');
+    const cari = async (k) => (await page.request.get(BASE + '/cari-warga?cari=' + encodeURIComponent(k))).json();
 
     // Nomor kartu diambil dari jawaban itu sendiri supaya uji tidak
     // bergantung pada isi basis data tertentu.
@@ -75,28 +75,28 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
   let namaUji = null;
   let idUji = null;
   {
-    const page = await buka(browser, 'warga.php');
+    const page = await buka(browser, 'warga');
     if ((await page.locator('.daftar-warga-baris').count()) > 0) {
       nomorUji = (await page.locator('.daftar-warga-nomor').first().innerText()).trim();
       namaUji = (await page.locator('.daftar-warga-nama').first().innerText()).trim();
       const hrefWarga = await page.locator('.daftar-warga-tautan').first().getAttribute('href');
       idUji = (hrefWarga || '').split('=').pop();
-      catat('warga.php menampilkan daftar warga', true, nomorUji + ' ' + namaUji);
+      catat('warga menampilkan daftar warga', true, nomorUji + ' ' + namaUji);
     } else {
-      catat('warga.php menampilkan daftar warga', false, 'belum ada warga; jalankan tools/isi-data-contoh.php');
+      catat('warga menampilkan daftar warga', false, 'belum ada warga; jalankan tools/isi-data-contoh.php');
     }
     await page.close();
   }
 
   if (nomorUji) {
-    const page = await buka(browser, 'warga.php?cari=' + encodeURIComponent(nomorUji));
-    catat('warga.php menampilkan hasil pencarian',
+    const page = await buka(browser, 'warga?cari=' + encodeURIComponent(nomorUji));
+    catat('warga menampilkan hasil pencarian',
       (await page.locator('.daftar-warga-baris').count()) >= 1, nomorUji);
     await page.close();
   }
 
   // --- 3. Pencarian di dalam peta tanpa memuat ulang -------------------------
-  for (const url of ['peta.php', 'peta2d.php']) {
+  for (const url of ['peta', 'peta2d']) {
     const page = await buka(browser, url);
     await page.locator('.tab-item[data-panel="warga"]').click();
     await page.waitForTimeout(500);
@@ -123,7 +123,7 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
 
   // --- 4. Sorot bangunan dari daftar ----------------------------------------
   {
-    const page = await buka(browser, 'peta.php');
+    const page = await buka(browser, 'peta');
     await page.locator('.tab-item[data-panel="bangunan"]').click();
     await page.waitForTimeout(600);
     const jumlah = await page.locator('.daftar-bangunan-tombol').count();
@@ -156,7 +156,7 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
     await page.close();
   }
   {
-    const page = await buka(browser, 'peta2d.php');
+    const page = await buka(browser, 'peta2d');
     await page.locator('.tab-item[data-panel="bangunan"]').click();
     await page.waitForTimeout(600);
     await page.locator('.daftar-bangunan-tombol').last().click();
@@ -168,14 +168,14 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
 
   // --- 5. Interior Balai Desa di dalam 3D -----------------------------------
   {
-    const page = await buka(browser, 'peta.php');
+    const page = await buka(browser, 'peta');
     catat('interior tertutup di awal', await page.locator('#interior3d').isHidden());
     await page.evaluate(() => document.getElementById('chipMasuk').click());
     await page.waitForTimeout(900);
     catat('interior terbuka tanpa pindah halaman',
-      (await page.locator('#interior3d').isVisible()) && page.url().endsWith('/peta.php'));
+      (await page.locator('#interior3d').isVisible()) && page.url().endsWith('/peta'));
     catat('interior punya 4 hotspot', (await page.locator('#interior3d .hotspot-interior').count()) === 4);
-    catat('interior punya tautan loket KTP', (await page.locator('#interior3d a[href$="ktp.php"]').count()) === 1);
+    catat('interior punya tautan loket KTP', (await page.locator('#interior3d a[href$="ktp"]').count()) === 1);
     // Sejak ruangan ini dijadikan 3D, isinya kanvas Three.js tersendiri.
     catat('interior berupa ruangan 3D', (await page.locator('#interior3dKanvas canvas').count()) === 1);
 
@@ -202,7 +202,7 @@ async function buka(browser, url, vp = { width: 1440, height: 900 }) {
   // --- 6. Tautan ?cari= langsung membuka panel ------------------------------
   {
     const kunci = nomorUji || 'a';
-    const page = await buka(browser, 'peta.php?cari=' + encodeURIComponent(kunci));
+    const page = await buka(browser, 'peta?cari=' + encodeURIComponent(kunci));
     const panel = await page.locator('#panelBersayap').isVisible();
     const isi = await page.locator('#cariWargaHasil').innerText();
     catat('?cari= membuka panel warga dengan hasil',

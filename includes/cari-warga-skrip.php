@@ -48,7 +48,7 @@
         hasil.innerHTML = '<p class="cari-warga-memuat">Mencari…</p>';
         // Endpoint relatif terhadap HALAMAN, bukan folder: halaman peta 3D
         // bisa dibuka dari akar (/peta.php) maupun dari /peta3d/.
-        var endpoint = form.getAttribute('data-endpoint') || 'cari-warga.php';
+        var endpoint = form.getAttribute('data-endpoint') || 'cari-warga';
         fetch(endpoint + '?cari=' + encodeURIComponent(kunci), { headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {

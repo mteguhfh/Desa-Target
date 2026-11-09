@@ -57,8 +57,8 @@ $berikut = $pasarData['berikutnya'];
         </dl>
 
         <p>
-            <a class="tombol tombol-utama" href="peta.php"><?= $acaraAktif !== null ? 'Buka lapak di peta' : 'Lihat peta desa' ?></a>
-            <a class="tombol tombol-biasa" href="ktp.php">Bikin KTP Warga</a>
+            <a class="tombol tombol-utama" href="peta"><?= $acaraAktif !== null ? 'Buka lapak di peta' : 'Lihat peta desa' ?></a>
+            <a class="tombol tombol-biasa" href="ktp">Bikin KTP Warga</a>
         </p>
         <p class="catatan">
             Lapak hanya bisa diambil saat acaranya sedang berlangsung. Buka panel Pasar lewat chip suasana

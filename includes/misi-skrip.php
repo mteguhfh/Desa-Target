@@ -18,7 +18,7 @@
 // Berkas ini hanya mengeluarkan markup + <script>. Perilakunya sama sekali
 // tidak memengaruhi peta: kalau permintaan gagal, tidak terjadi apa-apa.
 ?>
-<span id="misiPenanda" hidden data-endpoint="<?= e($awalanMisi ?? '') ?>misi.php"></span>
+<span id="misiPenanda" hidden data-endpoint="<?= e($awalanMisi ?? '') ?>misi"></span>
 <script>
 (function () {
     var MISI_JALAN = 'keliling-desa';
@@ -26,11 +26,11 @@
     if (!penanda) {
         return;
     }
-    var endpoint = penanda.getAttribute('data-endpoint') || 'misi.php';
+    var endpoint = penanda.getAttribute('data-endpoint') || 'misi';
     var tujuan = {
         'usulkan-usaha': function () { window.open('https://www.instagram.com/desatarget', '_blank', 'noopener'); },
         'dukung-teman': function () { window.open('https://www.instagram.com/desatarget', '_blank', 'noopener'); },
-        'bikin-ktp': function () { var tombol = document.querySelector('[data-panel="aku"]'); if (tombol) tombol.click(); else window.location.href = 'ktp.php'; },
+        'bikin-ktp': function () { var tombol = document.querySelector('[data-panel="aku"]'); if (tombol) tombol.click(); else window.location.href = 'ktp'; },
         'keliling-desa': function () { var tombol = document.getElementById('tombolJalan'); if (tombol) tombol.click(); }
     };
 

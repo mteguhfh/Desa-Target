@@ -27,7 +27,7 @@ $awalan = $awalan ?? '../';
     </div>
     <p class="petunjuk" data-belajar-interior-status>Memuat kelas...</p>
     <div data-belajar-interior-isi></div>
-    <p class="petunjuk">Panel ini memakai data yang sama dengan <a href="<?= e($awalan . 'belajar.php') ?>">halaman Belajar penuh</a>.</p>
+    <p class="petunjuk">Panel ini memakai data yang sama dengan <a href="<?= e($awalan . 'belajar') ?>">halaman Belajar penuh</a>.</p>
 </div>
 <script>
 (() => {
@@ -52,7 +52,7 @@ $awalan = $awalan ?? '../';
                 const kunci = localStorage.getItem('dt_kunci') || '';
                 if (nomor && kunci) { p.set('nomor', nomor); p.set('kunci', kunci); }
             } catch (_) {}
-            const res = await fetch(<?= json_encode($awalan . 'belajar.php') ?> + '?' + p.toString());
+            const res = await fetch(<?= json_encode($awalan . 'belajar') ?> + '?' + p.toString());
             const data = await res.json();
             if (!data.ok) throw new Error('gagal');
             status.textContent = data.pengunjung
@@ -64,7 +64,7 @@ $awalan = $awalan ?? '../';
                 kartu.append(buat('h3', k.judul), buat('p', k.keterangan));
                 kartu.append(buat('p', k.jumlahMateri + ' materi, total ' + k.totalPoin + ' poin. Selesai ' + k.selesai + ' dari ' + k.total + ' (' + k.persen + '%).'));
                 const tautan = buat('a', 'Buka kelas ini');
-                tautan.href = <?= json_encode($awalan . 'belajar.php') ?> + '?kelas=' + encodeURIComponent(k.slug);
+                tautan.href = <?= json_encode($awalan . 'belajar') ?> + '?kelas=' + encodeURIComponent(k.slug);
                 kartu.append(tautan);
                 wadah.append(kartu);
             }

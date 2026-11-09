@@ -104,7 +104,7 @@
             var data = new FormData();
             data.append('nomor', baca(KUNCI_NOMOR));
             data.append('kunci', baca(KUNCI_KUNCI));
-            fetch(awalan + 'klaim.php', { method: 'POST', body: data })
+            fetch(awalan + 'klaim', { method: 'POST', body: data })
                 .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, isi: j }; }); })
                 .then(function (hasil) {
                     if (hasil.ok) {
@@ -135,7 +135,7 @@
 
     // Warga yang sudah punya kartu disapa namanya sebelum pop-up tampil.
     function sapaWarga(nomor, kunci) {
-        var alamat = awalan + 'sapa.php?nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci);
+        var alamat = awalan + 'sapa?nomor=' + encodeURIComponent(nomor) + '&kunci=' + encodeURIComponent(kunci);
         return fetch(alamat, { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (hasil) {

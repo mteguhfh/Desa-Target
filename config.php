@@ -14,7 +14,7 @@ define('APP_INSTAGRAM', 'https://www.instagram.com/desatarget');
 define('DESA_DIBUKA', '2026-11-09');
 const KABAR_PETA = [
     'teks' => 'Ada kabar baru dari Desa Target. Lihat jadwal pasar dan lapak warga.',
-    'tautan' => 'pasar.php',
+    'tautan' => 'pasar',
     'label' => 'Lihat pasar desa',
 ];
 

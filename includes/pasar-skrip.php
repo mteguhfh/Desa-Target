@@ -14,7 +14,7 @@
 // Berkas ini hanya mengeluarkan markup penanda + <script>.
 ?>
 <span id="pasarPenanda" hidden
-      data-endpoint="<?= e($awalanPasar ?? '') ?>lapak.php"
+      data-endpoint="<?= e($awalanPasar ?? '') ?>lapak"
       data-jadwal="<?= e(json_encode(ACARA_LAPAK, JSON_UNESCAPED_UNICODE)) ?>"></span>
 <script>
 (function () {
@@ -22,7 +22,7 @@
     var panelPasar = document.querySelector('[data-isi="pasar"]');
     if (!penanda || !panelPasar) return;
 
-    var endpoint = penanda.getAttribute('data-endpoint') || 'lapak.php';
+    var endpoint = penanda.getAttribute('data-endpoint') || 'lapak';
     // Endpoint boleh absolut dari situs induk (mis. saat dipakai peta) atau
     // relatif dari halaman pasar.php, jadi diambil apa adanya.
     var jadwal = {};

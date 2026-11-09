@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tokenSesi === '' || !hash_equals($tokenSesi, $tokenForm)) {
         // Token tidak cocok: kemungkinan besar kiriman ganda dari refresh.
         $_SESSION['pesan_ktp'] = 'Formulir ini sepertinya sudah terkirim sebelumnya. Kalau namamu belum muncul, coba kirim ulang dari formulir di bawah.';
-        header('Location: ktp.php');
+        header('Location: ktp');
         exit;
     }
 
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // warga lain yang dibuka lewat ?kartu=N.
         $_SESSION['kartu_baru'] = $idBaru;
 
-        header('Location: ktp.php?kartu=' . $idBaru);
+        header('Location: ktp?kartu=' . $idBaru);
         exit;
     }
 
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         [$warna['baju'], $warna['kulit'], $warna['topi']]
     );
     $_SESSION['galat_ktp'] = $galat;
-    header('Location: ktp.php');
+    header('Location: ktp');
     exit;
 }
 

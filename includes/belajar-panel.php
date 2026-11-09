@@ -11,6 +11,6 @@
     <p class="petunjuk">
         Materi berurutan: selesaikan satu materi untuk membuka berikutnya.
         Setiap materi tuntas memberi poin ke dompetmu.
-        <a href="<?= e(($tabAwalan ?? '') . 'belajar.php') ?>">Buka halaman Belajar penuh</a> bila panel ini tidak cukup.
+        <a href="<?= e(($tabAwalan ?? '') . 'belajar') ?>">Buka halaman Belajar penuh</a> bila panel ini tidak cukup.
     </p>
 </div>

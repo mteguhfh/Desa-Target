@@ -23,7 +23,7 @@ async function jalankan(uji) {
   async function buatWarga() {
     const page = await halaman();
     await page.goto(BASE + '/', { waitUntil: 'networkidle' });
-    const response = await page.request.post(BASE + '/ktp-json.php', { form: { nama: 'Warga Uji Paritas', gang: 'Gang Kuliner', izin_penerbitan: '1', token: await page.evaluate(() => window.__tokenKtp) } });
+    const response = await page.request.post(BASE + '/ktp-json', { form: { nama: 'Warga Uji Paritas', gang: 'Gang Kuliner', izin_penerbitan: '1', token: await page.evaluate(() => window.__tokenKtp) } });
     assert.equal(response.status(), 200);
     const warga = await response.json();
     nomorUji.push(warga.nomor);

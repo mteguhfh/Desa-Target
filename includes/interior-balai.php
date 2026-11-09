@@ -86,7 +86,7 @@ function interior_balai_svg(?array $bangunanTerbaru): string
         . '</g></g>';
 
     // Loket KTP Warga: bilik layanan di sisi kiri, tautan ke ktp.php.
-    $svg .= '<a href="ktp.php" class="hotspot-tautan" aria-label="Loket KTP Warga, buka formulir KTP Warga">'
+    $svg .= '<a href="ktp" class="hotspot-tautan" aria-label="Loket KTP Warga, buka formulir KTP Warga">'
         . '<g class="hotspot-interior"><title>Loket KTP Warga</title><g class="hotspot-dalam">'
         . '<rect x="64" y="436" width="10" height="128" fill="#92600f"/>'
         . '<rect x="316" y="436" width="10" height="128" fill="#92600f"/>'

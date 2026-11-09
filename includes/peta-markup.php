@@ -464,13 +464,13 @@
         <!-- Bilah merek dan navigasi melayang di pojok kiri atas peta,
              pengganti kepala situs khusus halaman peta sepenuh layar. -->
         <div class="peta-merek-baris">
-            <a class="peta-merek" href="index.php">
+            <a class="peta-merek" href="./">
                 <img src="assets/bang-uju.png" alt="" class="peta-merek-logo">
                 <span>Desa <strong>Target</strong></span>
             </a>
             <nav class="peta-nav" aria-label="Navigasi peta">
-                <a href="index.php">Beranda</a>
-                <a href="ktp.php">Bikin KTP Warga</a>
+                <a href="./">Beranda</a>
+                <a href="ktp">Bikin KTP Warga</a>
                 <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
                 <?php // Chat antar gang (Fitur 2): isi panel bersayap yang sama. ?>
                 <button type="button" class="peta-nav-chat" id="tombolChat2d" data-panel="chat">Chat</button>
@@ -551,7 +551,7 @@
             </div>
             <p class="seksi-deskripsi">Jumlah warga terdaftar di tiap gang. Ajak teman seprofesimu biar gang-mu naik peringkat.</p>
             <?php require __DIR__ . '/papan-gang.php'; ?>
-            <p class="panel-gang-gabung"><a href="ktp.php">Gabung gang-mu</a></p>
+            <p class="panel-gang-gabung"><a href="ktp">Gabung gang-mu</a></p>
         </aside>
 
         <!-- Tombol panah ke bawah: jalan keluar buat pengunjung menggulir

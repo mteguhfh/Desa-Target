@@ -16,7 +16,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   await page.locator('#tabBar [data-panel="ruko"]').click();
   await page.locator('#rukoPanelKosong').waitFor({ state: 'visible' });
-  cek('warga tanpa ruko mendapat tautan klaim', await page.locator('#rukoPanelBuka').getAttribute('href') === 'ruko.php');
+  cek('warga tanpa ruko mendapat tautan klaim', await page.locator('#rukoPanelBuka').getAttribute('href') === 'ruko');
   const hasil = php('echo json_encode(klaim_ruko(db(),$argv[1],$argv[2],"Ruko Uji Panel","Cerita usaha uji","https://example.com","Gang Kuliner",999));', warga.nomor, warga.kunci);
   cek('ruko uji dibuat', hasil.ok === true);
   await page.reload({ waitUntil: 'networkidle' });

@@ -27,14 +27,14 @@ const catat = (nama, lulus, detail = '') => {
   page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 160)); });
 
   // 1. Default 3D
-  await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await page.waitForTimeout(4000);
-  catat('peta.php menampilkan 3D sebagai default', (await page.locator('#panggung canvas').count()) === 1);
+  catat('peta menampilkan 3D sebagai default', (await page.locator('#panggung canvas').count()) === 1);
   const catatan = await page.locator('#catatanData').innerText();
   catat('3D memuat data dari basis data', catatan.includes('Data langsung'), catatan.slice(0, 75));
   const aktif = (await page.locator('.sakelar-opsi.aktif').innerText()).trim();
   catat('sakelar menandai 3D aktif', aktif === '3D', 'aktif=' + aktif);
-  catat('URL tetap /peta.php (tanpa redirect)', page.url().endsWith('/peta.php'), page.url());
+  catat('URL tetap /peta (tanpa redirect)', page.url().endsWith('/peta'), page.url());
 
   // Kontrol peta 3D hadir. "Papan Gang" kini berupa tab di tab bar bawah
   // (bukan tombol di tumpukan kontrol), jadi diperiksa terpisah.
@@ -48,15 +48,15 @@ const catat = (nama, lulus, detail = '') => {
   // 2. Switch ke 2D
   await page.locator('.sakelar-opsi[data-mode="2d"]').click();
   await page.waitForLoadState('networkidle');
-  catat('sakelar 2D pindah ke peta2d.php', page.url().endsWith('/peta2d.php'), page.url());
+  catat('sakelar 2D pindah ke peta2d.php', page.url().endsWith('/peta2d'), page.url());
   catat('peta 2D merender SVG desa', (await page.locator('svg.peta-svg').count()) > 0);
   catat('peta 2D menandai 2D aktif', (await page.locator('.sakelar-opsi.aktif').innerText()).trim() === '2D');
   await page.screenshot({ path: '/tmp/opencode/shot-2d.png' });
 
   // 3. Pengingat pilihan
-  await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
-  catat('pilihan 2D diingat saat buka ulang peta', page.url().includes('/peta2d.php'), page.url());
+  catat('pilihan 2D diingat saat buka ulang peta', page.url().includes('/peta2d'), page.url());
 
   // 4. Balik ke 3D & diingat
   await page.locator('.sakelar-opsi[data-mode="3d"]').click();
@@ -65,7 +65,7 @@ const catat = (nama, lulus, detail = '') => {
   catat('sakelar 3D kembali ke peta 3D', !page.url().includes('peta2d'), page.url());
   catat('3D benar-benar merender ulang', (await page.locator('#panggung canvas').count()) === 1);
 
-  await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
   catat('pilihan 3D diingat', !page.url().includes('peta2d'), page.url());
 
@@ -75,7 +75,7 @@ const catat = (nama, lulus, detail = '') => {
   catat('peta3d/ langsung tetap 3D', (await page.locator('#panggung canvas').count()) === 1);
 
   // 6. halaman lain tidak rusak
-  for (const h of ['index.php', 'ktp.php']) {
+  for (const h of ['', 'ktp']) {
     const r = await page.goto(BASE + '/' + h, { waitUntil: 'networkidle' });
     catat(h + ' tetap normal', r.status() === 200);
   }
@@ -90,7 +90,7 @@ const catat = (nama, lulus, detail = '') => {
     try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
   });
   const hp = await ctx2.newPage();
-  await hp.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await hp.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await hp.waitForTimeout(3500);
   const kotak = await hp.locator('.sakelar-peta').boundingBox();
   catat('sakelar muat di layar 390px', !!kotak && kotak.x >= 0 && kotak.x + kotak.width <= 390, JSON.stringify(kotak));

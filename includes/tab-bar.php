@@ -39,7 +39,7 @@ $tabDesaPanel = $tabDesaPanel ?? false;
 $daftarTab = [
     $tabDesaPanel
         ? ['id' => 'bangunan', 'ikon' => '&#127970;', 'teks' => 'Bangunan', 'panel' => 'bangunan']
-        : ['id' => 'desa', 'ikon' => '&#127968;', 'teks' => 'Desa', 'href' => $tabAwalan . 'index.php'],
+        : ['id' => 'desa', 'ikon' => '&#127968;', 'teks' => 'Desa', 'href' => $tabAwalan !== '' ? $tabAwalan : './'],
     ['id' => 'warga', 'ikon' => '&#128269;', 'teks' => 'Warga', 'panel' => 'warga'],
     ['id' => 'gang', 'ikon' => '&#128200;', 'teks' => 'Gang', 'panel' => 'papan-gang'],
     // Aku sekarang membuka panel: formulir KTP ada di dalamnya (ADR-0007).

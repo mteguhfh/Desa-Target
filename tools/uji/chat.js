@@ -26,19 +26,19 @@ const catat = (nama, lulus, detail = '') => {
 async function buatWarga(browser, nama, gang) {
   const page = await browser.newPage();
   // Kunjungan pertama membangun sesi, kunjungan kedua memakai sesi yang sama.
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
   await page.locator('#nama').fill(nama);
   await page.locator('[name="izin_penerbitan"]').check();
   await page.locator('#gang').selectOption(gang);
   const [jawaban] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),
-    page.locator('form[action="ktp.php"] button[type="submit"]').click(),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp')),
+    page.locator('form[action="ktp"] button[type="submit"]').click(),
   ]);
   const lokasi = jawaban.headers()['location'] || '';
   const cocok = lokasi.match(/kartu=(\d+)/);
   if (!cocok) throw new Error('KTP tidak terbit untuk ' + nama + ': ' + lokasi);
-  await page.goto(BASE + '/ktp.php?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/ktp?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#ktpIdentitas', { state: 'attached' });
   const identitas = await page.evaluate(() => ({
     nomor: document.getElementById('ktpIdentitas').getAttribute('data-nomor'),
@@ -65,11 +65,11 @@ async function buatWarga(browser, nama, gang) {
   for (let i = 0; i < 4; i++) { cap += huruf[sisa % 26]; sisa = Math.floor(sisa / 26); }
 
   const baca = async (kanal, sejak = 0) => {
-    const r = await api.request.get(BASE + '/chat.php?kanal=' + encodeURIComponent(kanal) + '&sejak=' + sejak);
+    const r = await api.request.get(BASE + '/chat?kanal=' + encodeURIComponent(kanal) + '&sejak=' + sejak);
     return { status: r.status(), isi: await r.json().catch(() => null) };
   };
   const kirim = async (data) => {
-    const r = await api.request.post(BASE + '/chat.php', { form: data });
+    const r = await api.request.post(BASE + '/chat', { form: data });
     return { status: r.status(), isi: await r.json().catch(() => null) };
   };
 
@@ -98,7 +98,7 @@ async function buatWarga(browser, nama, gang) {
     const r = await baca(kanal);
     catat('kanal tidak sah ditolak 400: "' + kanal + '"', r.status === 400, String(r.status));
   }
-  const metodeSalah = await api.request.put(BASE + '/chat.php', { form: { kanal: 'alun-alun' } });
+  const metodeSalah = await api.request.put(BASE + '/chat', { form: { kanal: 'alun-alun' } });
   catat('metode selain GET/POST ditolak 405', metodeSalah.status() === 405);
 
   // ---------------------------------------------------------------------------
@@ -199,14 +199,14 @@ async function buatWarga(browser, nama, gang) {
   // ---------------------------------------------------------------------------
   // 8. UI peta 3D dan 2D: panel chat, tanpa kolom teks, polling mengikuti panel
   // ---------------------------------------------------------------------------
-  for (const halaman of ['peta.php', 'peta2d.php']) {
+  for (const halaman of ['peta', 'peta2d']) {
     // Pengunjung tanpa kartu: bisa membaca, tidak bisa menulis.
     const tamu = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await tamu.addInitScript(() => {
       try { localStorage.setItem('dt_sambutan', '1'); } catch (e) { /* localStorage diblokir */ }
     });
     await tamu.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
-    const tombolChat = halaman === 'peta.php' ? '#tombolChat' : '#tombolChat2d';
+    const tombolChat = halaman === 'peta' ? '#tombolChat' : '#tombolChat2d';
     // Bangunan, Warga, Gang, Aku, Ruko, Pasar, Belajar: tujuh tab setara.
     catat(halaman + ': tab bar memuat tujuh menu',
       await tamu.locator('#tabBar .tab-item').count() === 7);
@@ -236,7 +236,7 @@ async function buatWarga(browser, nama, gang) {
     await page.goto(BASE + '/' + halaman, { waitUntil: 'networkidle' });
     // Peta 3D menggambar terus di GPU lunak, jadi tombolnya bisa tertahan
     // "tidak stabil" oleh Playwright; ketuk lewat DOM saja.
-    await page.evaluate((id) => document.getElementById(id).click(), halaman === 'peta.php' ? 'tombolChat' : 'tombolChat2d');
+    await page.evaluate((id) => document.getElementById(id).click(), halaman === 'peta' ? 'tombolChat' : 'tombolChat2d');
     await page.waitForTimeout(600);
     await page.waitForSelector('#chatFrase button', { timeout: 5000 }).catch(() => {});
     catat(halaman + ': tombol frase tampil untuk warga', await page.locator('#chatFrase button').count() === 8,

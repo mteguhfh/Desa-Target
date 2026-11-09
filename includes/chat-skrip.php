@@ -15,8 +15,8 @@
 // Berkas ini hanya mengeluarkan markup penanda + <script>.
 ?>
 <span id="chatPenanda" hidden
-      data-endpoint="<?= e($awalanChat ?? '') ?>chat.php"
-      data-poind="<?= e($awalanChat ?? '') ?>poin.php"
+      data-endpoint="<?= e($awalanChat ?? '') ?>chat"
+      data-poind="<?= e($awalanChat ?? '') ?>poin"
       data-kanal="<?= e(CHAT_KANAL_UMUM) ?>"
       data-gang="<?= e(implode('|', GANG_WARGA)) ?>"></span>
 <script>
@@ -25,8 +25,8 @@
     var panelChat = document.querySelector('[data-isi="chat"]');
     if (!penanda || !panelChat) return;
 
-    var endpoint = penanda.getAttribute('data-endpoint') || 'chat.php';
-    var poinEndpoint = penanda.getAttribute('data-poind') || 'poin.php';
+    var endpoint = penanda.getAttribute('data-endpoint') || 'chat';
+    var poinEndpoint = penanda.getAttribute('data-poind') || 'poin';
     var kanalUmum = penanda.getAttribute('data-kanal') || 'alun-alun';
     var daftarGang = (penanda.getAttribute('data-gang') || '').split('|').filter(Boolean);
     var JEDA_POLLING = 5000;
@@ -348,7 +348,7 @@
         if (teks !== undefined) { data.set('teks', teks); data.set('tujuan', document.getElementById('inboxTujuan').value); }
         try {
             inboxMemuat = true;
-            const response = await fetch(endpoint.replace('chat.php', 'inbox.php'), {method:'POST', body:data});
+            const response = await fetch(endpoint.replace(/chat$/, 'inbox'), {method:'POST', body:data});
             const hasil = await response.json();
             if (!response.ok) throw new Error(hasil.galat || 'Inbox belum tersedia.');
             const jumlah = hasil.belum_dibaca || 0;

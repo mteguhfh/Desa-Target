@@ -5,7 +5,7 @@ $belajarAwalan = $tabAwalan ?? '';
 ?>
 <script>
 (() => {
-    const endpoint = <?= json_encode($belajarAwalan . 'belajar.php') ?>;
+    const endpoint = <?= json_encode($belajarAwalan . 'belajar') ?>;
     const akar = document.querySelector('[data-isi="belajar"]');
     if (!akar || akar.dataset.terpasang) return;
     akar.dataset.terpasang = '1';

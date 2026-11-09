@@ -17,17 +17,17 @@
 <body>
 <?php if (!$tanpaHeaderSitus): ?>
 <header class="situs-header">
-    <a class="merek" href="index.php">
+    <a class="merek" href="./">
         <img src="assets/bang-uju.png" alt="Bang Uju, Kepala Desa Target" class="merek-logo">
         <span class="merek-teks">Desa <strong>Target</strong></span>
     </a>
     <nav class="situs-nav">
-        <a href="index.php"<?= in_array($halamanAktif, ['beranda', 'peta'], true) ? ' class="aktif"' : '' ?>>Beranda</a>
-        <a href="tentang.php"<?= $halamanAktif === 'tentang' ? ' class="aktif"' : '' ?>>Tentang</a>
-        <a href="ktp.php"<?= $halamanAktif === 'ktp' ? ' class="aktif"' : '' ?>>Bikin KTP Warga</a>
-        <a href="ruko.php"<?= $halamanAktif === 'ruko' ? ' class="aktif"' : '' ?>>Buka Ruko</a>
-        <a href="pasar.php"<?= $halamanAktif === 'pasar' ? ' class="aktif"' : '' ?>>Pasar Desa</a>
-        <a href="belajar.php"<?= $halamanAktif === 'belajar' ? ' class="aktif"' : '' ?>>Belajar</a>
+        <a href="./"<?= in_array($halamanAktif, ['beranda', 'peta'], true) ? ' class="aktif"' : '' ?>>Beranda</a>
+        <a href="tentang"<?= $halamanAktif === 'tentang' ? ' class="aktif"' : '' ?>>Tentang</a>
+        <a href="ktp"<?= $halamanAktif === 'ktp' ? ' class="aktif"' : '' ?>>Bikin KTP Warga</a>
+        <a href="ruko"<?= $halamanAktif === 'ruko' ? ' class="aktif"' : '' ?>>Buka Ruko</a>
+        <a href="pasar"<?= $halamanAktif === 'pasar' ? ' class="aktif"' : '' ?>>Pasar Desa</a>
+        <a href="belajar"<?= $halamanAktif === 'belajar' ? ' class="aktif"' : '' ?>>Belajar</a>
         <a href="<?= e(APP_INSTAGRAM) ?>" target="_blank" rel="noopener">Instagram</a>
     </nav>
 </header>

@@ -32,19 +32,19 @@ function php(kode, ...arg) {
 
 async function buatWarga(browser, nama, gang) {
   const page = await browser.newPage();
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
   await page.locator('#nama').fill(nama);
   await page.locator('[name="izin_penerbitan"]').check();
   await page.locator('#gang').selectOption(gang);
   const [jawaban] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),
-    page.locator('form[action="ktp.php"] button[type="submit"]').click(),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp')),
+    page.locator('form[action="ktp"] button[type="submit"]').click(),
   ]);
   const lokasi = jawaban.headers()['location'] || '';
   const cocok = lokasi.match(/kartu=(\d+)/);
   if (!cocok) throw new Error('KTP tidak terbit untuk ' + nama + ': ' + lokasi);
-  await page.goto(BASE + '/ktp.php?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/ktp?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#ktpIdentitas', { state: 'attached' });
   const identitas = await page.evaluate(() => ({
     nomor: document.getElementById('ktpIdentitas').getAttribute('data-nomor'),
@@ -56,7 +56,7 @@ async function buatWarga(browser, nama, gang) {
 
 // Kirim formulir ruko lewat halaman sungguhan (POST lalu redirect).
 async function klaimLewatHalaman(page, isian) {
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   if (!(await page.locator('#formRuko').count())) return { ada: false };
   await page.locator('#namaUsaha').fill(isian.nama || '');
   await page.locator('#ceritaUsaha').fill(isian.cerita || '');
@@ -64,7 +64,7 @@ async function klaimLewatHalaman(page, isian) {
   // pattern https:// di input type=url ikut memeriksa di peramban; uji
   // tautan tidak sah memakai jalur server langsung di bawah.
   const [jawaban] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ruko.php')),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ruko')),
     page.locator('#formRuko button[type="submit"]').click(),
   ]);
   await page.waitForLoadState('networkidle');
@@ -90,7 +90,7 @@ async function klaimLewatHalaman(page, isian) {
   // 1. Tanpa kartu: halaman menolak, fungsi inti juga menolak
   // ---------------------------------------------------------------------------
   const tamu = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-  await tamu.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await tamu.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   // Identitas localStorage ditukar lewat POST; beri waktu halaman memuat
   // ulang bila ada, lalu pastikan tetap tamu.
   await tamu.waitForTimeout(600);
@@ -114,21 +114,21 @@ async function klaimLewatHalaman(page, isian) {
   }, [warga.nomor, warga.kunci]);
   // Kunjungan pertama hanya membangun cookie sesi (token formulir disimpan
   // di sesi), jadi halaman dimuat sekali lagi seperti pada ktp.php.
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   await page.waitForSelector('#formRuko', { timeout: 8000 }).catch(() => {});
   catat('warga dengan kartu melihat formulir klaim', await page.locator('#formRuko').count() === 1);
   catat('identitas peramban terpasang di formulir (nomor dari localStorage)',
     (await page.locator('#formRuko input[name="nomor"]').inputValue()) === warga.nomor);
   catat('gang ruko mengikuti kartu', /Gang Kuliner/.test(await page.locator('.kartu-formulir').first().innerText()));
 
-  const rukoAwal = await api.request.get(BASE + '/peta3d/data-desa.php');
+  const rukoAwal = await api.request.get(BASE + '/peta3d/data-desa');
   const bangunanAwal = (await rukoAwal.json()).bangunan.filter((b) => b.jenis === 'ruko').length;
 
   await klaimLewatHalaman(page, { nama: namaUsaha, cerita, tautan: tautanBaik });
   const isiSetelahKlaim = await page.content();
   catat('klaim ruko diterima', /Rukomu sudah berdiri/.test(isiSetelahKlaim));
 
-  const dataDesa = await (await api.request.get(BASE + '/peta3d/data-desa.php')).json();
+  const dataDesa = await (await api.request.get(BASE + '/peta3d/data-desa')).json();
   const ruko = dataDesa.bangunan.find((b) => b.nama === namaUsaha);
   catat('ruko muncul di data-desa.php sebagai jenis ruko', !!ruko && ruko.jenis === 'ruko',
     ruko ? ruko.jenis : 'tidak ada');
@@ -141,7 +141,7 @@ async function klaimLewatHalaman(page, isian) {
   // ---------------------------------------------------------------------------
   // 3. Klaim kedua ditolak, dan tidak menambah bangunan
   // ---------------------------------------------------------------------------
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   catat('halaman menampilkan ruko milik warga, bukan formulir kedua',
     await page.locator('#formRuko').count() === 0 && /Rukomu sudah berdiri/.test(await page.content()));
 
@@ -195,7 +195,7 @@ async function klaimLewatHalaman(page, isian) {
   // 5. Peta 2D: popover ruko menampilkan cerita sebagai teks dan tautan aman
   // ---------------------------------------------------------------------------
   const p2 = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await p2.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+  await p2.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
   const elRuko = p2.locator(`.bangunan-svg[data-nama="${namaUsaha}"]`);
   catat('peta 2D memuat ruko', await elRuko.count() === 1);
   // Popover peta 2D dibuka dari keyboard (Enter) pada elemen bangunan,
@@ -230,7 +230,7 @@ async function klaimLewatHalaman(page, isian) {
   const p3 = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const galatJs = [];
   p3.on('pageerror', (e) => galatJs.push(e.message));
-  await p3.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await p3.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await p3.waitForTimeout(1200);
   // Tombol daftar bangunan menyorot ruko, lalu popover-nya dibuka lewat data
   // yang sama dengan dunia 3D (klik objek 3D butuh raycast, bukan DOM).
@@ -255,7 +255,7 @@ async function klaimLewatHalaman(page, isian) {
   // ---------------------------------------------------------------------------
   {
     const pjalan = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await pjalan.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+    await pjalan.goto(BASE + '/peta', { waitUntil: 'networkidle' });
     await pjalan.evaluate(() => localStorage.setItem('dt_sambutan', '1'));
     const tabRuko = pjalan.locator('#tabBar [data-panel="ruko"]');
     catat('peta 3D: Ruko jadi tab kelima di tab bar', await tabRuko.count() === 1);
@@ -274,7 +274,7 @@ async function klaimLewatHalaman(page, isian) {
     await pjalan.evaluate(() => document.querySelector('#tabBar [data-panel="ruko"]').click());
     await pjalan.waitForTimeout(500);
     catat('Ruko membuka panel di dalam peta, bukan halaman baru',
-      pjalan.url().includes('peta.php') && await pjalan.locator('#panelBersayap [data-isi="ruko"]').isVisible(),
+      pjalan.url().includes('peta') && await pjalan.locator('#panelBersayap [data-isi="ruko"]').isVisible(),
       pjalan.url());
     catat('panel Ruko berjudul "Ruko Wargamu"',
       (await pjalan.locator('#panelBersayapJudul').innerText()) === 'Ruko Wargamu');
@@ -285,7 +285,7 @@ async function klaimLewatHalaman(page, isian) {
     catat('tombol ruko di kontrol 3D membuka panel Ruko yang sama',
       await pjalan.locator('#panelBersayap [data-isi="ruko"]').isVisible());
     catat('tombol ruko di kontrol 3D bukan tautan ke halaman lain',
-      await pjalan.locator('.kontrol a[href$="ruko.php"]').count() === 0);
+      await pjalan.locator('.kontrol a[href$="ruko"]').count() === 0);
     await pjalan.close();
 
     // Pemilik ruko: panel menampilkan rukonya sendiri lewat ruko.php?json=1
@@ -295,7 +295,7 @@ async function klaimLewatHalaman(page, isian) {
       localStorage.setItem('dt_kunci', id.kunci);
       localStorage.setItem('dt_sambutan', '1');
     }, warga);
-    await pmilik.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+    await pmilik.goto(BASE + '/peta', { waitUntil: 'networkidle' });
     await pmilik.evaluate(() => document.querySelector('#tabBar [data-panel="ruko"]').click());
     await pmilik.waitForSelector('#rukoPanelMilik:not([hidden])', { timeout: 8000 }).catch(() => {});
     const isiPanel = await pmilik.locator('#rukoPanelMilik').innerText().catch(() => '');
@@ -305,7 +305,7 @@ async function klaimLewatHalaman(page, isian) {
     await pmilik.close();
 
     const p2d = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await p2d.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+    await p2d.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
     catat('peta 2D: Ruko juga tab kelima',
       await p2d.locator('#tabBar [data-panel="ruko"]').count() === 1);
     await p2d.close();
@@ -314,14 +314,14 @@ async function klaimLewatHalaman(page, isian) {
   // ---------------------------------------------------------------------------
   // 7. Lepas ruko: hilang dari peta, baris dan cerita tetap tersimpan
   // ---------------------------------------------------------------------------
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ruko.php')),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ruko')),
     page.locator('.ruko-lepas button[type="submit"]').click(),
   ]);
   await page.waitForLoadState('networkidle');
   catat('lepas ruko ditampilkan', /Rukomu sudah dilepas/.test(await page.content()));
-  const setelahLepas = await (await api.request.get(BASE + '/peta3d/data-desa.php')).json();
+  const setelahLepas = await (await api.request.get(BASE + '/peta3d/data-desa')).json();
   catat('ruko yang dilepas hilang dari peta', !setelahLepas.bangunan.some((b) => b.nama === namaUsaha));
   const barisTersimpan = JSON.parse(php(
     'require "db.php"; $p = db(); $s = $p->prepare("SELECT COUNT(*) FROM bangunan WHERE nama = ? AND jenis = \'ruko\'"); $s->execute([$argv[1]]); echo json_encode(["jumlah" => (int) $s->fetchColumn()]);',
@@ -329,7 +329,7 @@ async function klaimLewatHalaman(page, isian) {
   ));
   catat('baris ruko tidak dihapus, hanya dinonaktifkan', barisTersimpan.jumlah === 1);
 
-  await page.goto(BASE + '/ruko.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ruko', { waitUntil: 'networkidle' });
   catat('setelah lepas, warga bisa klaim ruko lagi', await page.locator('#formRuko').count() === 1);
   await page.close();
 

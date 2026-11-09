@@ -38,14 +38,14 @@ async function cekTumpang(page, namaHalaman, selektorLain) {
     const lain2d = ['#tombolJalan', '#tombolPanelGang', '#zoomMasuk', '#zoomKeluar', '#zoomReset', '#layarPenuh', '#petaDpad', '.peta-chip', '.peta-intro', '.peta-gulir-bawah'];
 
     // 3D
-    await p.goto(BASE + '/peta.php?tetap=1', { waitUntil: 'networkidle' });
+    await p.goto(BASE + '/peta?tetap=1', { waitUntil: 'networkidle' });
     await p.waitForTimeout(3500);
     let b3 = await cekTumpang(p, '3D-' + label, lain3d);
     total++; if (b3.length) { gagal++; console.log(`BENTROK 3D ${label}:`, b3.map((x) => x.sel).join(', ')); } else console.log(`LULUS   3D ${label}: sakelar tidak menimpa elemen lain`);
     await p.screenshot({ path: `/tmp/opencode/fix-3d-${label}.png` });
 
     // 2D
-    await p.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+    await p.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
     await p.waitForTimeout(1500);
     let b2 = await cekTumpang(p, '2D-' + label, lain2d);
     total++; if (b2.length) { gagal++; console.log(`BENTROK 2D ${label}:`, b2.map((x) => x.sel).join(', ')); } else console.log(`LULUS   2D ${label}: sakelar tidak menimpa elemen lain`);

@@ -50,7 +50,7 @@ $namaTerbaru = $bangunanTerbaru !== null
             <span class="interior-titik-lencana">Papan</span>
             <span class="interior-titik-nama">Pengumuman</span>
         </button>
-        <a href="<?= e($awalan ?? '') ?>ktp.php" class="hotspot-tautan hotspot-interior interior-titik" data-pos="arsip"
+        <a href="<?= e($awalan ?? '') ?>ktp" class="hotspot-tautan hotspot-interior interior-titik" data-pos="arsip"
            data-keterangan="Buka arsip"
            aria-label="Arsip Dokumen Warga, buka formulir KTP Warga">
             <span class="interior-titik-lencana">Arsip</span>

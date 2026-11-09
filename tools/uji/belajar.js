@@ -53,11 +53,11 @@ const acak = Array.from({ length: 6 }, () => 'abcdefghjkmnpqrstuvwxyz'[Math.floo
 // lalu baca nomor dan kunci rahasia dari halaman kartunya.
 async function buatWarga(nama) {
     const klien = buatKlien();
-    await klien.get('/ktp.php');
-    const halaman = await klien.get('/ktp.php');
+    await klien.get('/ktp');
+    const halaman = await klien.get('/ktp');
     const cocok = /name="token" value="([0-9a-f]+)"/.exec(halaman.teks);
     if (!cocok) throw new Error('token formulir KTP tidak ditemukan');
-    const kirim = await klien.post('/ktp.php', {
+    const kirim = await klien.post('/ktp', {
         token: cocok[1], nama, gang: 'Gang Dagang', izin_penerbitan: '1',
     });
     if (!kirim.location || !kirim.location.includes('kartu=')) {
@@ -78,7 +78,7 @@ async function utama() {
     const idB = { nomor: wargaB.nomor, kunci: wargaB.kunci };
     const q = (obj) => '?' + new URLSearchParams(obj).toString();
 
-    const katalog = await wargaA.klien.get('/belajar.php' + q({ format: 'json', ...idA }));
+    const katalog = await wargaA.klien.get('/belajar' + q({ format: 'json', ...idA }));
     catat('katalog memuat tiga kelas kurikulum', katalog.json && katalog.json.kelas.length === 3,
         katalog.json ? 'jumlah ' + katalog.json.kelas.length : 'bukan JSON');
     const kelasDokumen = katalog.json.kelas.find((k) => k.slug === 'dokumen-usaha-dasar');
@@ -87,21 +87,21 @@ async function utama() {
     catat('kelas dokumen punya tiga materi artikel', kelasDokumen && kelasDokumen.jumlahMateri === 3);
 
     const ambilKelas = async (klien, id, slug) =>
-        (await klien.get('/belajar.php' + q({ format: 'json', kelas: slug, ...id }))).json;
+        (await klien.get('/belajar' + q({ format: 'json', kelas: slug, ...id }))).json;
     const awal = await ambilKelas(wargaA.klien, idA, 'dokumen-usaha-dasar');
     const [m1, m2, m3] = awal.kelas.materi;
     catat('materi pertama terbuka, kedua dan ketiga terkunci',
         m1.terbuka === true && m2.terbuka === false && m3.terbuka === false);
 
-    const lompat = await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(m2.id) });
+    const lompat = await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(m2.id) });
     catat('menyelesaikan materi terkunci ditolak server', lompat.status === 403 && lompat.json?.galat === 'terkunci',
         'status ' + lompat.status);
 
-    const selesai1 = await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(m1.id) });
+    const selesai1 = await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(m1.id) });
     catat('materi pertama selesai dan memberi 10 poin',
         selesai1.json?.ok === true && selesai1.json?.baru === true && selesai1.json?.poin === 10 && selesai1.json?.saldo === 10,
         JSON.stringify(selesai1.json));
-    const ulang = await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(m1.id) });
+    const ulang = await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(m1.id) });
     catat('kiriman ulang tidak menambah poin', ulang.json?.ok === true && ulang.json?.baru === false && ulang.json?.saldo === 10,
         JSON.stringify(ulang.json));
 
@@ -116,13 +116,13 @@ async function utama() {
     // hanya dikirim saat kuis menjadi materi aktif warga itu, jadi halaman
     // kelas diperiksa dulu, lalu artikelnya diselesaikan, baru JSON kuis
     // yang aktif diperiksa.
-    const halamanKuis = await wargaA.klien.get('/belajar.php' + q({ kelas: 'ngatur-duit-usaha', ...idA }));
+    const halamanKuis = await wargaA.klien.get('/belajar' + q({ kelas: 'ngatur-duit-usaha', ...idA }));
     const jsonAwal = await ambilKelas(wargaA.klien, idA, 'ngatur-duit-usaha');
     catat('HTML halaman kuis tidak memuat kunci jawaban',
         !halamanKuis.teks.includes('"jawaban"'));
     catat('tidak ada kunci jawaban bocor di JSON kelas', !JSON.stringify(jsonAwal).includes('"jawaban"'));
     const materiArtikelDuit = jsonAwal.kelas.materi.find((m) => m.tipe === 'artikel');
-    await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(materiArtikelDuit.id) });
+    await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(materiArtikelDuit.id) });
     const jsonKuis = await ambilKelas(wargaA.klien, idA, 'ngatur-duit-usaha');
     const materiKuis = jsonKuis.kelas.materi.find((m) => m.tipe === 'kuis');
     catat('JSON kuis aktif memuat soal tanpa field jawaban',
@@ -132,7 +132,7 @@ async function utama() {
     // Kuis: salah dulu, baru benar. Kunci yang benar diuji dari perilaku
     // server: kombinasi [1,0,2] harus lulus, kombinasi lain tidak.
     const kuisId = materiKuis.id;
-    const kirimKuis = (jawaban) => wargaA.klien.post('/belajar.php', {
+    const kirimKuis = (jawaban) => wargaA.klien.post('/belajar', {
         ...idA, aksi: 'kuis', materi: String(kuisId),
         'jawaban[0]': String(jawaban[0]), 'jawaban[1]': String(jawaban[1]), 'jawaban[2]': String(jawaban[2]),
     });
@@ -152,34 +152,34 @@ async function utama() {
     // Kelas tanpa video dituntaskan penuh oleh warga B, lalu lencananya dicek.
     let keadaanB = await ambilKelas(wargaB.klien, idB, 'dokumen-usaha-dasar');
     for (const m of keadaanB.kelas.materi) {
-        await wargaB.klien.post('/belajar.php', { ...idB, aksi: 'selesai', materi: String(m.id) });
+        await wargaB.klien.post('/belajar', { ...idB, aksi: 'selesai', materi: String(m.id) });
     }
     keadaanB = await ambilKelas(wargaB.klien, idB, 'dokumen-usaha-dasar');
     catat('kelas tanpa video tuntas 100 persen', keadaanB.kelas.tuntas === true && keadaanB.kelas.persen === 100,
         JSON.stringify({ tuntas: keadaanB.kelas.tuntas, persen: keadaanB.kelas.persen }));
-    const poinB = await wargaB.klien.get('/poin.php' + q(idB));
+    const poinB = await wargaB.klien.get('/poin' + q(idB));
     const lencana = (poinB.json?.koleksi || []).find((k) => k.kode === 'warga-cerdas');
     catat('lencana Warga Cerdas terbuka di koleksi warga B', !!lencana && lencana.terbuka === true,
         JSON.stringify(poinB.json?.koleksi?.map((k) => k.kode + ':' + k.terbuka)));
-    const daftarWarga = await wargaB.klien.get('/warga.php');
+    const daftarWarga = await wargaB.klien.get('/warga');
     catat('lencana Warga Cerdas tampil di halaman daftar warga', daftarWarga.teks.includes('Warga Cerdas'));
 
     // Video tanpa ID YouTube tidak bisa ditandai selesai.
     const kontenA = await ambilKelas(wargaA.klien, idA, 'ngonten-buat-jualan');
     const artikelKonten = kontenA.kelas.materi.find((m) => m.tipe === 'artikel');
-    await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(artikelKonten.id) });
+    await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(artikelKonten.id) });
     const kontenB = await ambilKelas(wargaA.klien, idA, 'ngonten-buat-jualan');
     const video = kontenB.kelas.materi.find((m) => m.tipe === 'video');
     catat('video tanpa ID tampil sebagai segera hadir', video.segera === true && video.youtubeId === null);
-    const paksaVideo = await wargaA.klien.post('/belajar.php', { ...idA, aksi: 'selesai', materi: String(video.id) });
+    const paksaVideo = await wargaA.klien.post('/belajar', { ...idA, aksi: 'selesai', materi: String(video.id) });
     catat('menandai video segera hadir ditolak server', paksaVideo.status === 422 && paksaVideo.json?.galat === 'segera',
         'status ' + paksaVideo.status + ' ' + JSON.stringify(paksaVideo.json));
 
     // Identitas: nomor asing dan kunci salah harus menjawab sama persis.
-    const asing = await wargaA.klien.get('/belajar.php' + q({ format: 'json', nomor: 'DT-9999', kunci: '0'.repeat(32) }));
-    const kunciSalah = await wargaA.klien.get('/belajar.php' + q({ format: 'json', nomor: wargaA.nomor, kunci: '0'.repeat(32) }));
-    const postAsing = await wargaA.klien.post('/belajar.php', { nomor: 'DT-9999', kunci: '0'.repeat(32), aksi: 'selesai', materi: String(m1.id) });
-    const postSalah = await wargaA.klien.post('/belajar.php', { nomor: wargaA.nomor, kunci: '0'.repeat(32), aksi: 'selesai', materi: String(m1.id) });
+    const asing = await wargaA.klien.get('/belajar' + q({ format: 'json', nomor: 'DT-9999', kunci: '0'.repeat(32) }));
+    const kunciSalah = await wargaA.klien.get('/belajar' + q({ format: 'json', nomor: wargaA.nomor, kunci: '0'.repeat(32) }));
+    const postAsing = await wargaA.klien.post('/belajar', { nomor: 'DT-9999', kunci: '0'.repeat(32), aksi: 'selesai', materi: String(m1.id) });
+    const postSalah = await wargaA.klien.post('/belajar', { nomor: wargaA.nomor, kunci: '0'.repeat(32), aksi: 'selesai', materi: String(m1.id) });
     catat('POST nomor asing dan kunci salah sama-sama 403 dengan pesan sama',
         postAsing.status === 403 && postSalah.status === 403 && postAsing.json?.pesan === postSalah.json?.pesan,
         postAsing.status + '/' + postSalah.status);

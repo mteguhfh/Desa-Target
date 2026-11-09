@@ -2,7 +2,7 @@ const { chromium } = require('playwright-core');
 const { execFileSync } = require('child_process');
 
 // Uji keamanan kartu: kunci rahasia warga tidak boleh tercetak di halaman
-// publik `ktp.php?kartu=N`. Nomor kartu berurutan, jadi kalau kunci ikut
+// publik `ktp?kartu=N`. Nomor kartu berurutan, jadi kalau kunci ikut
 // tercetak, siapa pun bisa membuka kartu warga lain dan memakai kuncinya.
 //
 // Yang dijaga:
@@ -41,7 +41,7 @@ function php(kode, ...arg) {
   // Konteks baru tanpa cookie sesi: ini posisi pengunjung asing.
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/ktp.php?kartu=' + calon.id, { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp?kartu=' + calon.id, { waitUntil: 'networkidle' });
 
   const jumlahIdentitas = await page.locator('#ktpIdentitas').count();
   catat('kartu publik tidak punya #ktpIdentitas', jumlahIdentitas === 0, String(jumlahIdentitas));

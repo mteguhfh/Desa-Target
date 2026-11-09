@@ -37,19 +37,19 @@ function acara(kapan) {
 
 async function buatWarga(browser, nama, gang) {
   const page = await browser.newPage();
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
   await page.locator('#nama').fill(nama);
   await page.locator('#gang').selectOption(gang);
   await page.locator('[name="izin_penerbitan"]').check();
   const [jawaban] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp.php')),
-    page.locator('form[action="ktp.php"] button[type="submit"]').click(),
+    page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('ktp')),
+    page.locator('form[action="ktp"] button[type="submit"]').click(),
   ]);
   const lokasi = jawaban.headers()['location'] || '';
   const cocok = lokasi.match(/kartu=(\d+)/);
   if (!cocok) throw new Error('KTP tidak terbit untuk ' + nama + ': ' + lokasi);
-  await page.goto(BASE + '/ktp.php?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/ktp?kartu=' + cocok[1], { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#ktpIdentitas', { state: 'attached' });
   const identitas = await page.evaluate(() => ({
     nomor: document.getElementById('ktpIdentitas').getAttribute('data-nomor'),
@@ -93,12 +93,12 @@ function bersihkanLapak() {
   // 2. Halaman pasar.php: jadwal, hitung mundur, lapak
   // ---------------------------------------------------------------------------
   const halaman = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await halaman.goto(BASE + '/pasar.php', { waitUntil: 'networkidle' });
+  await halaman.goto(BASE + '/pasar', { waitUntil: 'networkidle' });
   const isiHalaman = await halaman.locator('.pasar-halaman').innerText();
   catat('halaman Pasar menampilkan Pasar Malam Sabtu 18.00', /Pasar Malam[\s\S]*Sabtu[\s\S]*18:00/.test(isiHalaman));
   catat('halaman Pasar menampilkan CFD Minggu 06.00', /CFD[\s\S]*Minggu[\s\S]*06:00/.test(isiHalaman));
   catat('halaman Pasar menyebut lapak gratis dan tanpa pembayaran', /[Gg]ratis/.test(isiHalaman) && /pembayaran/.test(isiHalaman));
-  catat('halaman Pasar menautkan Buka Ruko', await halaman.locator('a[href$="ruko.php"]').count() > 0);
+  catat('halaman Pasar menautkan Buka Ruko', await halaman.locator('a[href$="ruko"]').count() > 0);
   await halaman.close();
 
   // ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ function bersihkanLapak() {
   const poinAwal = Number(php('require "db.php"; echo saldo_poin(db(), $argv[1]);', warga.nomor));
 
   const kirim = async (data) => {
-    const res = await api.request.post(BASE + '/lapak.php', { form: data });
+    const res = await api.request.post(BASE + '/lapak', { form: data });
     return { status: res.status(), data: await res.json().catch(() => ({})) };
   };
   const dasar = { acara: 'cfd', nomor: warga.nomor, kunci: warga.kunci, nama_usaha: 'Lapak Uji ' + cap, tautan: 'https://wa.me/6281200000000' };
@@ -182,7 +182,7 @@ function bersihkanLapak() {
   // ---------------------------------------------------------------------------
   bersihkanLapak();
   const jamSebelum = JSON.parse(acara(php('require "db.php"; echo date("Y-m-d H:i");').trim()));
-  const dataDesa = await (await api.request.get(BASE + '/peta3d/data-desa.php')).json();
+  const dataDesa = await (await api.request.get(BASE + '/peta3d/data-desa')).json();
   const jamSesudah = JSON.parse(acara(php('require "db.php"; echo date("Y-m-d H:i");').trim()));
   if (jamSebelum !== jamSesudah) {
     // Uji sempat melewati batas jam acara; status acara tidak bisa dinilai.
@@ -198,7 +198,7 @@ function bersihkanLapak() {
   const peta = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const galatJs = [];
   peta.on('pageerror', (e) => galatJs.push(e.message));
-  await peta.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+  await peta.goto(BASE + '/peta', { waitUntil: 'networkidle' });
   await peta.waitForTimeout(1000);
   catat('peta 3D tidak ada galat JavaScript', galatJs.length === 0, galatJs.join(' | '));
   const tenda = await peta.evaluate(() => ({
@@ -239,7 +239,7 @@ function bersihkanLapak() {
   // 5. Panel Pasar di peta 2D
   // ---------------------------------------------------------------------------
   const p2d = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await p2d.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+  await p2d.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
   await p2d.evaluate(() => {
     const btn = document.querySelector('#tabBar .tab-item[data-panel="papan-gang"]');
     if (btn) btn.click();

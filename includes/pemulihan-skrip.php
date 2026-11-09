@@ -19,7 +19,7 @@
         kabar.textContent = '';
         try {
             data.set('token', window.__tokenKtp);
-            var response = await fetch(<?= json_encode(($pemulihanAwalan ?? '') . 'pulihkan.php') ?>, { method: 'POST', body: data });
+            var response = await fetch(<?= json_encode(($pemulihanAwalan ?? '') . 'pulihkan') ?>, { method: 'POST', body: data });
             var hasil = await response.json();
             if (!response.ok) { kabar.textContent = hasil.galat; return; }
             if (hasil.kode) {

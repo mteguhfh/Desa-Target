@@ -4,8 +4,8 @@ jalankan(async({halaman,buatWarga,cek,php,BASE})=>{
  try{
  await p.goto(BASE+'/',{waitUntil:'networkidle'});await p.waitForFunction(()=>window.__desa?.agenWarga.length>0);
  await p.evaluate(n=>{window.__desa.agenWarga[0].figur.userData.popover.nomor=n;},w.nomor);
- await p.waitForResponse(r=>r.url().includes('chat.php?kanal=alun-alun&sejak='));
- const r=await p.request.post(BASE+'/chat.php',{form:{...w,kanal:'alun-alun',teks:'Halo dari dunia'}});cek('pesan terkirim',r.status()===201);
+ await p.waitForResponse(r=>r.url().includes('chat?kanal=alun-alun&sejak='));
+ const r=await p.request.post(BASE+'/chat',{form:{...w,kanal:'alun-alun',teks:'Halo dari dunia'}});cek('pesan terkirim',r.status()===201);
  await p.waitForFunction(n=>window.__desa.agenWarga.find(a=>a.figur.userData.popover?.nomor===n)?.figur.getObjectByName('bubbleChat'),w.nomor);
  cek('bubble muncul di figur pengirim',true);
  await p.evaluate(n=>{const d=window.__desa;d.aturModeJalan(true);const a=d.agenWarga.find(a=>a.figur.userData.popover?.nomor!==n);a.x=d.kamu.x+40;a.y=d.kamu.y;a.figur.position.set(a.x-1000,0,a.y-666.5);},w.nomor);

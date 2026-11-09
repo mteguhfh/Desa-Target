@@ -79,7 +79,7 @@ const posisi = (page) => page.evaluate(() => ({
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   });
 
-  const page = await buka(browser, 'peta.php');
+  const page = await buka(browser, 'peta');
   await page.evaluate(() => document.getElementById('tombolJalan').click());
   await page.waitForTimeout(1000);
 
@@ -251,7 +251,7 @@ const posisi = (page) => page.evaluate(() => ({
     catat('interior punya ruangan 3D', (await page.locator('#interior3dKanvas canvas').count()) === 1);
     catat('interior bisa dijelajahi (mesin siap)',
       await page.evaluate(() => !!(window.__interior3d && window.__interior3d.siap())));
-    catat('URL tetap di halaman peta 3D', page.url().includes('peta.php'), page.url());
+    catat('URL tetap di halaman peta 3D', page.url().includes('peta'), page.url());
     await page.evaluate(() => document.getElementById('tombolKeluarInterior3d').click());
     await page.waitForTimeout(600);
     catat('keluar interior kembali ke peta 3D',
@@ -264,7 +264,7 @@ const posisi = (page) => page.evaluate(() => ({
 
   // --- 7. Di ponsel tetap bisa jalan ------------------------------------
   const hp = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  await hp.goto(DASAR + '/peta.php', { waitUntil: 'networkidle' });
+  await hp.goto(DASAR + '/peta', { waitUntil: 'networkidle' });
   await hp.waitForFunction(() => window.__desa && window.__desa.kamu, null, { timeout: 30000 });
   await hp.waitForFunction(
     () => getComputedStyle(document.getElementById('layarMuat')).opacity === '0',

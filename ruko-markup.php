@@ -54,7 +54,7 @@ $kunciAktif = $kunciAktif ?? '';
             <p class="seksi-deskripsi">
                 Ruko hanya untuk warga yang punya kartu. Kartu gratis, nomornya milikmu sendiri.
             </p>
-            <p><a class="tombol tombol-utama" href="ktp.php">Bikin KTP Warga</a></p>
+            <p><a class="tombol tombol-utama" href="ktp">Bikin KTP Warga</a></p>
             <p class="catatan">
                 Sudah punya kartu? Buka kartumu di halaman KTP dulu supaya peramban ini mengenalimu,
                 lalu kembali ke sini.
@@ -88,9 +88,9 @@ $kunciAktif = $kunciAktif ?? '';
                 </div>
             </dl>
             <p>
-                <a class="tombol tombol-utama" href="peta.php">Lihat rukoku di peta</a>
+                <a class="tombol tombol-utama" href="peta">Lihat rukoku di peta</a>
             </p>
-            <form method="post" action="ruko.php" class="ruko-lepas">
+            <form method="post" action="ruko" class="ruko-lepas">
                 <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
                 <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
                 <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
@@ -100,7 +100,7 @@ $kunciAktif = $kunciAktif ?? '';
             <p class="catatan">Melepas ruko tidak menghapus ceritamu; bangunanmu hanya tidak tampil lagi di peta.</p>
 
             <h3 class="ruko-subjudul">Ubah rukomu</h3>
-            <form class="formulir" method="post" action="ruko.php" id="formUbahRuko" enctype="multipart/form-data">
+            <form class="formulir" method="post" action="ruko" id="formUbahRuko" enctype="multipart/form-data">
                 <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
                 <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
                 <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
@@ -129,7 +129,7 @@ $kunciAktif = $kunciAktif ?? '';
                 Ruko menempati kavling kosong berikutnya di peta. Gang rukomu mengikuti gang di kartumu:
                 <strong><?= e((string) ($wargaAktif['gang'] ?? '')) ?></strong>.
             </p>
-            <form class="formulir" method="post" action="ruko.php" id="formRuko" enctype="multipart/form-data">
+            <form class="formulir" method="post" action="ruko" id="formRuko" enctype="multipart/form-data">
                 <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
                 <input type="hidden" name="nomor" value="<?= e($nomorAktif) ?>">
                 <input type="hidden" name="kunci" value="<?= e($kunciAktif) ?>">
@@ -181,7 +181,7 @@ $kunciAktif = $kunciAktif ?? '';
                     </li>
                 <?php endforeach; ?>
             </ul>
-            <p><a href="peta.php">Lihat semuanya di peta</a></p>
+            <p><a href="peta">Lihat semuanya di peta</a></p>
         <?php endif; ?>
     </section>
 </main>
@@ -202,7 +202,7 @@ document.querySelectorAll('.unggah-usaha input').forEach(function (input) {
 </script>
 <?php require __DIR__ . '/includes/katalog-skrip.php'; ?>
 
-<form id="rukoIdentitas" method="post" action="ruko.php" hidden>
+<form id="rukoIdentitas" method="post" action="ruko" hidden>
     <input type="hidden" name="token" value="<?= e($tokenRuko) ?>">
     <input type="hidden" name="nomor" value="">
     <input type="hidden" name="kunci" value="">

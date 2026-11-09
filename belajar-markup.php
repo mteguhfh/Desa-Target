@@ -14,7 +14,7 @@ require __DIR__ . '/includes/header.php';
 
 function belajar_tautan_kelas(array $kelasBaris, ?array $wargaAktif, ?string $nomorAktif): string
 {
-    $tautan = 'belajar.php?kelas=' . urlencode($kelasBaris['slug']);
+    $tautan = 'belajar?kelas=' . urlencode($kelasBaris['slug']);
     if ($wargaAktif !== null) {
         $tautan .= '&nomor=' . urlencode((string) $nomorAktif) . '&kunci=' . urlencode((string) $wargaAktif['kunci']);
     }
@@ -23,7 +23,7 @@ function belajar_tautan_kelas(array $kelasBaris, ?array $wargaAktif, ?string $no
 
 const BELAJAR_TIPE = ['artikel' => 'Artikel', 'video' => 'Video', 'kuis' => 'Kuis'];
 
-$tautanDaftar = 'belajar.php' . ($warga !== null
+$tautanDaftar = 'belajar' . ($warga !== null
     ? '?nomor=' . urlencode((string) $nomor) . '&kunci=' . urlencode((string) $warga['kunci'])
     : '');
 ?>
@@ -63,7 +63,7 @@ $tautanDaftar = 'belajar.php' . ($warga !== null
                     Tanpa masuk, kamu tetap bisa membaca materi pertama setiap kelas. Progres dan poin
                     hanya tersimpan kalau kamu masuk dengan nomor dan kunci dari KTP Wargamu.
                 </p>
-                <form class="belajar-masuk-form" method="get" action="belajar.php">
+                <form class="belajar-masuk-form" method="get" action="belajar">
                     <?php if ($kelas !== null): ?>
                         <input type="hidden" name="kelas" value="<?= e($kelas['slug']) ?>">
                     <?php endif; ?>
@@ -77,7 +77,7 @@ $tautanDaftar = 'belajar.php' . ($warga !== null
                     </div>
                     <button class="tombol tombol-utama" type="submit">Masuk belajar</button>
                 </form>
-                <p class="formulir-catatan">Belum punya kartu? <a href="ktp.php">Bikin KTP Warga</a> dulu, gratis.</p>
+                <p class="formulir-catatan">Belum punya kartu? <a href="ktp">Bikin KTP Warga</a> dulu, gratis.</p>
             </div>
         <?php else: ?>
             <p class="belajar-sapa">
@@ -247,7 +247,7 @@ $tautanDaftar = 'belajar.php' . ($warga !== null
             pesan.textContent = 'Mencatat...';
             const body = new URLSearchParams({ nomor, kunci, aksi: 'selesai', materi: form.dataset.materi });
             try {
-                const res = await fetch('belajar.php', { method: 'POST', body });
+                const res = await fetch('belajar', { method: 'POST', body });
                 const data = await res.json();
                 pesan.textContent = data.pesan || 'Selesai.';
                 if (data.ok) setTimeout(() => muatUlang(data), 700);
@@ -264,7 +264,7 @@ $tautanDaftar = 'belajar.php' . ($warga !== null
                 if (cocok) body.set('jawaban[' + cocok[1] + ']', String(nilai));
             });
             try {
-                const res = await fetch('belajar.php', { method: 'POST', body });
+                const res = await fetch('belajar', { method: 'POST', body });
                 const data = await res.json();
                 pesan.textContent = data.pesan || 'Selesai.';
                 if (data.ok && data.lulus) setTimeout(() => muatUlang(data), 900);

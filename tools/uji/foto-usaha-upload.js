@@ -5,7 +5,7 @@ jalankan(async({halaman,buatWarga,cek,php,BASE})=>{
  try{
  const hasil=php('echo json_encode(klaim_ruko(db(),$argv[1],$argv[2],"Foto Usaha Uji","","https://example.com","Gang Kuliner",999));',w.nomor,w.kunci);
  cek('fixture ruko tersedia',hasil.ok);
- await p.goto(BASE+'/ruko.php',{waitUntil:'networkidle'});
+ await p.goto(BASE+'/ruko',{waitUntil:'networkidle'});
  await p.locator('#formUbahRuko').waitFor();
  const png=Buffer.from(await p.evaluate(()=>{const c=document.createElement('canvas');c.width=800;c.height=600;const g=c.getContext('2d');g.fillStyle='green';g.fillRect(0,0,800,600);return c.toDataURL('image/png').split(',')[1];}),'base64');
  await p.locator('#ubahFotoUsaha').setInputFiles({name:'foto.png',mimeType:'image/png',buffer:png});

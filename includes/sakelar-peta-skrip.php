@@ -32,7 +32,7 @@
             var terakhir = null;
             try { terakhir = localStorage.getItem(KUNCI); } catch (e) {}
             if (terakhir === '2d') {
-                window.location.replace('peta2d.php?tetap=1');
+                window.location.replace('peta2d?tetap=1');
             }
         }
     } catch (e) { /* localStorage diblokir: abaikan, default 3D */ }

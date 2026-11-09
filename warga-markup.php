@@ -6,20 +6,20 @@
 <section class="seksi seksi-warga">
     <div class="seksi-kepala">
         <h2><?= $mencari ? 'Hasil pencarian' : 'Warga Desa Target' ?></h2>
-        <a href="peta.php">Kembali ke peta desa</a>
+        <a href="peta">Kembali ke peta desa</a>
     </div>
 
     <p class="seksi-deskripsi">
         <?php if ($mencari): ?>
             <?= count($warga) ?> warga cocok dengan "<?= e($kunci) ?>".
-            <a href="warga.php">Lihat semua warga</a>
-            &middot; <a href="peta.php?cari=<?= urlencode($kunci) ?>">Lihat hasilnya di peta</a>
+            <a href="warga">Lihat semua warga</a>
+            &middot; <a href="peta?cari=<?= urlencode($kunci) ?>">Lihat hasilnya di peta</a>
         <?php else: ?>
             <?= number_format($totalWarga, 0, ',', '.') ?> warga sudah tercatat di balai desa. Cari berdasarkan nama atau nomor kartu.
         <?php endif; ?>
     </p>
 
-    <form class="cari-warga cari-warga-halaman" method="get" action="warga.php">
+    <form class="cari-warga cari-warga-halaman" method="get" action="warga">
         <label class="sr-saja" for="cariWargaKunci">Nama atau nomor warga</label>
         <input class="cari-warga-isian" id="cariWargaKunci" name="cari" type="search"
                placeholder="Nama atau DT-0007" autocomplete="off" maxlength="50"
@@ -32,14 +32,14 @@
             <?php if ($mencari): ?>
                 Tidak ada warga yang cocok. Coba nama lain, atau nomor kartu seperti DT-0001.
             <?php else: ?>
-                Belum ada warga terdaftar. <a href="ktp.php">Bikin KTP Warga</a> untuk jadi yang pertama.
+                Belum ada warga terdaftar. <a href="ktp">Bikin KTP Warga</a> untuk jadi yang pertama.
             <?php endif; ?>
         </p>
     <?php else: ?>
         <ul class="daftar-warga">
             <?php foreach ($warga as $w): ?>
                 <li class="daftar-warga-baris">
-                    <a class="daftar-warga-tautan" href="ktp.php?kartu=<?= (int) $w['id'] ?>">
+                    <a class="daftar-warga-tautan" href="ktp?kartu=<?= (int) $w['id'] ?>">
                         <span class="daftar-warga-nomor"><?= e(nomor_warga((int) $w['id'])) ?></span>
                         <span class="daftar-warga-nama"><?= e($w['nama']) ?></span>
                         <span class="daftar-warga-gang"><?= e($w['gang']) ?></span>
@@ -68,5 +68,5 @@
         <h2>Belum punya KTP Warga?</h2>
         <p>Bikin sekarang, gratis. Namamu langsung tercatat sebagai warga resmi Desa Target.</p>
     </div>
-    <a class="tombol tombol-utama" href="ktp.php">Bikin KTP Warga</a>
+    <a class="tombol tombol-utama" href="ktp">Bikin KTP Warga</a>
 </section>

@@ -49,7 +49,7 @@ function tumpang(a, b) {
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   });
 
-  for (const halaman of ['peta.php', 'peta2d.php']) {
+  for (const halaman of ['peta', 'peta2d']) {
     for (const ukuran of UKURAN) {
       const label = halaman + ' ' + ukuran.nama;
       const page = await bukaPeta(browser, halaman, ukuran);
@@ -112,7 +112,7 @@ function tumpang(a, b) {
       catat(label + ': Esc menutup panel', await page.locator('#panelBersayap').isHidden());
 
       // Dunia 3D tetap hidup (khusus peta.php).
-      if (halaman === 'peta.php') {
+      if (halaman === 'peta') {
         catat(label + ': kanvas 3D tetap ada', (await page.locator('#panggung canvas').count()) === 1);
       }
 
@@ -124,7 +124,7 @@ function tumpang(a, b) {
   // Di halaman peta, semua tab membuka panel di dalam dunia; tidak ada yang
   // berpindah halaman. Tab Bangunan dan Aku diperiksa di dua ukuran layar.
   for (const ukuran of [UKURAN[0], UKURAN[2]]) {
-    const page = await bukaPeta(browser, 'peta.php', ukuran);
+    const page = await bukaPeta(browser, 'peta', ukuran);
     catat('tab Bangunan tersedia di peta (' + ukuran.width + 'px)',
       (await page.locator('#tabBar .tab-item[data-panel="bangunan"]').count()) === 1);
     catat('tab Aku membuka panel di peta (' + ukuran.width + 'px)',

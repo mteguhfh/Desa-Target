@@ -63,7 +63,7 @@ async function ukurBilah(page) {
         localStorage.setItem('dt_kunci', '56424da0a0f621438226b894b084a0e9');
       } catch (e) { /* localStorage diblokir */ }
     });
-    await page.goto(BASE + '/peta.php', { waitUntil: 'networkidle' });
+    await page.goto(BASE + '/peta', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
 
     const bilah = await ukurBilah(page);

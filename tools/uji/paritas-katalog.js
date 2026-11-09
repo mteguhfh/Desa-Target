@@ -29,7 +29,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
     cek('filter interior menyembunyikan makanan ' + width, await usaha.count() === 0);
     await page.locator('#usahaKategori').selectOption('makanan');
     cek('filter interior memulihkan makanan ' + width, await usaha.count() === 1);
-    const dataDesa = await (await page.request.get(BASE + '/peta3d/data-desa.php')).json();
+    const dataDesa = await (await page.request.get(BASE + '/peta3d/data-desa')).json();
     const rukoTujuan = dataDesa.bangunan.find(r => r.nama === 'Katalog Uji');
     await page.evaluate(k => window.__usaha.buka('Katalog Uji', false, k), rukoTujuan.kavling);
     await usaha.waitFor();
@@ -53,11 +53,11 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
     cek('D-pad menggerakkan figur ' + width, (await page.evaluate(() => window.__usaha.posisi())).z < sebelum.z);
     await page.locator('#usahaKeluar').click();
     cek('tombol keluar menutup Pasar ' + width, await page.locator('#interiorUsaha').isHidden());
-    await page.route('**/peta3d/data-desa.php', route => route.fulfill({ status: 503, body: '{}' }));
+    await page.route('**/peta3d/data-desa', route => route.fulfill({ status: 503, body: '{}' }));
     await page.evaluate(() => window.__usaha.buka('Ruko warga'));
     await page.locator('#usahaUlang').waitFor();
     cek('galat katalog memberi pemulihan ' + width, /belum bisa/.test(await page.locator('#usahaStatus').innerText()));
-    await page.unroute('**/peta3d/data-desa.php');
+    await page.unroute('**/peta3d/data-desa');
     await page.locator('#usahaUlang').click();
     await usaha.waitFor();
     cek('coba lagi memuat katalog ' + width, await usaha.isVisible());

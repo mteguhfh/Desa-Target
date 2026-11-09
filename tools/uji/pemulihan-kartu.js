@@ -5,10 +5,10 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   const hash = php('$s=db()->prepare("SELECT kode_pulih FROM warga WHERE id=?"); $s->execute([(int)substr($argv[1],3)]); echo json_encode($s->fetchColumn());', warga.nomor);
   cek('basis data hanya menyimpan hash', hash !== warga.kode_pulih && hash.length === 64);
   const page = await halaman();
-  await page.goto(BASE + '/ktp.php', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/ktp', { waitUntil: 'networkidle' });
   const token = await page.evaluate(() => window.__tokenKtp);
   async function pulih(form) {
-    const r = await page.request.post(BASE + '/pulihkan.php', { form: { token, ...form } });
+    const r = await page.request.post(BASE + '/pulihkan', { form: { token, ...form } });
     return { status: r.status(), isi: await r.json() };
   }
   const salah = await pulih({ nomor: warga.nomor, kode: '0'.repeat(32) });
@@ -29,7 +29,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   cek('pembuatan ulang mengganti kode', ulang.isi.kode !== baru.isi.kode);
   cek('kode sebelum dibuat ulang ditolak', (await pulih({ nomor: id.nomor, kode: baru.isi.kode })).status === 403);
   const peta = await halaman(id);
-  await peta.goto(BASE + '/peta2d.php', { waitUntil: 'networkidle' });
+  await peta.goto(BASE + '/peta2d', { waitUntil: 'networkidle' });
   await peta.locator('#tabBar [data-panel="aku"]').click();
   await peta.locator('#buatKodePulih').click();
   await peta.locator('#kodePulihBaru').waitFor({ state: 'visible' });
@@ -42,7 +42,7 @@ jalankan(async ({ halaman, buatWarga, php, cek, BASE }) => {
   await peta3d.locator('#kodePulihBaru').waitFor({ state: 'visible' });
   cek('panel Aku 3D dapat membuat kode', (await peta3d.locator('#kodePulihBaru').innerText()).includes(id.nomor));
   await peta3d.close();
-  const publik = await page.request.get(BASE + '/ktp.php?kartu=' + Number(id.nomor.slice(3)));
+  const publik = await page.request.get(BASE + '/ktp?kartu=' + Number(id.nomor.slice(3)));
   const html = await publik.text();
   cek('kode dan hash tidak tercetak di kartu publik', !html.includes(ulang.isi.kode) && !html.includes(hash));
 });

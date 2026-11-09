@@ -50,14 +50,14 @@ function katalog() {
 async function muatKatalog() {
     const id = ++permintaan; daftarUsaha = []; daftarEl.replaceChildren(); ulangEl.hidden = true; statusEl.textContent = 'Memuat katalog usaha…';
     try {
-        const respons = await fetch(new URL('peta3d/data-desa.php', akar));
+        const respons = await fetch(new URL('peta3d/data-desa', akar));
         if (!respons.ok) throw new Error('data');
         const data = await respons.json();
         let usaha;
         if (modePasar) {
             const acara = data.acara || data.acaraBerikutnya?.acara;
             if (acara) {
-                const url = new URL('lapak.php', akar); url.searchParams.set('acara', acara);
+                const url = new URL('lapak', akar); url.searchParams.set('acara', acara);
                 if (!data.acara && data.acaraBerikutnya?.tanggal) url.searchParams.set('tanggal', data.acaraBerikutnya.tanggal);
                 const lapak = await fetch(url); if (!lapak.ok) throw new Error('lapak');
                 usaha = (await lapak.json()).lapak;
