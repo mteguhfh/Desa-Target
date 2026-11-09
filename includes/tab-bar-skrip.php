@@ -70,6 +70,35 @@
         tabTerakhir = tab || null;
     }
 
+    // Isi panel Misi yang bisa dituju langsung, misalnya ladang panen.
+    // Dulu mini game hanya bisa dicapai lewat chip Poin, yang tersembunyi
+    // untuk tamu tanpa kartu, jadi tamu tidak punya jalan masuk.
+    var PANEL_DARI_ISI = { 'panenGame': 'misi' };
+
+    function bukaIsi(idTujuan) {
+        var tujuan = document.getElementById(idTujuan);
+        if (!tujuan) return;
+        buka(PANEL_DARI_ISI[idTujuan], null);
+        // Isi panel Misi sangat panjang, jadi ladang digulirkan di dalam
+        // wadah bergulirnya sendiri. Menunggu beberapa bingkai saja tidak
+        // cukup: di peta 3D, isi Misi baru punya tinggi setelah daftar misi
+        // selesai digambar (~0,7 detik), dan guliran yang lebih awal dibuang
+        // peramban. Jadi tunggu sampai ada isi yang benar-benar bisa digulir,
+        // dengan batas waktu supaya tidak menunggu selamanya.
+        var wadah = panel.querySelector('.panel-bersayap-isi');
+        var batas = performance.now() + 2000;
+        (function coba() {
+            if (!wadah) return;
+            if (wadah.scrollHeight > wadah.clientHeight + 4 || performance.now() > batas) {
+                wadah.scrollTop = Math.max(0, tujuan.offsetTop - 12);
+                if (!tujuan.hasAttribute('tabindex')) tujuan.setAttribute('tabindex', '-1');
+                tujuan.focus({ preventScroll: true });
+                return;
+            }
+            window.requestAnimationFrame(coba);
+        })();
+    }
+
     function tutup(kembalikanFokus) {
         if (!panel.classList.contains('terbuka') && panel.hidden) return;
         panel.classList.remove('terbuka');
@@ -133,6 +162,32 @@
     // Tombol ruko bundar di kontrol 3D membuka panel Ruko yang sama
     // (ADR-0006), jadi pengunjung tidak meninggalkan dunia 3D.
     pasangPintasan('tombolRuko3d', 'ruko');
+    // Tombol "Main panen padi" di isi panel (Warga dan seterusnya) membuka
+    // panel Misi dan langsung menggulir ke ladang.
+    var pintuPanen = document.getElementById('pintuPanen');
+    if (pintuPanen) {
+        pintuPanen.addEventListener('click', function () {
+            bukaIsi(pintuPanen.getAttribute('data-buka-isi'));
+        });
+    }
+    // Panen dicatat atas nama warga berkartu (main.php menolak tamu), jadi
+    // janji kartu pintu ikut menyesuaikan: tamu diarahkan bikin KTP dulu.
+    if (pintuPanen) {
+        var pintuKeterangan = pintuPanen.querySelector('.pintu-panen-teks span');
+        var perbaruiPintu = function () {
+            var warga;
+            try { warga = localStorage.getItem('dt_nomor'); } catch (err) { warga = null; }
+            if (pintuKeterangan) {
+                pintuKeterangan.textContent = warga
+                    ? 'Ketuk saat padi di tengah, kumpulkan poin warga.'
+                    : 'Butuh KTP Warga. Bikin dulu, lalu panen dan dapat 5 poin.';
+            }
+        };
+        perbaruiPintu();
+        // Kartu bisa dibuat di panel Aku tanpa memuat ulang halaman.
+        window.addEventListener('storage', perbaruiPintu);
+        document.addEventListener('dt-kartu-siap', perbaruiPintu);
+    }
 
     // Pintasan untuk peta 3D: tombol "Papan Gang" lama kini membuka panel
     // yang sama, bukan panel terpisah. Dijalankan setelah halaman siap.

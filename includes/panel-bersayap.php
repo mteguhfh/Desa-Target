@@ -60,6 +60,20 @@ foreach ($panelPapanGang as $barisPapan) {
             <p class="panel-catatan">Semua warga juga bisa dilihat di <a href="<?= e($tabAwalan) ?>warga">daftar warga desa</a>.</p>
         </div>
 
+        <?php // Pintu masuk Panen padi. Mini game tinggal di panel Misi, yang
+              // dulu hanya bisa dibuka dari chip Poin -- chip itu tersembunyi
+              // untuk tamu, jadi tanpa kartu warga tidak ada jalan masuk sama
+              // sekali. Kartu ini tampil untuk semua orang dan membuka panel
+              // Misi langsung di bagian ladang (tab-bar-skrip.php). ?>
+        <button type="button" class="pintu-panen" id="pintuPanen" data-buka-isi="panenGame">
+            <span class="pintu-panen-ikon" aria-hidden="true">&#127806;</span>
+            <span class="pintu-panen-teks">
+                <strong>Main panen padi</strong>
+                <span>Ketuk saat padi di tengah, kumpulkan poin warga.</span>
+            </span>
+            <span class="pintu-panen-panah" aria-hidden="true">&rarr;</span>
+        </button>
+
         <div class="panel-isi" data-isi="misi" hidden>
             <?php $ringkasMisi = ringkasan_misi($panelMisi); ?>
             <p class="panel-deskripsi">
